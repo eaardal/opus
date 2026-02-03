@@ -51,8 +51,10 @@ function App() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -206,6 +208,14 @@ function App() {
     }
   };
 
+  const handleNodeClick = (taskId: string) => {
+    setHighlightedTaskId(taskId);
+    const taskItem = taskItemRefs.current.get(taskId);
+    if (taskItem) {
+      taskItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  };
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (draggingNode) {
@@ -304,7 +314,16 @@ function App() {
         </button>
         <div className="task-list">
           {tasks.map((task, index) => (
-            <div key={task.id} className="task-item">
+            <div
+              key={task.id}
+              ref={(el) => {
+                if (el) taskItemRefs.current.set(task.id, el);
+                else taskItemRefs.current.delete(task.id);
+              }}
+              className={`task-item ${highlightedTaskId === task.id ? "highlighted" : ""}`}
+              onMouseEnter={() => setHighlightedTaskId(task.id)}
+              onMouseLeave={() => setHighlightedTaskId(null)}
+            >
               <span
                 className="task-number"
                 style={
@@ -324,6 +343,8 @@ function App() {
                 value={task.text}
                 onChange={(e) => updateTaskText(task.id, e.target.value)}
                 onKeyDown={handleTaskKeyDown}
+                onFocus={() => setHighlightedTaskId(task.id)}
+                onBlur={() => setHighlightedTaskId(null)}
                 placeholder="Enter task..."
               />
               <div className="task-menu-container">
@@ -479,7 +500,7 @@ function App() {
             >
               <circle
                 r="25"
-                className={`node ${draggingNode === task.id ? "dragging" : ""}`}
+                className={`node ${draggingNode === task.id ? "dragging" : ""} ${highlightedTaskId === task.id ? "highlighted" : ""}`}
                 style={{
                   fill: STATUSES[task.status]?.color || STATUSES.pending.color,
                   ...(task.category
@@ -490,6 +511,7 @@ function App() {
                     : {}),
                 }}
                 onMouseDown={(e) => handleNodeMouseDown(e, task.id)}
+                onClick={() => handleNodeClick(task.id)}
               />
               <circle cx="0" cy="-25" r="10" className="node-number-badge" />
               <text
