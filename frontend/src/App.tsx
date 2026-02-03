@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import './App.css';
+import { ConfirmDialog } from '../wailsjs/go/main/App';
 
 interface Task {
   id: string;
@@ -50,10 +51,11 @@ function App() {
     setTasks(tasks.map(t => t.id === id ? { ...t, text } : t));
   };
 
-  const deleteTask = (id: string) => {
+  const deleteTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
     const taskName = task?.text || 'this task';
-    if (confirm(`Delete "${taskName}"?`)) {
+    const confirmed = await ConfirmDialog('Delete Task', `Delete "${taskName}"?`);
+    if (confirmed) {
       setTasks(prev => prev.filter(t => t.id !== id));
       setConnections(prev => prev.filter(c => c.from !== id && c.to !== id));
     }
