@@ -1,6 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
-import { ConfirmDialog, ExportData, ImportData } from "../wailsjs/go/main/App";
+import {
+  ConfirmDialog,
+  OpenFile,
+  SaveFile,
+  SaveFileAs,
+} from "../wailsjs/go/main/App";
 
 type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
 
@@ -26,8 +31,8 @@ const CATEGORIES: Record<string, { label: string; color: string }> = {
 
 const STATUSES: Record<TaskStatus, { label: string; color: string }> = {
   pending: { label: "Pending", color: "#3a3a5a" },
-  in_progress: { label: "In Progress", color: "#3737d0" },
-  completed: { label: "Completed", color: "#22c55e" },
+  in_progress: { label: "In Progress", color: "#3737af" },
+  completed: { label: "Completed", color: "#2ea058" },
   archived: { label: "Archived", color: "#5e5e5e" },
 };
 
@@ -44,6 +49,8 @@ function App() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
@@ -80,6 +87,43 @@ function App() {
     }
   }, [openMenuId]);
 
+  // Track unsaved changes
+  useEffect(() => {
+    if (tasks.length > 0 || connections.length > 0) {
+      setHasUnsavedChanges(true);
+    }
+  }, [tasks, connections]);
+
+  const handleSave = useCallback(async () => {
+    const data = JSON.stringify({ tasks, connections }, null, 2);
+    try {
+      if (currentFilePath) {
+        await SaveFile(currentFilePath, data);
+        setHasUnsavedChanges(false);
+      } else {
+        const filePath = await SaveFileAs(data);
+        if (filePath) {
+          setCurrentFilePath(filePath);
+          setHasUnsavedChanges(false);
+        }
+      }
+    } catch (err) {
+      console.error("Save failed:", err);
+    }
+  }, [tasks, connections, currentFilePath]);
+
+  // Keyboard shortcut for save (Cmd+S / Ctrl+S)
+  useEffect(() => {
+    const handleSaveShortcut = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener("keydown", handleSaveShortcut);
+    return () => window.removeEventListener("keydown", handleSaveShortcut);
+  }, [handleSave]);
+
   const addTask = () => {
     const newTask: Task = {
       id: crypto.randomUUID(),
@@ -113,25 +157,18 @@ function App() {
     setOpenMenuId(null);
   };
 
-  const handleExport = async () => {
-    const data = JSON.stringify({ tasks, connections }, null, 2);
+  const handleOpen = async () => {
     try {
-      await ExportData(data);
-    } catch (err) {
-      console.error("Export failed:", err);
-    }
-  };
-
-  const handleImport = async () => {
-    try {
-      const data = await ImportData();
-      if (data) {
-        const parsed = JSON.parse(data);
+      const result = await OpenFile();
+      if (result) {
+        const parsed = JSON.parse(result.content);
         if (parsed.tasks) setTasks(parsed.tasks);
         if (parsed.connections) setConnections(parsed.connections);
+        setCurrentFilePath(result.filePath);
+        setHasUnsavedChanges(false);
       }
     } catch (err) {
-      console.error("Import failed:", err);
+      console.error("Open failed:", err);
     }
   };
 
@@ -246,13 +283,21 @@ function App() {
     <div id="App">
       <div className="sidebar">
         <div className="actionbar">
-          <button className="action-btn" onClick={handleImport}>
-            Import
+          <button className="action-btn" onClick={handleOpen}>
+            Open
           </button>
-          <button className="action-btn" onClick={handleExport}>
-            Export
+          <button className="action-btn" onClick={handleSave}>
+            Save
           </button>
         </div>
+        {currentFilePath && (
+          <div className="file-info">
+            <span className="file-name">
+              {currentFilePath.split("/").pop()}
+            </span>
+            {hasUnsavedChanges && <span className="unsaved-indicator">●</span>}
+          </div>
+        )}
         <h2>Tasks</h2>
         <button className="add-btn" onClick={addTask}>
           + Add Task
@@ -352,6 +397,7 @@ function App() {
           ))}
         </div>
         <div className="help-text">
+          <p>Cmd/Ctrl+S to save</p>
           <p>Cmd/Ctrl+Enter to add new task</p>
           <p>Shift+drag between nodes to connect</p>
           <p>Shift+click connection to remove</p>
