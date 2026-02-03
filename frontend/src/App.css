@@ -185,7 +185,8 @@
   padding-top: 8px;
 }
 
-.category-dot {
+.category-dot,
+.status-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;

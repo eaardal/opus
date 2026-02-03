@@ -1,6 +1,8 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import './App.css';
-import { ConfirmDialog, ExportData, ImportData } from '../wailsjs/go/main/App';
+import { useState, useRef, useCallback, useEffect } from "react";
+import "./App.css";
+import { ConfirmDialog, ExportData, ImportData } from "../wailsjs/go/main/App";
+
+type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
 
 interface Task {
   id: string;
@@ -8,6 +10,7 @@ interface Task {
   x: number;
   y: number;
   category?: string;
+  status: TaskStatus;
 }
 
 interface Connection {
@@ -16,16 +19,27 @@ interface Connection {
 }
 
 const CATEGORIES: Record<string, { label: string; color: string }> = {
-  backend: { label: 'Backend', color: '#f97316' },
-  frontend: { label: 'Frontend', color: '#60a5fa' },
-  ux: { label: 'UX', color: '#f472b6' },
+  backend: { label: "Backend", color: "#f97316" },
+  frontend: { label: "Frontend", color: "#60a5fa" },
+  ux: { label: "UX", color: "#f472b6" },
+};
+
+const STATUSES: Record<TaskStatus, { label: string; color: string }> = {
+  pending: { label: "Pending", color: "#3a3a5a" },
+  in_progress: { label: "In Progress", color: "#3737d0" },
+  completed: { label: "Completed", color: "#22c55e" },
+  archived: { label: "Archived", color: "#5e5e5e" },
 };
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState<{ from: string; mouseX: number; mouseY: number } | null>(null);
+  const [connecting, setConnecting] = useState<{
+    from: string;
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
   const [shiftPressed, setShiftPressed] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
@@ -35,16 +49,16 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') setShiftPressed(true);
+      if (e.key === "Shift") setShiftPressed(true);
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') setShiftPressed(false);
+      if (e.key === "Shift") setShiftPressed(false);
     };
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
 
@@ -61,35 +75,41 @@ function App() {
   useEffect(() => {
     const handleClickOutside = () => setOpenMenuId(null);
     if (openMenuId) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [openMenuId]);
 
   const addTask = () => {
     const newTask: Task = {
       id: crypto.randomUUID(),
-      text: '',
+      text: "",
       x: 60,
       y: 60,
+      status: "pending",
     };
     setTasks([...tasks, newTask]);
     setFocusTaskId(newTask.id);
   };
 
   const handleTaskKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       addTask();
     }
   };
 
   const updateTaskText = (id: string, text: string) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, text } : t));
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, text } : t)));
   };
 
   const setTaskCategory = (id: string, category: string | undefined) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, category } : t));
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, category } : t)));
+    setOpenMenuId(null);
+  };
+
+  const setTaskStatus = (id: string, status: TaskStatus) => {
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, status } : t)));
     setOpenMenuId(null);
   };
 
@@ -98,7 +118,7 @@ function App() {
     try {
       await ExportData(data);
     } catch (err) {
-      console.error('Export failed:', err);
+      console.error("Export failed:", err);
     }
   };
 
@@ -111,17 +131,22 @@ function App() {
         if (parsed.connections) setConnections(parsed.connections);
       }
     } catch (err) {
-      console.error('Import failed:', err);
+      console.error("Import failed:", err);
     }
   };
 
   const deleteTask = async (id: string) => {
-    const task = tasks.find(t => t.id === id);
-    const taskName = task?.text || 'this task';
-    const confirmed = await ConfirmDialog('Delete Task', `Delete "${taskName}"?`);
+    const task = tasks.find((t) => t.id === id);
+    const taskName = task?.text || "this task";
+    const confirmed = await ConfirmDialog(
+      "Delete Task",
+      `Delete "${taskName}"?`,
+    );
     if (confirmed) {
-      setTasks(prev => prev.filter(t => t.id !== id));
-      setConnections(prev => prev.filter(c => c.from !== id && c.to !== id));
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+      setConnections((prev) =>
+        prev.filter((c) => c.from !== id && c.to !== id),
+      );
     }
   };
 
@@ -144,22 +169,27 @@ function App() {
     }
   };
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (draggingNode) {
-      const coords = getSvgCoords(e);
-      setTasks(prev => prev.map(t =>
-        t.id === draggingNode ? { ...t, x: coords.x, y: coords.y } : t
-      ));
-    } else if (connecting) {
-      const coords = getSvgCoords(e);
-      setConnecting({ ...connecting, mouseX: coords.x, mouseY: coords.y });
-    }
-  }, [draggingNode, connecting]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (draggingNode) {
+        const coords = getSvgCoords(e);
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === draggingNode ? { ...t, x: coords.x, y: coords.y } : t,
+          ),
+        );
+      } else if (connecting) {
+        const coords = getSvgCoords(e);
+        setConnecting({ ...connecting, mouseX: coords.x, mouseY: coords.y });
+      }
+    },
+    [draggingNode, connecting],
+  );
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (connecting) {
       const coords = getSvgCoords(e);
-      const targetTask = tasks.find(t => {
+      const targetTask = tasks.find((t) => {
         const dx = t.x - coords.x;
         const dy = t.y - coords.y;
         return Math.sqrt(dx * dx + dy * dy) < 30;
@@ -167,10 +197,13 @@ function App() {
 
       if (targetTask && targetTask.id !== connecting.from) {
         const exists = connections.some(
-          c => c.from === connecting.from && c.to === targetTask.id
+          (c) => c.from === connecting.from && c.to === targetTask.id,
         );
         if (!exists) {
-          setConnections([...connections, { from: connecting.from, to: targetTask.id }]);
+          setConnections([
+            ...connections,
+            { from: connecting.from, to: targetTask.id },
+          ]);
         }
       }
     }
@@ -180,15 +213,20 @@ function App() {
 
   const removeConnection = (e: React.MouseEvent, from: string, to: string) => {
     if (e.shiftKey) {
-      setConnections(connections.filter(c => !(c.from === from && c.to === to)));
+      setConnections(
+        connections.filter((c) => !(c.from === from && c.to === to)),
+      );
     }
   };
 
-  const getArrowPath = (fromTask: Task, toTask: Task): { path: string; endX: number; endY: number } => {
+  const getArrowPath = (
+    fromTask: Task,
+    toTask: Task,
+  ): { path: string; endX: number; endY: number } => {
     const dx = toTask.x - fromTask.x;
     const dy = toTask.y - fromTask.y;
     const len = Math.sqrt(dx * dx + dy * dy);
-    if (len === 0) return { path: '', endX: 0, endY: 0 };
+    if (len === 0) return { path: "", endX: 0, endY: 0 };
 
     const nodeRadius = 25;
     const arrowOffset = 8;
@@ -208,17 +246,27 @@ function App() {
     <div id="App">
       <div className="sidebar">
         <div className="actionbar">
-          <button className="action-btn" onClick={handleImport}>Import</button>
-          <button className="action-btn" onClick={handleExport}>Export</button>
+          <button className="action-btn" onClick={handleImport}>
+            Import
+          </button>
+          <button className="action-btn" onClick={handleExport}>
+            Export
+          </button>
         </div>
         <h2>Tasks</h2>
-        <button className="add-btn" onClick={addTask}>+ Add Task</button>
+        <button className="add-btn" onClick={addTask}>
+          + Add Task
+        </button>
         <div className="task-list">
           {tasks.map((task, index) => (
             <div key={task.id} className="task-item">
               <span
                 className="task-number"
-                style={task.category ? { background: CATEGORIES[task.category]?.color } : undefined}
+                style={
+                  task.category
+                    ? { background: CATEGORIES[task.category]?.color }
+                    : undefined
+                }
               >
                 {index + 1}
               </span>
@@ -244,18 +292,45 @@ function App() {
                   ⋯
                 </button>
                 {openMenuId === task.id && (
-                  <div className="task-menu" onClick={(e) => e.stopPropagation()}>
-                    <div className="menu-section-label">Category</div>
-                    {Object.entries(CATEGORIES).map(([key, { label, color }]) => (
+                  <div
+                    className="task-menu"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="menu-section-label">Status</div>
+                    {(
+                      Object.entries(STATUSES) as [
+                        TaskStatus,
+                        { label: string; color: string },
+                      ][]
+                    ).map(([key, { label, color }]) => (
                       <button
                         key={key}
-                        className={`menu-item ${task.category === key ? 'active' : ''}`}
-                        onClick={() => setTaskCategory(task.id, key)}
+                        className={`menu-item ${task.status === key ? "active" : ""}`}
+                        onClick={() => setTaskStatus(task.id, key)}
                       >
-                        <span className="category-dot" style={{ background: color }} />
+                        <span
+                          className="status-dot"
+                          style={{ background: color }}
+                        />
                         {label}
                       </button>
                     ))}
+                    <div className="menu-section-label">Category</div>
+                    {Object.entries(CATEGORIES).map(
+                      ([key, { label, color }]) => (
+                        <button
+                          key={key}
+                          className={`menu-item ${task.category === key ? "active" : ""}`}
+                          onClick={() => setTaskCategory(task.id, key)}
+                        >
+                          <span
+                            className="category-dot"
+                            style={{ background: color }}
+                          />
+                          {label}
+                        </button>
+                      ),
+                    )}
                     {task.category && (
                       <button
                         className="menu-item clear-category"
@@ -267,7 +342,12 @@ function App() {
                   </div>
                 )}
               </div>
-              <button className="delete-btn" onClick={() => deleteTask(task.id)}>×</button>
+              <button
+                className="delete-btn"
+                onClick={() => deleteTask(task.id)}
+              >
+                ×
+              </button>
             </div>
           ))}
         </div>
@@ -299,15 +379,18 @@ function App() {
             </marker>
           </defs>
 
-          {connections.map(conn => {
-            const fromTask = tasks.find(t => t.id === conn.from);
-            const toTask = tasks.find(t => t.id === conn.to);
+          {connections.map((conn) => {
+            const fromTask = tasks.find((t) => t.id === conn.from);
+            const toTask = tasks.find((t) => t.id === conn.to);
             if (!fromTask || !toTask) return null;
 
             const { path, endX, endY } = getArrowPath(fromTask, toTask);
 
             return (
-              <g key={`${conn.from}-${conn.to}`} className={`connection-group ${shiftPressed ? 'shift-active' : ''}`}>
+              <g
+                key={`${conn.from}-${conn.to}`}
+                className={`connection-group ${shiftPressed ? "shift-active" : ""}`}
+              >
                 <path
                   d={path}
                   stroke="#666"
@@ -331,8 +414,8 @@ function App() {
 
           {connecting && (
             <line
-              x1={tasks.find(t => t.id === connecting.from)?.x || 0}
-              y1={tasks.find(t => t.id === connecting.from)?.y || 0}
+              x1={tasks.find((t) => t.id === connecting.from)?.x || 0}
+              y1={tasks.find((t) => t.id === connecting.from)?.y || 0}
               x2={connecting.mouseX}
               y2={connecting.mouseY}
               stroke="#999"
@@ -350,16 +433,19 @@ function App() {
             >
               <circle
                 r="25"
-                className={`node ${draggingNode === task.id ? 'dragging' : ''}`}
-                style={task.category ? { stroke: CATEGORIES[task.category]?.color, strokeWidth: 3 } : undefined}
+                className={`node ${draggingNode === task.id ? "dragging" : ""}`}
+                style={{
+                  fill: STATUSES[task.status]?.color || STATUSES.pending.color,
+                  ...(task.category
+                    ? {
+                        stroke: CATEGORIES[task.category]?.color,
+                        strokeWidth: 3,
+                      }
+                    : {}),
+                }}
                 onMouseDown={(e) => handleNodeMouseDown(e, task.id)}
               />
-              <circle
-                cx="0"
-                cy="-25"
-                r="10"
-                className="node-number-badge"
-              />
+              <circle cx="0" cy="-25" r="10" className="node-number-badge" />
               <text
                 x="0"
                 y="-25"
@@ -375,7 +461,7 @@ function App() {
                 className="node-text"
                 onMouseDown={(e) => handleNodeMouseDown(e, task.id)}
               >
-                {task.text.slice(0, 8) || '?'}
+                {task.text.slice(0, 8) || "?"}
               </text>
               {hoveredNode === task.id && task.text && (
                 <g className="tooltip" transform="translate(0, 40)">
