@@ -20,6 +20,7 @@ function App() {
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{ from: string; mouseX: number; mouseY: number } | null>(null);
   const [shiftPressed, setShiftPressed] = useState(false);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -229,7 +230,12 @@ function App() {
           )}
 
           {tasks.map((task, index) => (
-            <g key={task.id} transform={`translate(${task.x}, ${task.y})`}>
+            <g
+              key={task.id}
+              transform={`translate(${task.x}, ${task.y})`}
+              onMouseEnter={() => setHoveredNode(task.id)}
+              onMouseLeave={() => setHoveredNode(null)}
+            >
               <circle
                 r="25"
                 className={`node ${draggingNode === task.id ? 'dragging' : ''}`}
@@ -258,6 +264,20 @@ function App() {
               >
                 {task.text.slice(0, 8) || '?'}
               </text>
+              {hoveredNode === task.id && task.text && (
+                <g className="tooltip" transform="translate(0, 40)">
+                  <rect
+                    x={-Math.max(task.text.length * 4, 40)}
+                    y="-12"
+                    width={Math.max(task.text.length * 8, 80)}
+                    height="24"
+                    rx="4"
+                  />
+                  <text textAnchor="middle" dy="0.35em">
+                    {task.text}
+                  </text>
+                </g>
+              )}
             </g>
           ))}
         </svg>

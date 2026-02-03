@@ -178,3 +178,16 @@
 .connection-group.shift-active:hover .connection {
   stroke: #ff6b6b;
 }
+
+.tooltip rect {
+  fill: #2a2a4a;
+  stroke: #6a6a8a;
+  stroke-width: 1;
+}
+
+.tooltip text {
+  fill: #fff;
+  font-size: 12px;
+  pointer-events: none;
+  user-select: none;
+}
