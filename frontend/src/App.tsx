@@ -122,8 +122,9 @@ function App() {
         <h2>Tasks</h2>
         <button className="add-btn" onClick={addTask}>+ Add Task</button>
         <div className="task-list">
-          {tasks.map(task => (
+          {tasks.map((task, index) => (
             <div key={task.id} className="task-item">
+              <span className="task-number">{index + 1}</span>
               <input
                 type="text"
                 value={task.text}
@@ -192,13 +193,28 @@ function App() {
             />
           )}
 
-          {tasks.map(task => (
+          {tasks.map((task, index) => (
             <g key={task.id} transform={`translate(${task.x}, ${task.y})`}>
               <circle
                 r="25"
                 className={`node ${draggingNode === task.id ? 'dragging' : ''}`}
                 onMouseDown={(e) => handleNodeMouseDown(e, task.id)}
               />
+              <circle
+                cx="0"
+                cy="-25"
+                r="10"
+                className="node-number-badge"
+              />
+              <text
+                x="0"
+                y="-25"
+                textAnchor="middle"
+                dy="0.35em"
+                className="node-number"
+              >
+                {index + 1}
+              </text>
               <text
                 textAnchor="middle"
                 dy="0.3em"
