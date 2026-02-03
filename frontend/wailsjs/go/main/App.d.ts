@@ -3,4 +3,8 @@
 
 export function ConfirmDialog(arg1:string,arg2:string):Promise<boolean>;
 
+export function ExportData(arg1:string):Promise<void>;
+
 export function Greet(arg1:string):Promise<string>;
+
+export function ImportData():Promise<string>;

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import './App.css';
-import { ConfirmDialog } from '../wailsjs/go/main/App';
+import { ConfirmDialog, ExportData, ImportData } from '../wailsjs/go/main/App';
 
 interface Task {
   id: string;
@@ -50,6 +50,28 @@ function App() {
 
   const updateTaskText = (id: string, text: string) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, text } : t));
+  };
+
+  const handleExport = async () => {
+    const data = JSON.stringify({ tasks, connections }, null, 2);
+    try {
+      await ExportData(data);
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
+  const handleImport = async () => {
+    try {
+      const data = await ImportData();
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed.tasks) setTasks(parsed.tasks);
+        if (parsed.connections) setConnections(parsed.connections);
+      }
+    } catch (err) {
+      console.error('Import failed:', err);
+    }
   };
 
   const deleteTask = async (id: string) => {
@@ -144,6 +166,10 @@ function App() {
   return (
     <div id="App">
       <div className="sidebar">
+        <div className="actionbar">
+          <button className="action-btn" onClick={handleImport}>Import</button>
+          <button className="action-btn" onClick={handleExport}>Export</button>
+        </div>
         <h2>Tasks</h2>
         <button className="add-btn" onClick={addTask}>+ Add Task</button>
         <div className="task-list">

@@ -6,6 +6,14 @@ export function ConfirmDialog(arg1, arg2) {
   return window['go']['main']['App']['ConfirmDialog'](arg1, arg2);
 }
 
+export function ExportData(arg1) {
+  return window['go']['main']['App']['ExportData'](arg1);
+}
+
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
+}
+
+export function ImportData() {
+  return window['go']['main']['App']['ImportData']();
 }

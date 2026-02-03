@@ -16,6 +16,31 @@
   box-sizing: border-box;
 }
 
+.actionbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #333;
+}
+
+.action-btn {
+  flex: 1;
+  background: #2a2a4a;
+  color: #aaa;
+  border: 1px solid #444;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.action-btn:hover {
+  background: #3a3a5a;
+  color: #fff;
+}
+
 .sidebar h2 {
   margin: 0 0 16px 0;
   color: #fff;
