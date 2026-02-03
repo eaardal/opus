@@ -7,12 +7,19 @@ interface Task {
   text: string;
   x: number;
   y: number;
+  category?: string;
 }
 
 interface Connection {
   from: string;
   to: string;
 }
+
+const CATEGORIES: Record<string, { label: string; color: string }> = {
+  backend: { label: 'Backend', color: '#f97316' },
+  frontend: { label: 'Frontend', color: '#60a5fa' },
+  ux: { label: 'UX', color: '#f472b6' },
+};
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -21,7 +28,10 @@ function App() {
   const [connecting, setConnecting] = useState<{ from: string; mouseX: number; mouseY: number } | null>(null);
   const [shiftPressed, setShiftPressed] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,6 +48,24 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (focusTaskId) {
+      const input = inputRefs.current.get(focusTaskId);
+      if (input) {
+        input.focus();
+        setFocusTaskId(null);
+      }
+    }
+  }, [focusTaskId, tasks]);
+
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null);
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenuId]);
+
   const addTask = () => {
     const newTask: Task = {
       id: crypto.randomUUID(),
@@ -46,10 +74,23 @@ function App() {
       y: 60,
     };
     setTasks([...tasks, newTask]);
+    setFocusTaskId(newTask.id);
+  };
+
+  const handleTaskKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      addTask();
+    }
   };
 
   const updateTaskText = (id: string, text: string) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, text } : t));
+  };
+
+  const setTaskCategory = (id: string, category: string | undefined) => {
+    setTasks(tasks.map(t => t.id === id ? { ...t, category } : t));
+    setOpenMenuId(null);
   };
 
   const handleExport = async () => {
@@ -175,18 +216,63 @@ function App() {
         <div className="task-list">
           {tasks.map((task, index) => (
             <div key={task.id} className="task-item">
-              <span className="task-number">{index + 1}</span>
+              <span
+                className="task-number"
+                style={task.category ? { background: CATEGORIES[task.category]?.color } : undefined}
+              >
+                {index + 1}
+              </span>
               <input
+                ref={(el) => {
+                  if (el) inputRefs.current.set(task.id, el);
+                  else inputRefs.current.delete(task.id);
+                }}
                 type="text"
                 value={task.text}
                 onChange={(e) => updateTaskText(task.id, e.target.value)}
+                onKeyDown={handleTaskKeyDown}
                 placeholder="Enter task..."
               />
+              <div className="task-menu-container">
+                <button
+                  className="menu-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenuId(openMenuId === task.id ? null : task.id);
+                  }}
+                >
+                  ⋯
+                </button>
+                {openMenuId === task.id && (
+                  <div className="task-menu" onClick={(e) => e.stopPropagation()}>
+                    <div className="menu-section-label">Category</div>
+                    {Object.entries(CATEGORIES).map(([key, { label, color }]) => (
+                      <button
+                        key={key}
+                        className={`menu-item ${task.category === key ? 'active' : ''}`}
+                        onClick={() => setTaskCategory(task.id, key)}
+                      >
+                        <span className="category-dot" style={{ background: color }} />
+                        {label}
+                      </button>
+                    ))}
+                    {task.category && (
+                      <button
+                        className="menu-item clear-category"
+                        onClick={() => setTaskCategory(task.id, undefined)}
+                      >
+                        Clear category
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               <button className="delete-btn" onClick={() => deleteTask(task.id)}>×</button>
             </div>
           ))}
         </div>
         <div className="help-text">
+          <p>Cmd/Ctrl+Enter to add new task</p>
           <p>Shift+drag between nodes to connect</p>
           <p>Shift+click connection to remove</p>
         </div>
@@ -265,6 +351,7 @@ function App() {
               <circle
                 r="25"
                 className={`node ${draggingNode === task.id ? 'dragging' : ''}`}
+                style={task.category ? { stroke: CATEGORIES[task.category]?.color, strokeWidth: 3 } : undefined}
                 onMouseDown={(e) => handleNodeMouseDown(e, task.id)}
               />
               <circle
