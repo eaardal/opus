@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import './App.css';
 
 interface Task {
@@ -18,7 +18,23 @@ function App() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{ from: string; mouseX: number; mouseY: number } | null>(null);
+  const [shiftPressed, setShiftPressed] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setShiftPressed(true);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setShiftPressed(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   const addTask = () => {
     const newTask: Task = {
@@ -35,8 +51,12 @@ function App() {
   };
 
   const deleteTask = (id: string) => {
-    setTasks(tasks.filter(t => t.id !== id));
-    setConnections(connections.filter(c => c.from !== id && c.to !== id));
+    const task = tasks.find(t => t.id === id);
+    const taskName = task?.text || 'this task';
+    if (confirm(`Delete "${taskName}"?`)) {
+      setTasks(prev => prev.filter(t => t.id !== id));
+      setConnections(prev => prev.filter(c => c.from !== id && c.to !== id));
+    }
   };
 
   const getSvgCoords = (e: React.MouseEvent): { x: number; y: number } => {
@@ -92,15 +112,17 @@ function App() {
     setConnecting(null);
   };
 
-  const removeConnection = (from: string, to: string) => {
-    setConnections(connections.filter(c => !(c.from === from && c.to === to)));
+  const removeConnection = (e: React.MouseEvent, from: string, to: string) => {
+    if (e.shiftKey) {
+      setConnections(connections.filter(c => !(c.from === from && c.to === to)));
+    }
   };
 
-  const getArrowPath = (fromTask: Task, toTask: Task): string => {
+  const getArrowPath = (fromTask: Task, toTask: Task): { path: string; endX: number; endY: number } => {
     const dx = toTask.x - fromTask.x;
     const dy = toTask.y - fromTask.y;
     const len = Math.sqrt(dx * dx + dy * dy);
-    if (len === 0) return '';
+    if (len === 0) return { path: '', endX: 0, endY: 0 };
 
     const nodeRadius = 25;
     const arrowOffset = 8;
@@ -113,7 +135,7 @@ function App() {
     const endX = toTask.x - ux * (nodeRadius + arrowOffset);
     const endY = toTask.y - uy * (nodeRadius + arrowOffset);
 
-    return `M ${startX} ${startY} L ${endX} ${endY}`;
+    return { path: `M ${startX} ${startY} L ${endX} ${endY}`, endX, endY };
   };
 
   return (
@@ -137,7 +159,7 @@ function App() {
         </div>
         <div className="help-text">
           <p>Shift+drag between nodes to connect</p>
-          <p>Click connection to remove</p>
+          <p>Shift+click connection to remove</p>
         </div>
       </div>
 
@@ -167,17 +189,28 @@ function App() {
             const toTask = tasks.find(t => t.id === conn.to);
             if (!fromTask || !toTask) return null;
 
+            const { path, endX, endY } = getArrowPath(fromTask, toTask);
+
             return (
-              <path
-                key={`${conn.from}-${conn.to}`}
-                d={getArrowPath(fromTask, toTask)}
-                stroke="#666"
-                strokeWidth="2"
-                fill="none"
-                markerEnd="url(#arrowhead)"
-                className="connection"
-                onClick={() => removeConnection(conn.from, conn.to)}
-              />
+              <g key={`${conn.from}-${conn.to}`} className={`connection-group ${shiftPressed ? 'shift-active' : ''}`}>
+                <path
+                  d={path}
+                  stroke="#666"
+                  strokeWidth="2"
+                  fill="none"
+                  markerEnd="url(#arrowhead)"
+                  className="connection"
+                  onClick={(e) => removeConnection(e, conn.from, conn.to)}
+                />
+                <circle
+                  cx={endX}
+                  cy={endY}
+                  r="12"
+                  fill="transparent"
+                  className="connection-target"
+                  onClick={(e) => removeConnection(e, conn.from, conn.to)}
+                />
+              </g>
             );
           })}
 
