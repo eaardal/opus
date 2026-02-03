@@ -42,8 +42,8 @@ function App() {
     const newTask: Task = {
       id: crypto.randomUUID(),
       text: '',
-      x: 100 + Math.random() * 200,
-      y: 100 + Math.random() * 200,
+      x: 60,
+      y: 60,
     };
     setTasks([...tasks, newTask]);
   };
