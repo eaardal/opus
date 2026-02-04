@@ -51,7 +51,9 @@ function App() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
+    null,
+  );
   const svgRef = useRef<SVGSVGElement>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -292,22 +294,27 @@ function App() {
   return (
     <div id="App">
       <div className="sidebar">
-        <div className="actionbar">
-          <button className="action-btn" onClick={handleOpen}>
-            Open
-          </button>
-          <button className="action-btn" onClick={handleSave}>
-            Save
-          </button>
-        </div>
-        {currentFilePath && (
-          <div className="file-info">
-            <span className="file-name">
-              {currentFilePath.split("/").pop()}
-            </span>
-            {hasUnsavedChanges && <span className="unsaved-indicator">●</span>}
+        <div className="top-section">
+          <div className="actionbar">
+            <button className="action-btn" onClick={handleOpen}>
+              Open
+            </button>
+            <button className="action-btn" onClick={handleSave}>
+              Save
+            </button>
           </div>
-        )}
+
+          {currentFilePath && (
+            <div className="file-info">
+              <span className="file-name">
+                {currentFilePath.split("/").pop()}
+              </span>
+              {hasUnsavedChanges && (
+                <span className="unsaved-indicator">●</span>
+              )}
+            </div>
+          )}
+        </div>
         <h2>Tasks</h2>
         <button className="add-btn" onClick={addTask}>
           + Add Task
