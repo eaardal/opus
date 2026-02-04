@@ -49,6 +49,7 @@ function App() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
@@ -86,7 +87,10 @@ function App() {
   }, [focusTaskId, tasks]);
 
   useEffect(() => {
-    const handleClickOutside = () => setOpenMenuId(null);
+    const handleClickOutside = () => {
+      setOpenMenuId(null);
+      setMenuPosition(null);
+    };
     if (openMenuId) {
       document.addEventListener("click", handleClickOutside);
       return () => document.removeEventListener("click", handleClickOutside);
@@ -391,14 +395,22 @@ function App() {
                   className="menu-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setOpenMenuId(openMenuId === task.id ? null : task.id);
+                    if (openMenuId === task.id) {
+                      setOpenMenuId(null);
+                      setMenuPosition(null);
+                    } else {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setMenuPosition({ top: rect.bottom + 4, left: rect.right });
+                      setOpenMenuId(task.id);
+                    }
                   }}
                 >
                   ⋯
                 </button>
-                {openMenuId === task.id && (
+                {openMenuId === task.id && menuPosition && (
                   <div
                     className="task-menu"
+                    style={{ top: menuPosition.top, left: menuPosition.left }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="menu-section-label">Status</div>
