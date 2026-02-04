@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import "./Sidebar.css";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
 
