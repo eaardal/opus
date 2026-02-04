@@ -54,6 +54,8 @@ function App() {
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
     null,
   );
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -127,6 +129,33 @@ function App() {
     window.addEventListener("keydown", handleSaveShortcut);
     return () => window.removeEventListener("keydown", handleSaveShortcut);
   }, [handleSave]);
+
+  // Sidebar resize handlers
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(200, Math.min(600, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
 
   const addTask = () => {
     const newTask: Task = {
@@ -292,8 +321,11 @@ function App() {
   };
 
   return (
-    <div id="App">
-      <div className="sidebar">
+    <div id="App" className={isResizing ? "resizing" : ""}>
+      <div
+        className="sidebar"
+        style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+      >
         <div className="top-section">
           <div className="actionbar">
             <button className="action-btn" onClick={handleOpen}>
@@ -431,6 +463,11 @@ function App() {
           <p>Shift+click connection to remove</p>
         </div>
       </div>
+
+      <div
+        className={`sidebar-resize-handle ${isResizing ? "active" : ""}`}
+        onMouseDown={handleResizeMouseDown}
+      />
 
       <div className="canvas-container">
         <svg

@@ -6,8 +6,6 @@
 }
 
 .sidebar {
-  width: 280px;
-  min-width: 280px;
   background: #1a1a2e;
   border-right: 1px solid #333;
   display: flex;
@@ -15,6 +13,28 @@
   padding: 16px;
   box-sizing: border-box;
   gap: 8px;
+}
+
+.sidebar-resize-handle {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.active {
+  background: #4a4a6a;
+}
+
+#App.resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+#App.resizing * {
+  cursor: col-resize;
 }
 
 .actionbar {
@@ -93,7 +113,7 @@
 
 .task-list {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -103,8 +123,6 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 4px;
-  margin: -4px;
   border-radius: 6px;
   transition: background 0.15s;
 }
