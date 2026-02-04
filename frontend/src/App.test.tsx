@@ -324,7 +324,7 @@ describe("App", () => {
   describe("Opening files", () => {
     it("should call OpenFile when clicking Open button", async () => {
       const user = userEvent.setup();
-      vi.mocked(OpenFile).mockResolvedValue(null);
+      vi.mocked(OpenFile).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof OpenFile>>);
 
       render(<App />);
 
@@ -378,7 +378,7 @@ describe("App", () => {
 
     it("should not change state if OpenFile returns null", async () => {
       const user = userEvent.setup();
-      vi.mocked(OpenFile).mockResolvedValue(null);
+      vi.mocked(OpenFile).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof OpenFile>>);
 
       render(<App />);
 
