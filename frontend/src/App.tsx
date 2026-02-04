@@ -6,35 +6,12 @@ import {
   SaveFile,
   SaveFileAs,
 } from "../wailsjs/go/main/App";
-
-type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
-
-interface Task {
-  id: string;
-  text: string;
-  x: number;
-  y: number;
-  category?: string;
-  status: TaskStatus;
-}
+import { Sidebar, Task, TaskStatus, CATEGORIES, STATUSES } from "./Sidebar";
 
 interface Connection {
   from: string;
   to: string;
 }
-
-const CATEGORIES: Record<string, { label: string; color: string }> = {
-  backend: { label: "Backend", color: "#f97316" },
-  frontend: { label: "Frontend", color: "#60a5fa" },
-  ux: { label: "UX", color: "#f472b6" },
-};
-
-const STATUSES: Record<TaskStatus, { label: string; color: string }> = {
-  pending: { label: "Pending", color: "#3a3a5a" },
-  in_progress: { label: "In Progress", color: "#3737af" },
-  completed: { label: "Completed", color: "#2ea058" },
-  archived: { label: "Archived", color: "#5e5e5e" },
-};
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -70,7 +47,6 @@ function App() {
     nodePositions: Map<string, { x: number; y: number }>;
   } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useEffect(() => {
@@ -92,27 +68,6 @@ function App() {
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
-
-  useEffect(() => {
-    if (focusTaskId) {
-      const input = inputRefs.current.get(focusTaskId);
-      if (input) {
-        input.focus();
-        setFocusTaskId(null);
-      }
-    }
-  }, [focusTaskId, tasks]);
-
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setOpenMenuId(null);
-      setMenuPosition(null);
-    };
-    if (openMenuId) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [openMenuId]);
 
   // Track unsaved changes
   useEffect(() => {
@@ -414,157 +369,36 @@ function App() {
     return { path: `M ${startX} ${startY} L ${endX} ${endY}`, endX, endY };
   };
 
+  const registerTaskItemRef = useCallback((id: string, el: HTMLDivElement | null) => {
+    if (el) taskItemRefs.current.set(id, el);
+    else taskItemRefs.current.delete(id);
+  }, []);
+
   return (
     <div id="App" className={isResizing ? "resizing" : ""}>
-      <div
-        className="sidebar"
-        style={{ width: sidebarWidth, minWidth: sidebarWidth }}
-      >
-        <div className="top-section">
-          <div className="actionbar">
-            <button className="action-btn" onClick={handleOpen}>
-              Open
-            </button>
-            <button className="action-btn" onClick={handleSave}>
-              Save
-            </button>
-          </div>
-
-          {currentFilePath && (
-            <div className="file-info">
-              <span className="file-name">
-                {currentFilePath.split("/").pop()}
-              </span>
-              {hasUnsavedChanges && (
-                <span className="unsaved-indicator">●</span>
-              )}
-            </div>
-          )}
-        </div>
-        <h2>Tasks</h2>
-        <button className="add-btn" onClick={addTask}>
-          + Add Task
-        </button>
-        <div className="task-list">
-          {tasks.map((task, index) => (
-            <div
-              key={task.id}
-              ref={(el) => {
-                if (el) taskItemRefs.current.set(task.id, el);
-                else taskItemRefs.current.delete(task.id);
-              }}
-              className={`task-item ${highlightedTaskId === task.id ? "highlighted" : ""}`}
-              onMouseEnter={() => setHighlightedTaskId(task.id)}
-              onMouseLeave={() => setHighlightedTaskId(null)}
-            >
-              <span
-                className="task-number"
-                style={
-                  task.category
-                    ? { background: CATEGORIES[task.category]?.color }
-                    : undefined
-                }
-              >
-                {index + 1}
-              </span>
-              <input
-                ref={(el) => {
-                  if (el) inputRefs.current.set(task.id, el);
-                  else inputRefs.current.delete(task.id);
-                }}
-                type="text"
-                value={task.text}
-                onChange={(e) => updateTaskText(task.id, e.target.value)}
-                onKeyDown={handleTaskKeyDown}
-                onFocus={() => setHighlightedTaskId(task.id)}
-                onBlur={() => setHighlightedTaskId(null)}
-                placeholder="Enter task..."
-              />
-              <div className="task-menu-container">
-                <button
-                  className="menu-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (openMenuId === task.id) {
-                      setOpenMenuId(null);
-                      setMenuPosition(null);
-                    } else {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setMenuPosition({ top: rect.bottom + 4, left: rect.right });
-                      setOpenMenuId(task.id);
-                    }
-                  }}
-                >
-                  ⋯
-                </button>
-                {openMenuId === task.id && menuPosition && (
-                  <div
-                    className="task-menu"
-                    style={{ top: menuPosition.top, left: menuPosition.left }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="menu-section-label">Status</div>
-                    {(
-                      Object.entries(STATUSES) as [
-                        TaskStatus,
-                        { label: string; color: string },
-                      ][]
-                    ).map(([key, { label, color }]) => (
-                      <button
-                        key={key}
-                        className={`menu-item ${task.status === key ? "active" : ""}`}
-                        onClick={() => setTaskStatus(task.id, key)}
-                      >
-                        <span
-                          className="status-dot"
-                          style={{ background: color }}
-                        />
-                        {label}
-                      </button>
-                    ))}
-                    <div className="menu-section-label">Category</div>
-                    {Object.entries(CATEGORIES).map(
-                      ([key, { label, color }]) => (
-                        <button
-                          key={key}
-                          className={`menu-item ${task.category === key ? "active" : ""}`}
-                          onClick={() => setTaskCategory(task.id, key)}
-                        >
-                          <span
-                            className="category-dot"
-                            style={{ background: color }}
-                          />
-                          {label}
-                        </button>
-                      ),
-                    )}
-                    {task.category && (
-                      <button
-                        className="menu-item clear-category"
-                        onClick={() => setTaskCategory(task.id, undefined)}
-                      >
-                        Clear category
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-              <button
-                className="delete-btn"
-                onClick={() => deleteTask(task.id)}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="help-text">
-          <p>Cmd/Ctrl+S to save</p>
-          <p>Cmd/Ctrl+Enter to add new task</p>
-          <p>Shift+drag between nodes to connect</p>
-          <p>Shift+click connection to remove</p>
-        </div>
-      </div>
+      <Sidebar
+        width={sidebarWidth}
+        tasks={tasks}
+        currentFilePath={currentFilePath}
+        hasUnsavedChanges={hasUnsavedChanges}
+        highlightedTaskId={highlightedTaskId}
+        openMenuId={openMenuId}
+        menuPosition={menuPosition}
+        focusTaskId={focusTaskId}
+        onOpen={handleOpen}
+        onSave={handleSave}
+        onAddTask={addTask}
+        onUpdateTaskText={updateTaskText}
+        onSetTaskCategory={setTaskCategory}
+        onSetTaskStatus={setTaskStatus}
+        onDeleteTask={deleteTask}
+        onSetHighlightedTaskId={setHighlightedTaskId}
+        onSetOpenMenuId={setOpenMenuId}
+        onSetMenuPosition={setMenuPosition}
+        onTaskKeyDown={handleTaskKeyDown}
+        onFocusTaskId={setFocusTaskId}
+        registerTaskItemRef={registerTaskItemRef}
+      />
 
       <div
         className={`sidebar-resize-handle ${isResizing ? "active" : ""}`}
