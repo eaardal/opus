@@ -569,7 +569,13 @@ function App() {
                 onMouseDown={(e) => handleNodeMouseDown(e, task.id)}
                 onClick={() => handleNodeClick(task.id)}
               />
-              <circle cx="0" cy="-25" r="10" className="node-number-badge" />
+              <circle
+                cx="0"
+                cy="-25"
+                r="10"
+                className="node-number-badge"
+                style={task.category ? { fill: CATEGORIES[task.category]?.color } : undefined}
+              />
               <text
                 x="0"
                 y="-25"
