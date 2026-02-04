@@ -1,0 +1,12 @@
+.connection {
+  cursor: pointer;
+  transition: stroke 0.2s;
+}
+
+.connection-group.shift-active {
+  cursor: pointer;
+}
+
+.connection-group.shift-active:hover .connection {
+  stroke: #ff6b6b;
+}

@@ -1,3 +1,4 @@
+import "./Connector.css";
 import { Task } from "./Sidebar";
 
 interface ConnectorProps {

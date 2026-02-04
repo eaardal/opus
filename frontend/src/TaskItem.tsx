@@ -1,3 +1,4 @@
+import "./TaskItem.css";
 import { Task, TaskStatus, CATEGORIES, STATUSES } from "./Sidebar";
 
 interface TaskItemProps {

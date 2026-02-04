@@ -1,3 +1,4 @@
+import "./TaskNode.css";
 import { Task, CATEGORIES, STATUSES } from "./Sidebar";
 
 interface TaskNodeProps {

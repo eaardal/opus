@@ -1,4 +1,5 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle } from "react";
+import "./Canvas.css";
 import { Task } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";

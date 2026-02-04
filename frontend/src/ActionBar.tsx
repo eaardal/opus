@@ -1,3 +1,5 @@
+import "./ActionBar.css";
+
 interface ActionBarProps {
   currentFilePath: string | null;
   hasUnsavedChanges: boolean;

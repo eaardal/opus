@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import "./TaskList.css";
 import { Task, TaskStatus } from "./Sidebar";
 import { TaskItem } from "./TaskItem";
 
