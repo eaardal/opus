@@ -57,6 +57,18 @@ function App() {
   );
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
+  const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
+  const [selection, setSelection] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const [draggingSelection, setDraggingSelection] = useState<{
+    startX: number;
+    startY: number;
+    nodePositions: Map<string, { x: number; y: number }>;
+  } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -64,6 +76,11 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Shift") setShiftPressed(true);
+      if (e.key === "Escape") {
+        setSelectedNodes(new Set());
+        setSelection(null);
+        setDraggingSelection(null);
+      }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Shift") setShiftPressed(false);
@@ -235,11 +252,45 @@ function App() {
 
   const handleNodeMouseDown = (e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     if (e.shiftKey) {
       const coords = getSvgCoords(e);
       setConnecting({ from: taskId, mouseX: coords.x, mouseY: coords.y });
+    } else if (selectedNodes.has(taskId)) {
+      // Start dragging selected nodes
+      const coords = getSvgCoords(e);
+      const nodePositions = new Map<string, { x: number; y: number }>();
+      tasks.forEach((t) => {
+        if (selectedNodes.has(t.id)) {
+          nodePositions.set(t.id, { x: t.x, y: t.y });
+        }
+      });
+      setDraggingSelection({ startX: coords.x, startY: coords.y, nodePositions });
     } else {
+      // Clear selection and drag single node
+      setSelectedNodes(new Set());
       setDraggingNode(taskId);
+    }
+  };
+
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // Only start selection if clicking directly on the SVG (not on a node)
+    if (e.target === svgRef.current) {
+      const coords = getSvgCoords(e);
+      // Check if clicking outside selected nodes - clear selection
+      if (selectedNodes.size > 0) {
+        const clickedOnSelected = tasks.some((t) => {
+          if (!selectedNodes.has(t.id)) return false;
+          const dx = t.x - coords.x;
+          const dy = t.y - coords.y;
+          return Math.sqrt(dx * dx + dy * dy) < 25;
+        });
+        if (!clickedOnSelected) {
+          setSelectedNodes(new Set());
+        }
+      }
+      // Start selection rectangle
+      setSelection({ startX: coords.x, startY: coords.y, currentX: coords.x, currentY: coords.y });
     }
   };
 
@@ -253,19 +304,32 @@ function App() {
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
+      const coords = getSvgCoords(e);
       if (draggingNode) {
-        const coords = getSvgCoords(e);
         setTasks((prev) =>
           prev.map((t) =>
             t.id === draggingNode ? { ...t, x: coords.x, y: coords.y } : t,
           ),
         );
       } else if (connecting) {
-        const coords = getSvgCoords(e);
         setConnecting({ ...connecting, mouseX: coords.x, mouseY: coords.y });
+      } else if (selection) {
+        setSelection({ ...selection, currentX: coords.x, currentY: coords.y });
+      } else if (draggingSelection) {
+        const dx = coords.x - draggingSelection.startX;
+        const dy = coords.y - draggingSelection.startY;
+        setTasks((prev) =>
+          prev.map((t) => {
+            const originalPos = draggingSelection.nodePositions.get(t.id);
+            if (originalPos) {
+              return { ...t, x: originalPos.x + dx, y: originalPos.y + dy };
+            }
+            return t;
+          }),
+        );
       }
     },
-    [draggingNode, connecting],
+    [draggingNode, connecting, selection, draggingSelection],
   );
 
   const handleMouseUp = (e: React.MouseEvent) => {
@@ -289,8 +353,34 @@ function App() {
         }
       }
     }
+
+    // Finalize selection rectangle
+    if (selection) {
+      const minX = Math.min(selection.startX, selection.currentX);
+      const maxX = Math.max(selection.startX, selection.currentX);
+      const minY = Math.min(selection.startY, selection.currentY);
+      const maxY = Math.max(selection.startY, selection.currentY);
+      const nodeRadius = 25;
+
+      // Select nodes that are 100% inside the rectangle
+      const newSelected = new Set<string>();
+      tasks.forEach((t) => {
+        if (
+          t.x - nodeRadius >= minX &&
+          t.x + nodeRadius <= maxX &&
+          t.y - nodeRadius >= minY &&
+          t.y + nodeRadius <= maxY
+        ) {
+          newSelected.add(t.id);
+        }
+      });
+      setSelectedNodes(newSelected);
+    }
+
     setDraggingNode(null);
     setConnecting(null);
+    setSelection(null);
+    setDraggingSelection(null);
   };
 
   const removeConnection = (e: React.MouseEvent, from: string, to: string) => {
@@ -485,6 +575,7 @@ function App() {
         <svg
           ref={svgRef}
           className="canvas"
+          onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
@@ -547,6 +638,16 @@ function App() {
             />
           )}
 
+          {selection && (
+            <rect
+              className="selection-rect"
+              x={Math.min(selection.startX, selection.currentX)}
+              y={Math.min(selection.startY, selection.currentY)}
+              width={Math.abs(selection.currentX - selection.startX)}
+              height={Math.abs(selection.currentY - selection.startY)}
+            />
+          )}
+
           {tasks.map((task, index) => (
             <g
               key={task.id}
@@ -556,10 +657,10 @@ function App() {
             >
               <circle
                 r="25"
-                className={`node ${draggingNode === task.id ? "dragging" : ""} ${highlightedTaskId === task.id ? "highlighted" : ""}`}
+                className={`node ${draggingNode === task.id ? "dragging" : ""} ${highlightedTaskId === task.id ? "highlighted" : ""} ${selectedNodes.has(task.id) ? "selected" : ""}`}
                 style={{
                   fill: STATUSES[task.status]?.color || STATUSES.pending.color,
-                  ...(task.category
+                  ...(task.category && !selectedNodes.has(task.id)
                     ? {
                         stroke: CATEGORIES[task.category]?.color,
                         strokeWidth: 3,

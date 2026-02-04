@@ -314,6 +314,18 @@
   stroke-width: 3 !important;
 }
 
+.node.selected {
+  stroke: #f472b6 !important;
+  stroke-width: 3 !important;
+}
+
+.selection-rect {
+  fill: rgba(244, 114, 182, 0.1);
+  stroke: #f472b6;
+  stroke-width: 1;
+  stroke-dasharray: 4, 2;
+}
+
 .node-text {
   fill: #fff;
   font-size: 10px;
