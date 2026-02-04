@@ -9,6 +9,7 @@ vi.mock("../wailsjs/go/main/App", () => ({
   OpenFile: vi.fn(),
   SaveFile: vi.fn(),
   SaveFileAs: vi.fn(),
+  SaveImageAs: vi.fn(),
 }));
 
 import { ConfirmDialog, OpenFile, SaveFile, SaveFileAs } from "../wailsjs/go/main/App";

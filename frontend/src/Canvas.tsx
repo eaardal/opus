@@ -1,8 +1,9 @@
-import { useRef, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
 import { Task } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
+import { SaveImageAs } from "../wailsjs/go/main/App";
 
 export interface Connection {
   from: string;
@@ -68,6 +69,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   ref
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const menuWrapperRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuWrapperRef.current && !menuWrapperRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   const getSvgCoords = useCallback(
     (e: React.MouseEvent): { x: number; y: number } => {
@@ -98,8 +112,66 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onMouseUp(e, getSvgCoords(e));
   };
 
+  const exportCanvasAsPng = useCallback(async () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    setMenuOpen(false);
+    try {
+      const rect = svg.getBoundingClientRect();
+      const w = Math.round(rect.width);
+      const h = Math.round(rect.height);
+      const clone = svg.cloneNode(true) as SVGSVGElement;
+      clone.setAttribute("width", String(w));
+      clone.setAttribute("height", String(h));
+      const xml = new XMLSerializer().serializeToString(clone);
+      const svgDataUrl = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load SVG image"));
+        img.src = svgDataUrl;
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Could not get canvas context");
+      ctx.fillStyle = "#0f0f1a";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      const pngDataUrl = canvas.toDataURL("image/png");
+      const base64 = pngDataUrl.replace(/^data:image\/png;base64,/, "");
+      await SaveImageAs(base64);
+    } catch (err) {
+      console.error("Export failed:", err);
+    }
+  }, []);
+
   return (
     <div className="canvas-container">
+      <div className="canvas-menu-wrapper" ref={menuWrapperRef}>
+        <button
+          type="button"
+          className="canvas-menu-trigger"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-label="Canvas menu"
+          aria-expanded={menuOpen}
+        >
+          <span className="canvas-menu-icon" aria-hidden>☰</span>
+        </button>
+        {menuOpen && (
+          <div className="canvas-menu-dropdown" role="menu">
+            <button
+              type="button"
+              role="menuitem"
+              className="canvas-menu-item"
+              onClick={exportCanvasAsPng}
+            >
+              Export as PNG
+            </button>
+          </div>
+        )}
+      </div>
       <svg
         ref={svgRef}
         className="canvas"
