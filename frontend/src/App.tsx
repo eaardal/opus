@@ -7,13 +7,14 @@ import {
   SaveFileAs,
 } from "../wailsjs/go/main/App";
 import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
-import { Canvas, CanvasHandle, Connection } from "./Canvas";
+import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 0, height: 0 });
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{
     from: string;
@@ -82,7 +83,7 @@ function App() {
   }, [tasks, connections, groups, theme]);
 
   const handleSave = useCallback(async () => {
-    const data = JSON.stringify({ tasks, connections, groups, theme }, null, 2);
+    const data = JSON.stringify({ tasks, connections, groups, theme, viewBox }, null, 2);
     try {
       if (currentFilePath) {
         await SaveFile(currentFilePath, data);
@@ -97,7 +98,7 @@ function App() {
     } catch (err) {
       console.error("Save failed:", err);
     }
-  }, [tasks, connections, groups, theme, currentFilePath]);
+  }, [tasks, connections, groups, theme, viewBox, currentFilePath]);
 
   // Keyboard shortcut for save (Cmd+S / Ctrl+S)
   useEffect(() => {
@@ -182,6 +183,7 @@ function App() {
         const loadedTheme = parsed.theme === "light" ? "light" : "dark";
         setTheme(loadedTheme);
         document.documentElement.setAttribute("data-theme", loadedTheme);
+        if (parsed.viewBox) setViewBox(parsed.viewBox);
         setCurrentFilePath(result.filePath);
         setHasUnsavedChanges(false);
       }
@@ -488,6 +490,8 @@ function App() {
         onGroupMove={moveGroup}
         onGroupResize={resizeGroup}
         onGroupTitleChange={updateGroupTitle}
+        viewBox={viewBox}
+        onViewBoxChange={setViewBox}
         theme={theme}
         onToggleTheme={() => {
           const next = theme === "dark" ? "light" : "dark";

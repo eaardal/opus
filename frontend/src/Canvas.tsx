@@ -24,6 +24,13 @@ interface ConnectingState {
   mouseY: number;
 }
 
+export interface ViewBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface CanvasHandle {
   getSvgCoords: (e: React.MouseEvent) => { x: number; y: number };
   getSvgElement: () => SVGSVGElement | null;
@@ -52,6 +59,8 @@ interface CanvasProps {
   onGroupMove: (id: string, x: number, y: number) => void;
   onGroupResize: (id: string, width: number, height: number) => void;
   onGroupTitleChange: (id: string, title: string) => void;
+  viewBox: ViewBox;
+  onViewBoxChange: (vb: ViewBox) => void;
   theme: "dark" | "light";
   onToggleTheme: () => void;
 }
@@ -84,6 +93,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupMove,
     onGroupResize,
     onGroupTitleChange,
+    viewBox,
+    onViewBoxChange,
     theme,
     onToggleTheme,
   },
@@ -96,16 +107,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
   const panMode = spaceHeld || middleMouseHeld;
   const [panning, setPanning] = useState<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const viewBoxRef = useRef(viewBox);
+  viewBoxRef.current = viewBox;
   const viewBoxInitialized = useRef(false);
 
-  // Initialize viewBox from container size
+  // Initialize viewBox dimensions from container size if not yet set
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg || viewBoxInitialized.current) return;
     const rect = svg.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
-      setViewBox({ x: 0, y: 0, width: rect.width, height: rect.height });
+      if (viewBox.width === 0 && viewBox.height === 0) {
+        onViewBoxChange({ ...viewBox, width: rect.width, height: rect.height });
+      }
       viewBoxInitialized.current = true;
     }
   });
@@ -183,7 +197,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       const scale = viewBox.width / rect.width;
       const dx = (e.clientX - panning.startX) * scale;
       const dy = (e.clientY - panning.startY) * scale;
-      setViewBox((prev) => ({ ...prev, x: panning.origVx - dx, y: panning.origVy - dy }));
+      onViewBoxChange({ ...viewBox, x: panning.origVx - dx, y: panning.origVy - dy });
       return;
     }
     onMouseMove(e, getSvgCoords(e));
@@ -209,20 +223,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     const mouseXFrac = (e.clientX - rect.left) / rect.width;
     const mouseYFrac = (e.clientY - rect.top) / rect.height;
 
-    setViewBox((prev) => {
-      const zoomFactor = 1 + e.deltaY * ZOOM_SENSITIVITY;
-      const baseWidth = rect.width;
-      const currentZoom = baseWidth / prev.width;
-      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom / zoomFactor));
-      const newWidth = baseWidth / newZoom;
-      const newHeight = rect.height / newZoom;
+    const prev = viewBoxRef.current;
+    const zoomFactor = 1 + e.deltaY * ZOOM_SENSITIVITY;
+    const baseWidth = rect.width;
+    const currentZoom = baseWidth / prev.width;
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom / zoomFactor));
+    const newWidth = baseWidth / newZoom;
+    const newHeight = rect.height / newZoom;
 
-      const newX = prev.x + (prev.width - newWidth) * mouseXFrac;
-      const newY = prev.y + (prev.height - newHeight) * mouseYFrac;
+    const newX = prev.x + (prev.width - newWidth) * mouseXFrac;
+    const newY = prev.y + (prev.height - newHeight) * mouseYFrac;
 
-      return { x: newX, y: newY, width: newWidth, height: newHeight };
-    });
-  }, []);
+    onViewBoxChange({ x: newX, y: newY, width: newWidth, height: newHeight });
+  }, [onViewBoxChange]);
 
   useEffect(() => {
     const svg = svgRef.current;
