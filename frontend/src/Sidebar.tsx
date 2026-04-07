@@ -23,9 +23,9 @@ export interface Group {
 }
 
 export const CATEGORIES: Record<string, { label: string; color: string }> = {
-  backend: { label: "Backend", color: "#f97316" },
-  frontend: { label: "Frontend", color: "#60a5fa" },
-  ux: { label: "UX", color: "#f472b6" },
+  backend: { label: "Backend", color: "#f6b093" },
+  frontend: { label: "Frontend", color: "#a0c4f1" },
+  ux: { label: "UX", color: "#f0a6ce" },
 };
 
 export const STATUSES: Record<TaskStatus, { label: string; color: string; emoji: string }> = {
