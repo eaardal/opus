@@ -25,6 +25,63 @@
   stroke-dasharray: 4, 2;
 }
 
+.canvas-toolbar {
+  position: absolute;
+  top: 12px;
+  right: 56px;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+}
+
+.canvas-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--menu-trigger-bg);
+  color: var(--menu-trigger-color);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.canvas-toolbar-btn:hover {
+  background: var(--menu-trigger-hover);
+  color: var(--text-primary);
+}
+
+.canvas-toolbar-btn[data-tooltip] {
+  position: relative;
+}
+
+.canvas-toolbar-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: var(--menu-bg);
+  color: var(--text-primary);
+  font-size: 11px;
+  white-space: nowrap;
+  border-radius: 4px;
+  border: 1px solid var(--menu-border);
+  box-shadow: 0 2px 8px var(--menu-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+
+.canvas-toolbar-btn[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
 /* Canvas hamburger menu (upper right) */
 .canvas-menu-wrapper {
   position: absolute;

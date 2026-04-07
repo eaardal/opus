@@ -1,5 +1,6 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
+import { Maximize, Focus } from "lucide-react";
 import { Task, Group, TaskStatus } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
@@ -286,8 +287,78 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     }
   }, []);
 
+  const fitToScreen = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const padding = 60;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    tasks.forEach((t) => {
+      minX = Math.min(minX, t.x - 30);
+      minY = Math.min(minY, t.y - 30);
+      maxX = Math.max(maxX, t.x + 30);
+      maxY = Math.max(maxY, t.y + 60);
+    });
+    groups.forEach((g) => {
+      minX = Math.min(minX, g.x);
+      minY = Math.min(minY, g.y);
+      maxX = Math.max(maxX, g.x + g.width);
+      maxY = Math.max(maxY, g.y + g.height);
+    });
+
+    if (!isFinite(minX)) {
+      onViewBoxChange({ x: 0, y: 0, width: rect.width, height: rect.height });
+      return;
+    }
+
+    const contentW = maxX - minX + padding * 2;
+    const contentH = maxY - minY + padding * 2;
+    const scaleX = rect.width / contentW;
+    const scaleY = rect.height / contentH;
+    const scale = Math.min(scaleX, scaleY);
+    const fitW = rect.width / scale;
+    const fitH = rect.height / scale;
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    onViewBoxChange({
+      x: cx - fitW / 2,
+      y: cy - fitH / 2,
+      width: fitW,
+      height: fitH,
+    });
+  }, [tasks, groups, onViewBoxChange]);
+
+  const resetZoom = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    onViewBoxChange({ x: 0, y: 0, width: rect.width, height: rect.height });
+  }, [onViewBoxChange]);
+
   return (
     <div className="canvas-container">
+      <div className="canvas-toolbar">
+        <button
+          type="button"
+          className="canvas-toolbar-btn"
+          onClick={fitToScreen}
+          aria-label="Fit to screen"
+          data-tooltip="Fit to screen"
+        >
+          <Maximize size={16} />
+        </button>
+        <button
+          type="button"
+          className="canvas-toolbar-btn"
+          onClick={resetZoom}
+          aria-label="Reset zoom to 100%"
+          data-tooltip="Reset zoom"
+        >
+          <Focus size={16} />
+        </button>
+      </div>
       <div className="canvas-menu-wrapper" ref={menuWrapperRef}>
         <button
           type="button"
