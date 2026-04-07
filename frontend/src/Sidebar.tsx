@@ -123,6 +123,8 @@ export function Sidebar({
         <p>Cmd/Ctrl+Enter to add new task</p>
         <p>Shift+drag between nodes to connect</p>
         <p>Shift+click connection to remove</p>
+        <p>Space+drag to pan canvas</p>
+        <p>Scroll to zoom</p>
       </div>
     </div>
   );

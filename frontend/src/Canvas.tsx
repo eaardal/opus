@@ -52,6 +52,10 @@ interface CanvasProps {
   onGroupTitleChange: (id: string, title: string) => void;
 }
 
+const ZOOM_SENSITIVITY = 0.001;
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 5;
+
 export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   {
     tasks,
@@ -80,6 +84,40 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [spacePressed, setSpacePressed] = useState(false);
+  const [panning, setPanning] = useState<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const viewBoxInitialized = useRef(false);
+
+  // Initialize viewBox from container size
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || viewBoxInitialized.current) return;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setViewBox({ x: 0, y: 0, width: rect.width, height: rect.height });
+      viewBoxInitialized.current = true;
+    }
+  });
+
+  // Spacebar tracking
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !(e.target instanceof HTMLInputElement)) {
+        e.preventDefault();
+        setSpacePressed(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") setSpacePressed(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -94,12 +132,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
   const getSvgCoords = useCallback(
     (e: React.MouseEvent): { x: number; y: number } => {
-      if (!svgRef.current) return { x: 0, y: 0 };
-      const rect = svgRef.current.getBoundingClientRect();
-      return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
+      const svg = svgRef.current;
+      if (!svg) return { x: 0, y: 0 };
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return { x: 0, y: 0 };
+      const svgPt = pt.matrixTransform(ctm.inverse());
+      return { x: svgPt.x, y: svgPt.y };
     },
     []
   );
@@ -110,16 +151,66 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }));
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (spacePressed) {
+      e.preventDefault();
+      setPanning({ startX: e.clientX, startY: e.clientY, origVx: viewBox.x, origVy: viewBox.y });
+      return;
+    }
     onMouseDown(e, svgRef.current);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (panning) {
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const scale = viewBox.width / rect.width;
+      const dx = (e.clientX - panning.startX) * scale;
+      const dy = (e.clientY - panning.startY) * scale;
+      setViewBox((prev) => ({ ...prev, x: panning.origVx - dx, y: panning.origVy - dy }));
+      return;
+    }
     onMouseMove(e, getSvgCoords(e));
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
+    if (panning) {
+      setPanning(null);
+      return;
+    }
     onMouseUp(e, getSvgCoords(e));
   };
+
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const mouseXFrac = (e.clientX - rect.left) / rect.width;
+    const mouseYFrac = (e.clientY - rect.top) / rect.height;
+
+    setViewBox((prev) => {
+      const zoomFactor = 1 + e.deltaY * ZOOM_SENSITIVITY;
+      const baseWidth = rect.width;
+      const currentZoom = baseWidth / prev.width;
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom / zoomFactor));
+      const newWidth = baseWidth / newZoom;
+      const newHeight = rect.height / newZoom;
+
+      const newX = prev.x + (prev.width - newWidth) * mouseXFrac;
+      const newY = prev.y + (prev.height - newHeight) * mouseYFrac;
+
+      return { x: newX, y: newY, width: newWidth, height: newHeight };
+    });
+  }, []);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.addEventListener("wheel", handleWheel, { passive: false });
+    return () => svg.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   const exportCanvasAsPng = useCallback(async () => {
     const svg = svgRef.current;
@@ -183,7 +274,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       </div>
       <svg
         ref={svgRef}
-        className="canvas"
+        className={`canvas ${spacePressed || panning ? "panning" : ""}`}
+        viewBox={viewBox.width > 0 ? `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}` : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
