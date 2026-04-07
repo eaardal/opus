@@ -92,7 +92,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [spacePressed, setSpacePressed] = useState(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
+  const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
+  const panMode = spaceHeld || middleMouseHeld;
   const [panning, setPanning] = useState<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const viewBoxInitialized = useRef(false);
@@ -113,11 +115,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
-        setSpacePressed(true);
+        setSpaceHeld(true);
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") setSpacePressed(false);
+      if (e.code === "Space") setSpaceHeld(false);
     };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -159,7 +161,13 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }));
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (spacePressed) {
+    if (e.button === 1) {
+      e.preventDefault();
+      setMiddleMouseHeld(true);
+      setPanning({ startX: e.clientX, startY: e.clientY, origVx: viewBox.x, origVy: viewBox.y });
+      return;
+    }
+    if (panMode) {
       e.preventDefault();
       setPanning({ startX: e.clientX, startY: e.clientY, origVx: viewBox.x, origVy: viewBox.y });
       return;
@@ -182,6 +190,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
+    if (e.button === 1) {
+      setMiddleMouseHeld(false);
+    }
     if (panning) {
       setPanning(null);
       return;
@@ -294,7 +305,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       </div>
       <svg
         ref={svgRef}
-        className={`canvas ${spacePressed || panning ? "panning" : ""}`}
+        className={`canvas ${panMode || panning ? "panning" : ""}`}
         viewBox={viewBox.width > 0 ? `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}` : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
