@@ -13,6 +13,15 @@ export interface Task {
   status: TaskStatus;
 }
 
+export interface Group {
+  id: string;
+  title: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export const CATEGORIES: Record<string, { label: string; color: string }> = {
   backend: { label: "Backend", color: "#f97316" },
   frontend: { label: "Frontend", color: "#60a5fa" },
@@ -48,6 +57,7 @@ interface SidebarProps {
   onTaskKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onFocusTaskId: (id: string | null) => void;
   registerTaskItemRef: (id: string, el: HTMLDivElement | null) => void;
+  onAddGroup: () => void;
 }
 
 export function Sidebar({
@@ -72,6 +82,7 @@ export function Sidebar({
   onTaskKeyDown,
   onFocusTaskId,
   registerTaskItemRef,
+  onAddGroup,
 }: SidebarProps) {
   return (
     <div className="sidebar" style={{ width, minWidth: width }}>
@@ -82,9 +93,14 @@ export function Sidebar({
         onSave={onSave}
       />
       <h2>Tasks</h2>
-      <button className="add-btn" onClick={onAddTask}>
-        + Add Task
-      </button>
+      <div className="add-buttons">
+        <button className="add-btn" onClick={onAddTask}>
+          + Add Task
+        </button>
+        <button className="add-btn" onClick={onAddGroup}>
+          + Add Group
+        </button>
+      </div>
       <TaskList
         tasks={tasks}
         highlightedTaskId={highlightedTaskId}

@@ -6,12 +6,13 @@ import {
   SaveFile,
   SaveFileAs,
 } from "../wailsjs/go/main/App";
-import { Sidebar, Task, TaskStatus } from "./Sidebar";
+import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
 import { Canvas, CanvasHandle, Connection } from "./Canvas";
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{
     from: string;
@@ -71,13 +72,13 @@ function App() {
 
   // Track unsaved changes
   useEffect(() => {
-    if (tasks.length > 0 || connections.length > 0) {
+    if (tasks.length > 0 || connections.length > 0 || groups.length > 0) {
       setHasUnsavedChanges(true);
     }
-  }, [tasks, connections]);
+  }, [tasks, connections, groups]);
 
   const handleSave = useCallback(async () => {
-    const data = JSON.stringify({ tasks, connections }, null, 2);
+    const data = JSON.stringify({ tasks, connections, groups }, null, 2);
     try {
       if (currentFilePath) {
         await SaveFile(currentFilePath, data);
@@ -92,7 +93,7 @@ function App() {
     } catch (err) {
       console.error("Save failed:", err);
     }
-  }, [tasks, connections, currentFilePath]);
+  }, [tasks, connections, groups, currentFilePath]);
 
   // Keyboard shortcut for save (Cmd+S / Ctrl+S)
   useEffect(() => {
@@ -173,6 +174,7 @@ function App() {
         const parsed = JSON.parse(result.content);
         if (parsed.tasks) setTasks(parsed.tasks);
         if (parsed.connections) setConnections(parsed.connections);
+        if (parsed.groups) setGroups(parsed.groups);
         setCurrentFilePath(result.filePath);
         setHasUnsavedChanges(false);
       }
@@ -194,6 +196,34 @@ function App() {
         prev.filter((c) => c.from !== id && c.to !== id)
       );
     }
+  };
+
+  const addGroup = () => {
+    const newGroup: Group = {
+      id: crypto.randomUUID(),
+      title: "New Group",
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 150,
+    };
+    setGroups([...groups, newGroup]);
+  };
+
+  const moveGroup = (id: string, x: number, y: number) => {
+    setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, x, y } : g)));
+  };
+
+  const resizeGroup = (id: string, width: number, height: number) => {
+    setGroups((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, width, height } : g))
+    );
+  };
+
+  const updateGroupTitle = (id: string, title: string) => {
+    setGroups((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, title } : g))
+    );
   };
 
   const handleCanvasMouseDown = (
@@ -376,6 +406,7 @@ function App() {
         onTaskKeyDown={handleTaskKeyDown}
         onFocusTaskId={setFocusTaskId}
         registerTaskItemRef={registerTaskItemRef}
+        onAddGroup={addGroup}
       />
 
       <div
@@ -401,6 +432,10 @@ function App() {
         onNodeClick={handleNodeClick}
         onNodeHover={setHoveredNode}
         onRemoveConnection={handleRemoveConnection}
+        groups={groups}
+        onGroupMove={moveGroup}
+        onGroupResize={resizeGroup}
+        onGroupTitleChange={updateGroupTitle}
       />
     </div>
   );

@@ -15,6 +15,12 @@
   font-weight: 500;
 }
 
+.add-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
 .add-btn {
   background: #4a4a6a;
   color: #fff;
@@ -23,7 +29,7 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  margin-bottom: 16px;
+  flex: 1;
   transition: background 0.2s;
 }
 

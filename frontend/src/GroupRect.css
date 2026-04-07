@@ -1,0 +1,43 @@
+.group-rect {
+  fill: rgba(255, 255, 255, 0.04);
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 1.5;
+  stroke-dasharray: 6, 3;
+  cursor: grab;
+  transition: stroke 0.2s;
+}
+
+.group-rect:hover {
+  stroke: rgba(255, 255, 255, 0.35);
+}
+
+.group-title {
+  fill: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: all;
+  cursor: grab;
+  user-select: none;
+}
+
+.group-title-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 1px 4px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.group-resize-handle {
+  fill: transparent;
+  cursor: nwse-resize;
+}
+
+.group-resize-handle:hover {
+  fill: rgba(255, 255, 255, 0.15);
+}

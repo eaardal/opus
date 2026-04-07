@@ -1,8 +1,9 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
-import { Task } from "./Sidebar";
+import { Task, Group } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
+import { GroupRect } from "./GroupRect";
 import { SaveImageAs } from "../wailsjs/go/main/App";
 
 export interface Connection {
@@ -45,6 +46,10 @@ interface CanvasProps {
   onNodeClick: (taskId: string) => void;
   onNodeHover: (taskId: string | null) => void;
   onRemoveConnection: (e: React.MouseEvent, from: string, to: string) => void;
+  groups: Group[];
+  onGroupMove: (id: string, x: number, y: number) => void;
+  onGroupResize: (id: string, width: number, height: number) => void;
+  onGroupTitleChange: (id: string, title: string) => void;
 }
 
 export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
@@ -65,6 +70,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onNodeClick,
     onNodeHover,
     onRemoveConnection,
+    groups,
+    onGroupMove,
+    onGroupResize,
+    onGroupTitleChange,
   },
   ref
 ) {
@@ -192,6 +201,16 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
           </marker>
         </defs>
+
+        {groups.map((group) => (
+          <GroupRect
+            key={group.id}
+            group={group}
+            onMove={onGroupMove}
+            onResize={onGroupResize}
+            onTitleChange={onGroupTitleChange}
+          />
+        ))}
 
         {connections.map((conn) => {
           const fromTask = tasks.find((t) => t.id === conn.from);
