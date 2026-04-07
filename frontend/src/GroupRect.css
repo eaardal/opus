@@ -38,6 +38,35 @@
   box-sizing: border-box;
 }
 
+.group-zoom-btn {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+g:hover > .group-zoom-btn {
+  opacity: 1;
+}
+
+.group-zoom-btn-bg {
+  fill: var(--group-fill);
+  stroke: var(--group-stroke);
+  stroke-width: 1;
+  transition: fill 0.15s, stroke 0.15s;
+}
+
+.group-zoom-btn:hover .group-zoom-btn-bg {
+  fill: var(--group-stroke-hover);
+  stroke: var(--group-title-color);
+}
+
+.group-zoom-btn-icon {
+  fill: none;
+  stroke: var(--group-title-color);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
 .group-resize-handle {
   fill: transparent;
   cursor: nwse-resize;

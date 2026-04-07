@@ -250,6 +250,30 @@ function App() {
     setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, title } : g)));
   };
 
+  const zoomToGroup = (id: string) => {
+    const group = groups.find((g) => g.id === id);
+    if (!group) return;
+    const svg = canvasRef.current?.getSvgElement();
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const padding = 80;
+    const contentW = group.width + padding * 2;
+    const contentH = group.height + padding * 2;
+    const scaleX = rect.width / contentW;
+    const scaleY = rect.height / contentH;
+    const scale = Math.min(scaleX, scaleY);
+    const fitW = rect.width / scale;
+    const fitH = rect.height / scale;
+    const cx = group.x + group.width / 2;
+    const cy = group.y + group.height / 2;
+    setViewBox({
+      x: cx - fitW / 2,
+      y: cy - fitH / 2,
+      width: fitW,
+      height: fitH,
+    });
+  };
+
   const handleCanvasMouseDown = (
     e: React.MouseEvent,
     svgElement: SVGSVGElement | null,
@@ -512,6 +536,7 @@ function App() {
         onGroupMove={moveGroup}
         onGroupResize={resizeGroup}
         onGroupTitleChange={updateGroupTitle}
+        onGroupZoomTo={zoomToGroup}
         viewBox={viewBox}
         onViewBoxChange={setViewBox}
         theme={theme}

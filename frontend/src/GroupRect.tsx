@@ -6,6 +6,9 @@ const RESIZE_HANDLE_SIZE = 12;
 const MIN_WIDTH = 80;
 const MIN_HEIGHT = 60;
 
+const ZOOM_BTN_SIZE = 20;
+const ZOOM_BTN_MARGIN = 6;
+
 interface GroupRectProps {
   group: Group;
   isSelected: boolean;
@@ -13,6 +16,7 @@ interface GroupRectProps {
   onMove: (id: string, x: number, y: number) => void;
   onResize: (id: string, width: number, height: number) => void;
   onTitleChange: (id: string, title: string) => void;
+  onZoomTo: (id: string) => void;
 }
 
 export function GroupRect({
@@ -22,6 +26,7 @@ export function GroupRect({
   onMove,
   onResize,
   onTitleChange,
+  onZoomTo,
 }: GroupRectProps) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(group.title);
@@ -132,6 +137,23 @@ export function GroupRect({
           {group.title || "Untitled Group"}
         </text>
       )}
+      <g
+        className="group-zoom-btn"
+        transform={`translate(${group.width - ZOOM_BTN_SIZE - ZOOM_BTN_MARGIN}, ${ZOOM_BTN_MARGIN})`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onZoomTo(group.id);
+        }}
+      >
+        <rect
+          width={ZOOM_BTN_SIZE}
+          height={ZOOM_BTN_SIZE}
+          rx="4"
+          className="group-zoom-btn-bg"
+        />
+        <circle cx="9" cy="9" r="4" className="group-zoom-btn-icon" />
+        <line x1="12" y1="12" x2="16" y2="16" className="group-zoom-btn-icon" />
+      </g>
       <rect
         className="group-resize-handle"
         x={group.width - RESIZE_HANDLE_SIZE}

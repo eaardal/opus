@@ -63,6 +63,7 @@ interface CanvasProps {
   onGroupMove: (id: string, x: number, y: number) => void;
   onGroupResize: (id: string, width: number, height: number) => void;
   onGroupTitleChange: (id: string, title: string) => void;
+  onGroupZoomTo: (id: string) => void;
   viewBox: ViewBox;
   onViewBoxChange: (vb: ViewBox) => void;
   theme: "dark" | "light";
@@ -99,6 +100,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupMove,
     onGroupResize,
     onGroupTitleChange,
+    onGroupZoomTo,
     viewBox,
     onViewBoxChange,
     theme,
@@ -435,6 +437,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onMove={onGroupMove}
             onResize={onGroupResize}
             onTitleChange={onGroupTitleChange}
+            onZoomTo={onGroupZoomTo}
           />
         ))}
 
