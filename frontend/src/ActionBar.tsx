@@ -1,9 +1,10 @@
-import { FolderOpen, Save } from "lucide-react";
+import { FilePlus, FolderOpen, Save } from "lucide-react";
 import "./ActionBar.css";
 
 interface ActionBarProps {
   currentFilePath: string | null;
   hasUnsavedChanges: boolean;
+  onNew: () => void;
   onOpen: () => void;
   onSave: () => void;
 }
@@ -11,11 +12,15 @@ interface ActionBarProps {
 export function ActionBar({
   currentFilePath,
   hasUnsavedChanges,
+  onNew,
   onOpen,
   onSave,
 }: ActionBarProps) {
   return (
     <div className="actionbar">
+      <button className="action-icon-btn" onClick={onNew} aria-label="New project">
+        <FilePlus size={16} />
+      </button>
       <button className="action-icon-btn" onClick={onOpen} aria-label="Open file">
         <FolderOpen size={16} />
       </button>

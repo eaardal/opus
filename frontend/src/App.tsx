@@ -189,6 +189,25 @@ function App() {
     setOpenMenuId(null);
   };
 
+  const handleNew = async () => {
+    if (hasUnsavedChanges) {
+      const confirmed = await ConfirmDialog(
+        "New Project",
+        "You have unsaved changes. Discard them and start fresh?",
+      );
+      if (!confirmed) return;
+    }
+    setTasks([]);
+    setConnections([]);
+    setGroups([]);
+    setCurrentFilePath(null);
+    setHasUnsavedChanges(false);
+    setViewBox({ x: 0, y: 0, width: 0, height: 0 });
+    setHighlightedTaskId(null);
+    setSelectedNodes(new Set());
+    setSelectedGroups(new Set());
+  };
+
   const handleOpen = async () => {
     try {
       const result = await OpenFile();
@@ -489,6 +508,7 @@ function App() {
         openMenuId={openMenuId}
         menuPosition={menuPosition}
         focusTaskId={focusTaskId}
+        onNew={handleNew}
         onOpen={handleOpen}
         onSave={handleSave}
         onAddTask={addTask}

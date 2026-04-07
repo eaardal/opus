@@ -38,6 +38,7 @@ interface SidebarProps {
   openMenuId: string | null;
   menuPosition: { top: number; left: number } | null;
   focusTaskId: string | null;
+  onNew: () => void;
   onOpen: () => void;
   onSave: () => void;
   onAddTask: () => void;
@@ -65,6 +66,7 @@ export function Sidebar({
   openMenuId,
   menuPosition,
   focusTaskId,
+  onNew,
   onOpen,
   onSave,
   onAddTask,
@@ -102,6 +104,7 @@ export function Sidebar({
         <ActionBar
           currentFilePath={currentFilePath}
           hasUnsavedChanges={hasUnsavedChanges}
+          onNew={onNew}
           onOpen={onOpen}
           onSave={onSave}
         />
