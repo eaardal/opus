@@ -244,6 +244,7 @@ function App() {
   ) => {
     if (e.target === svgElement) {
       const coords = canvasRef.current?.getSvgCoords(e) || { x: 0, y: 0 };
+      setHighlightedTaskId(null);
       if (selectedNodes.size > 0 || selectedGroups.size > 0) {
         const clickedOnSelected = tasks.some((t) => {
           if (!selectedNodes.has(t.id)) return false;
