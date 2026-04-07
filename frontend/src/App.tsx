@@ -35,6 +35,7 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [selection, setSelection] = useState<{
     startX: number;
     startY: number;
@@ -45,6 +46,7 @@ function App() {
     startX: number;
     startY: number;
     nodePositions: Map<string, { x: number; y: number }>;
+    groupPositions: Map<string, { x: number; y: number }>;
   } | null>(null);
 
   const canvasRef = useRef<CanvasHandle>(null);
@@ -55,6 +57,7 @@ function App() {
       if (e.key === "Shift") setShiftPressed(true);
       if (e.key === "Escape") {
         setSelectedNodes(new Set());
+        setSelectedGroups(new Set());
         setSelection(null);
         setDraggingSelection(null);
       }
@@ -232,7 +235,7 @@ function App() {
   ) => {
     if (e.target === svgElement) {
       const coords = canvasRef.current?.getSvgCoords(e) || { x: 0, y: 0 };
-      if (selectedNodes.size > 0) {
+      if (selectedNodes.size > 0 || selectedGroups.size > 0) {
         const clickedOnSelected = tasks.some((t) => {
           if (!selectedNodes.has(t.id)) return false;
           const dx = t.x - coords.x;
@@ -241,6 +244,7 @@ function App() {
         });
         if (!clickedOnSelected) {
           setSelectedNodes(new Set());
+          setSelectedGroups(new Set());
         }
       }
       setSelection({
@@ -252,6 +256,27 @@ function App() {
     }
   };
 
+  const startSelectionDrag = (coords: { x: number; y: number }) => {
+    const nodePositions = new Map<string, { x: number; y: number }>();
+    tasks.forEach((t) => {
+      if (selectedNodes.has(t.id)) {
+        nodePositions.set(t.id, { x: t.x, y: t.y });
+      }
+    });
+    const groupPositions = new Map<string, { x: number; y: number }>();
+    groups.forEach((g) => {
+      if (selectedGroups.has(g.id)) {
+        groupPositions.set(g.id, { x: g.x, y: g.y });
+      }
+    });
+    setDraggingSelection({
+      startX: coords.x,
+      startY: coords.y,
+      nodePositions,
+      groupPositions,
+    });
+  };
+
   const handleNodeMouseDown = (e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -259,20 +284,19 @@ function App() {
     if (e.shiftKey) {
       setConnecting({ from: taskId, mouseX: coords.x, mouseY: coords.y });
     } else if (selectedNodes.has(taskId)) {
-      const nodePositions = new Map<string, { x: number; y: number }>();
-      tasks.forEach((t) => {
-        if (selectedNodes.has(t.id)) {
-          nodePositions.set(t.id, { x: t.x, y: t.y });
-        }
-      });
-      setDraggingSelection({
-        startX: coords.x,
-        startY: coords.y,
-        nodePositions,
-      });
+      startSelectionDrag(coords);
     } else {
       setSelectedNodes(new Set());
       setDraggingNode(taskId);
+    }
+  };
+
+  const handleGroupMouseDown = (e: React.MouseEvent, groupId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const coords = canvasRef.current?.getSvgCoords(e) || { x: 0, y: 0 };
+    if (selectedGroups.has(groupId)) {
+      startSelectionDrag(coords);
     }
   };
 
@@ -306,6 +330,15 @@ function App() {
               return { ...t, x: originalPos.x + dx, y: originalPos.y + dy };
             }
             return t;
+          })
+        );
+        setGroups((prev) =>
+          prev.map((g) => {
+            const originalPos = draggingSelection.groupPositions.get(g.id);
+            if (originalPos) {
+              return { ...g, x: originalPos.x + dx, y: originalPos.y + dy };
+            }
+            return g;
           })
         );
       }
@@ -344,7 +377,7 @@ function App() {
       const maxY = Math.max(selection.startY, selection.currentY);
       const nodeRadius = 25;
 
-      const newSelected = new Set<string>();
+      const newSelectedNodes = new Set<string>();
       tasks.forEach((t) => {
         if (
           t.x - nodeRadius >= minX &&
@@ -352,10 +385,23 @@ function App() {
           t.y - nodeRadius >= minY &&
           t.y + nodeRadius <= maxY
         ) {
-          newSelected.add(t.id);
+          newSelectedNodes.add(t.id);
         }
       });
-      setSelectedNodes(newSelected);
+      setSelectedNodes(newSelectedNodes);
+
+      const newSelectedGroups = new Set<string>();
+      groups.forEach((g) => {
+        if (
+          g.x >= minX &&
+          g.x + g.width <= maxX &&
+          g.y >= minY &&
+          g.y + g.height <= maxY
+        ) {
+          newSelectedGroups.add(g.id);
+        }
+      });
+      setSelectedGroups(newSelectedGroups);
     }
 
     setDraggingNode(null);
@@ -433,6 +479,8 @@ function App() {
         onNodeHover={setHoveredNode}
         onRemoveConnection={handleRemoveConnection}
         groups={groups}
+        selectedGroups={selectedGroups}
+        onGroupMouseDown={handleGroupMouseDown}
         onGroupMove={moveGroup}
         onGroupResize={resizeGroup}
         onGroupTitleChange={updateGroupTitle}

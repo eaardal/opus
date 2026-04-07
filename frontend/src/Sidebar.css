@@ -1,6 +1,6 @@
 .sidebar {
-  background: #1a1a2e;
-  border-right: 1px solid #333;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-primary);
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -10,7 +10,7 @@
 
 .sidebar h2 {
   margin: 0 0 16px 0;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 500;
 }
@@ -22,8 +22,8 @@
 }
 
 .add-btn {
-  background: #4a4a6a;
-  color: #fff;
+  background: var(--bg-control);
+  color: var(--text-primary);
   border: none;
   padding: 10px 16px;
   border-radius: 6px;
@@ -34,17 +34,17 @@
 }
 
 .add-btn:hover {
-  background: #5a5a7a;
+  background: var(--bg-control-hover);
 }
 
 .help-text {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--border-primary);
 }
 
 .help-text p {
   margin: 4px 0;
-  color: #666;
+  color: var(--text-faint);
   font-size: 11px;
 }

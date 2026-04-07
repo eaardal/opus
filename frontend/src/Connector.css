@@ -8,5 +8,5 @@
 }
 
 .connection-group.shift-active:hover .connection {
-  stroke: #ff6b6b;
+  stroke: var(--connector-remove);
 }

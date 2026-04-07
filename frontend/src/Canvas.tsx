@@ -47,6 +47,8 @@ interface CanvasProps {
   onNodeHover: (taskId: string | null) => void;
   onRemoveConnection: (e: React.MouseEvent, from: string, to: string) => void;
   groups: Group[];
+  selectedGroups: Set<string>;
+  onGroupMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onGroupMove: (id: string, x: number, y: number) => void;
   onGroupResize: (id: string, width: number, height: number) => void;
   onGroupTitleChange: (id: string, title: string) => void;
@@ -75,6 +77,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onNodeHover,
     onRemoveConnection,
     groups,
+    selectedGroups,
+    onGroupMouseDown,
     onGroupMove,
     onGroupResize,
     onGroupTitleChange,
@@ -84,6 +88,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [lightMode, setLightMode] = useState(() => document.documentElement.getAttribute("data-theme") === "light");
   const [spacePressed, setSpacePressed] = useState(false);
   const [panning, setPanning] = useState<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 0, height: 0 });
@@ -236,7 +241,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       canvas.height = h;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Could not get canvas context");
-      ctx.fillStyle = "#0f0f1a";
+      const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim();
+      ctx.fillStyle = bgColor || "#0f0f1a";
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
       const pngDataUrl = canvas.toDataURL("image/png");
@@ -269,6 +275,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             >
               Export as PNG
             </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="canvas-menu-item"
+              onClick={() => {
+                const next = !lightMode;
+                setLightMode(next);
+                document.documentElement.setAttribute("data-theme", next ? "light" : "dark");
+                setMenuOpen(false);
+              }}
+            >
+              {lightMode ? "Dark Mode" : "Light Mode"}
+            </button>
           </div>
         )}
       </div>
@@ -290,7 +309,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             refY="3.5"
             orient="auto"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+            <polygon points="0 0, 10 3.5, 0 7" fill="var(--connector-color)" />
           </marker>
         </defs>
 
@@ -298,6 +317,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <GroupRect
             key={group.id}
             group={group}
+            isSelected={selectedGroups.has(group.id)}
+            onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}
             onResize={onGroupResize}
             onTitleChange={onGroupTitleChange}

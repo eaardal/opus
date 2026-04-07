@@ -1,11 +1,127 @@
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #2a2a4a;
+  --bg-elevated: #3a3a5a;
+  --bg-control: #4a4a6a;
+  --bg-control-hover: #5a5a7a;
+
+  --text-primary: #fff;
+  --text-secondary: #ccc;
+  --text-muted: #aaa;
+  --text-dim: #888;
+  --text-faint: #666;
+
+  --border-primary: #333;
+  --border-secondary: #444;
+  --border-focus: #6a6a8a;
+
+  --node-fill: #3a3a5a;
+  --node-stroke: #6a6a8a;
+  --node-hover-fill: #4a4a6a;
+  --node-hover-stroke: #8a8aaa;
+  --node-drag-fill: #5a5a7a;
+  --node-badge-fill: #4a4a6a;
+  --node-badge-stroke: #6a6a8a;
+  --tooltip-fill: #2a2a4a;
+  --tooltip-stroke: #6a6a8a;
+
+  --connector-color: #666;
+  --connector-pending: #999;
+  --connector-remove: #ff6b6b;
+
+  --selection-fill: rgba(244, 114, 182, 0.1);
+  --selection-stroke: #f472b6;
+  --highlight-bg: rgba(96, 165, 250, 0.15);
+
+  --group-fill: rgba(255, 255, 255, 0.04);
+  --group-stroke: rgba(255, 255, 255, 0.2);
+  --group-stroke-hover: rgba(255, 255, 255, 0.35);
+  --group-title-color: rgba(255, 255, 255, 0.7);
+  --group-input-bg: rgba(0, 0, 0, 0.4);
+  --group-input-border: rgba(255, 255, 255, 0.3);
+  --group-resize-hover: rgba(255, 255, 255, 0.15);
+
+  --menu-bg: #1e1e2e;
+  --menu-shadow: rgba(0, 0, 0, 0.4);
+  --menu-border: rgba(255, 255, 255, 0.08);
+  --menu-trigger-bg: rgba(255, 255, 255, 0.08);
+  --menu-trigger-hover: rgba(255, 255, 255, 0.14);
+  --menu-trigger-color: #e0e0e0;
+  --menu-item-hover: rgba(255, 255, 255, 0.1);
+  --menu-item-active-bg: rgba(255, 255, 255, 0.05);
+
+  --unsaved-color: #f97316;
+  --delete-color: #ff6b6b;
+  --delete-bg: rgba(255, 107, 107, 0.1);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f0f5;
+  --bg-secondary: #e4e4ec;
+  --bg-tertiary: #d8d8e4;
+  --bg-elevated: #ccccd8;
+  --bg-control: #b8b8c8;
+  --bg-control-hover: #a8a8b8;
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #333;
+  --text-muted: #555;
+  --text-dim: #666;
+  --text-faint: #888;
+
+  --border-primary: #c0c0cc;
+  --border-secondary: #b0b0bc;
+  --border-focus: #8888aa;
+
+  --node-fill: #ccccd8;
+  --node-stroke: #c4b8d6;
+  --node-hover-fill: #b8b8c8;
+  --node-hover-stroke: #b8a8cc;
+  --node-drag-fill: #a8a8b8;
+  --node-badge-fill: #b8b8c8;
+  --node-badge-stroke: #c4b8d6;
+  --tooltip-fill: #e8e0f0;
+  --tooltip-stroke: #d0c4de;
+
+  --connector-color: #999;
+  --connector-pending: #aaa;
+  --connector-remove: #e04040;
+
+  --selection-fill: rgba(244, 114, 182, 0.15);
+  --selection-stroke: #e0609a;
+  --highlight-bg: rgba(96, 165, 250, 0.2);
+
+  --group-fill: rgba(0, 0, 0, 0.04);
+  --group-stroke: rgba(0, 0, 0, 0.2);
+  --group-stroke-hover: rgba(0, 0, 0, 0.35);
+  --group-title-color: rgba(0, 0, 0, 0.65);
+  --group-input-bg: rgba(255, 255, 255, 0.8);
+  --group-input-border: rgba(0, 0, 0, 0.25);
+  --group-resize-hover: rgba(0, 0, 0, 0.1);
+
+  --menu-bg: #e8e8f0;
+  --menu-shadow: rgba(0, 0, 0, 0.15);
+  --menu-border: rgba(0, 0, 0, 0.1);
+  --menu-trigger-bg: rgba(0, 0, 0, 0.06);
+  --menu-trigger-hover: rgba(0, 0, 0, 0.1);
+  --menu-trigger-color: #444;
+  --menu-item-hover: rgba(0, 0, 0, 0.06);
+  --menu-item-active-bg: rgba(0, 0, 0, 0.04);
+
+  --unsaved-color: #e06010;
+  --delete-color: #d03030;
+  --delete-bg: rgba(208, 48, 48, 0.1);
+}
+
 html, body, #root {
     margin: 0;
     padding: 0;
     height: 100%;
     width: 100%;
     overflow: hidden;
-    background-color: #0f0f1a;
-    color: white;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;

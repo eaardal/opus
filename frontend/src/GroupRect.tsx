@@ -8,6 +8,8 @@ const MIN_HEIGHT = 60;
 
 interface GroupRectProps {
   group: Group;
+  isSelected: boolean;
+  onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onResize: (id: string, width: number, height: number) => void;
   onTitleChange: (id: string, title: string) => void;
@@ -15,6 +17,8 @@ interface GroupRectProps {
 
 export function GroupRect({
   group,
+  isSelected,
+  onMouseDown: onGroupMouseDown,
   onMove,
   onResize,
   onTitleChange,
@@ -37,6 +41,10 @@ export function GroupRect({
 
   const handleBodyMouseDown = (e: React.MouseEvent) => {
     if (editing) return;
+    if (isSelected) {
+      onGroupMouseDown(e, group.id);
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
 
@@ -87,7 +95,7 @@ export function GroupRect({
   return (
     <g transform={`translate(${group.x}, ${group.y})`}>
       <rect
-        className="group-rect"
+        className={`group-rect ${isSelected ? "selected" : ""}`}
         width={group.width}
         height={group.height}
         rx="8"

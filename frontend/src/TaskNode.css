@@ -1,6 +1,6 @@
 .node {
-  fill: #3a3a5a;
-  stroke: #6a6a8a;
+  fill: var(--node-fill);
+  stroke: var(--node-stroke);
   stroke-width: 2;
   cursor: grab;
   transition:
@@ -9,13 +9,13 @@
 }
 
 .node:hover {
-  fill: #4a4a6a;
-  stroke: #8a8aaa;
+  fill: var(--node-hover-fill);
+  stroke: var(--node-hover-stroke);
 }
 
 .node.dragging {
   cursor: grabbing;
-  fill: #5a5a7a;
+  fill: var(--node-drag-fill);
 }
 
 .node.highlighted {
@@ -23,12 +23,12 @@
 }
 
 .node.selected {
-  stroke: #f472b6 !important;
+  stroke: var(--selection-stroke) !important;
   stroke-width: 3 !important;
 }
 
 .node-text {
-  fill: #fff;
+  fill: var(--text-primary);
   font-size: 10px;
   font-weight: 500;
   pointer-events: none;
@@ -42,13 +42,13 @@
 }
 
 .node-number-badge {
-  fill: #4a4a6a;
-  stroke: #6a6a8a;
+  fill: var(--node-badge-fill);
+  stroke: var(--node-badge-stroke);
   stroke-width: 1;
 }
 
 .node-number {
-  fill: #fff;
+  fill: var(--text-primary);
   font-size: 10px;
   font-weight: 600;
   pointer-events: none;
@@ -56,13 +56,13 @@
 }
 
 .tooltip rect {
-  fill: #2a2a4a;
-  stroke: #6a6a8a;
+  fill: var(--tooltip-fill);
+  stroke: var(--tooltip-stroke);
   stroke-width: 1;
 }
 
 .tooltip text {
-  fill: #fff;
+  fill: var(--text-primary);
   font-size: 12px;
   pointer-events: none;
   user-select: none;

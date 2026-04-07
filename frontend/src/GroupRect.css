@@ -1,6 +1,6 @@
 .group-rect {
-  fill: rgba(255, 255, 255, 0.04);
-  stroke: rgba(255, 255, 255, 0.2);
+  fill: var(--group-fill);
+  stroke: var(--group-stroke);
   stroke-width: 1.5;
   stroke-dasharray: 6, 3;
   cursor: grab;
@@ -8,11 +8,16 @@
 }
 
 .group-rect:hover {
-  stroke: rgba(255, 255, 255, 0.35);
+  stroke: var(--group-stroke-hover);
+}
+
+.group-rect.selected {
+  stroke: var(--selection-stroke);
+  stroke-width: 2;
 }
 
 .group-title {
-  fill: rgba(255, 255, 255, 0.7);
+  fill: var(--group-title-color);
   font-size: 13px;
   font-weight: 500;
   pointer-events: all;
@@ -22,10 +27,10 @@
 
 .group-title-input {
   width: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--group-input-bg);
+  border: 1px solid var(--group-input-border);
   border-radius: 3px;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 500;
   padding: 1px 4px;
@@ -39,5 +44,5 @@
 }
 
 .group-resize-handle:hover {
-  fill: rgba(255, 255, 255, 0.15);
+  fill: var(--group-resize-hover);
 }

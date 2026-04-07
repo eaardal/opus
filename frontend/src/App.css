@@ -15,7 +15,7 @@
 
 .sidebar-resize-handle:hover,
 .sidebar-resize-handle.active {
-  background: #4a4a6a;
+  background: var(--bg-control);
 }
 
 #App.resizing {

@@ -43,7 +43,7 @@ export function Connector({
     <g className={`connection-group ${shiftPressed ? "shift-active" : ""}`}>
       <path
         d={path}
-        stroke="#666"
+        stroke="var(--connector-color)"
         strokeWidth="2"
         fill="none"
         markerEnd="url(#arrowhead)"
@@ -81,7 +81,7 @@ export function PendingConnector({
       y1={fromY}
       x2={toX}
       y2={toY}
-      stroke="#999"
+      stroke="var(--connector-pending)"
       strokeWidth="2"
       strokeDasharray="5,5"
     />
