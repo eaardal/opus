@@ -13,6 +13,7 @@ function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{
     from: string;
@@ -78,10 +79,10 @@ function App() {
     if (tasks.length > 0 || connections.length > 0 || groups.length > 0) {
       setHasUnsavedChanges(true);
     }
-  }, [tasks, connections, groups]);
+  }, [tasks, connections, groups, theme]);
 
   const handleSave = useCallback(async () => {
-    const data = JSON.stringify({ tasks, connections, groups }, null, 2);
+    const data = JSON.stringify({ tasks, connections, groups, theme }, null, 2);
     try {
       if (currentFilePath) {
         await SaveFile(currentFilePath, data);
@@ -96,7 +97,7 @@ function App() {
     } catch (err) {
       console.error("Save failed:", err);
     }
-  }, [tasks, connections, groups, currentFilePath]);
+  }, [tasks, connections, groups, theme, currentFilePath]);
 
   // Keyboard shortcut for save (Cmd+S / Ctrl+S)
   useEffect(() => {
@@ -178,6 +179,9 @@ function App() {
         if (parsed.tasks) setTasks(parsed.tasks);
         if (parsed.connections) setConnections(parsed.connections);
         if (parsed.groups) setGroups(parsed.groups);
+        const loadedTheme = parsed.theme === "light" ? "light" : "dark";
+        setTheme(loadedTheme);
+        document.documentElement.setAttribute("data-theme", loadedTheme);
         setCurrentFilePath(result.filePath);
         setHasUnsavedChanges(false);
       }
@@ -484,6 +488,12 @@ function App() {
         onGroupMove={moveGroup}
         onGroupResize={resizeGroup}
         onGroupTitleChange={updateGroupTitle}
+        theme={theme}
+        onToggleTheme={() => {
+          const next = theme === "dark" ? "light" : "dark";
+          setTheme(next);
+          document.documentElement.setAttribute("data-theme", next);
+        }}
       />
     </div>
   );

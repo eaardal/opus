@@ -52,6 +52,8 @@ interface CanvasProps {
   onGroupMove: (id: string, x: number, y: number) => void;
   onGroupResize: (id: string, width: number, height: number) => void;
   onGroupTitleChange: (id: string, title: string) => void;
+  theme: "dark" | "light";
+  onToggleTheme: () => void;
 }
 
 const ZOOM_SENSITIVITY = 0.001;
@@ -82,13 +84,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupMove,
     onGroupResize,
     onGroupTitleChange,
+    theme,
+    onToggleTheme,
   },
   ref
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [lightMode, setLightMode] = useState(() => document.documentElement.getAttribute("data-theme") === "light");
   const [spacePressed, setSpacePressed] = useState(false);
   const [panning, setPanning] = useState<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 0, height: 0 });
@@ -280,13 +283,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               role="menuitem"
               className="canvas-menu-item"
               onClick={() => {
-                const next = !lightMode;
-                setLightMode(next);
-                document.documentElement.setAttribute("data-theme", next ? "light" : "dark");
+                onToggleTheme();
                 setMenuOpen(false);
               }}
             >
-              {lightMode ? "Dark Mode" : "Light Mode"}
+              {theme === "light" ? "Dark Mode" : "Light Mode"}
             </button>
           </div>
         )}
