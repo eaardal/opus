@@ -212,6 +212,22 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           />
         ))}
 
+        {tasks.map((task, index) => (
+          <TaskNode
+            key={task.id}
+            task={task}
+            index={index}
+            isDragging={draggingNode === task.id}
+            isHighlighted={highlightedTaskId === task.id}
+            isSelected={selectedNodes.has(task.id)}
+            isHovered={hoveredNode === task.id}
+            onMouseDown={(e) => onNodeMouseDown(e, task.id)}
+            onClick={() => onNodeClick(task.id)}
+            onMouseEnter={() => onNodeHover(task.id)}
+            onMouseLeave={() => onNodeHover(null)}
+          />
+        ))}
+
         {connections.map((conn) => {
           const fromTask = tasks.find((t) => t.id === conn.from);
           const toTask = tasks.find((t) => t.id === conn.to);
@@ -246,22 +262,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             height={Math.abs(selection.currentY - selection.startY)}
           />
         )}
-
-        {tasks.map((task, index) => (
-          <TaskNode
-            key={task.id}
-            task={task}
-            index={index}
-            isDragging={draggingNode === task.id}
-            isHighlighted={highlightedTaskId === task.id}
-            isSelected={selectedNodes.has(task.id)}
-            isHovered={hoveredNode === task.id}
-            onMouseDown={(e) => onNodeMouseDown(e, task.id)}
-            onClick={() => onNodeClick(task.id)}
-            onMouseEnter={() => onNodeHover(task.id)}
-            onMouseLeave={() => onNodeHover(null)}
-          />
-        ))}
       </svg>
     </div>
   );
