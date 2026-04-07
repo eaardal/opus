@@ -4,6 +4,7 @@ import { Maximize, Focus } from "lucide-react";
 import { Task, Group, TaskStatus } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
+import { ProgressBar } from "./ProgressBar";
 import { CategoryConfig, StatusConfig } from "./theme";
 import { GroupRect } from "./GroupRect";
 import { SaveImageAs } from "../wailsjs/go/main/App";
@@ -494,6 +495,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           />
         )}
       </svg>
+      <ProgressBar tasks={tasks} />
       {showHelp && (
         <div className="help-overlay" onClick={() => setShowHelp(false)}>
           <div className="help-dialog" onClick={(e) => e.stopPropagation()}>

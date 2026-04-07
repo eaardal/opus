@@ -7,10 +7,13 @@
 
 .sidebar-resize-handle {
   width: 4px;
+  margin-left: -4px;
   background: transparent;
   cursor: col-resize;
   transition: background 0.15s;
   flex-shrink: 0;
+  position: relative;
+  z-index: 5;
 }
 
 .sidebar-resize-handle:hover,
