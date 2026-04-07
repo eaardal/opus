@@ -18,14 +18,22 @@ const CATEGORIES_DARK: Record<string, CategoryConfig> = {
   backend: { label: "Backend", color: "#f6b093" },
   frontend: { label: "Frontend", color: "#a0c4f1" },
   ux: { label: "UX", color: "#f0a6ce" },
-  integration: { label: "Integration Point", color: "#ffffff", shape: "diamond" },
+  integration: {
+    label: "Integration Point",
+    color: "#ffffff",
+    shape: "diamond",
+  },
 };
 
 const CATEGORIES_LIGHT: Record<string, CategoryConfig> = {
-  backend: { label: "Backend", color: "#e08860" },
-  frontend: { label: "Frontend", color: "#6a9fd8" },
+  backend: { label: "Backend", color: "#ffc58f" },
+  frontend: { label: "Frontend", color: "#93bddd" },
   ux: { label: "UX", color: "#d87aaa" },
-  integration: { label: "Integration Point", color: "#f5f5f5", shape: "diamond" },
+  integration: {
+    label: "Integration Point",
+    color: "#f5f5f5",
+    shape: "diamond",
+  },
 };
 
 const STATUSES_DARK: Record<TaskStatus, StatusConfig> = {
@@ -36,8 +44,8 @@ const STATUSES_DARK: Record<TaskStatus, StatusConfig> = {
 };
 
 const STATUSES_LIGHT: Record<TaskStatus, StatusConfig> = {
-  pending: { label: "Pending", color: "#b0b0c8", emoji: "💤" },
-  in_progress: { label: "In Progress", color: "#8888cc", emoji: "👀" },
+  pending: { label: "Pending", color: "#bebfd9", emoji: "💤" },
+  in_progress: { label: "In Progress", color: "#7a7ab8", emoji: "👀" },
   completed: { label: "Completed", color: "#6abf85", emoji: "✅" },
   archived: { label: "Archived", color: "#a0a0a0", emoji: "🪦" },
 };
