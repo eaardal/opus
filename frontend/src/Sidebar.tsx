@@ -113,7 +113,6 @@ export function Sidebar({
           <PanelLeftClose size={18} />
         </button>
       </div>
-      <h2>Tasks</h2>
       <div className="add-buttons">
         <button className="add-btn" onClick={onAddTask}>
           + Add Task
