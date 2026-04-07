@@ -35,8 +35,12 @@ export function TaskNode({
   onMouseEnter,
   onMouseLeave,
 }: TaskNodeProps) {
-  const baseColor = STATUSES[task.status]?.color || STATUSES.pending.color;
-  const fillColor = isHighlighted ? lightenColor(baseColor, 0.4) : baseColor;
+  const statusColor = STATUSES[task.status]?.color || STATUSES.pending.color;
+  const categoryColor = task.category
+    ? CATEGORIES[task.category]?.color
+    : undefined;
+  const baseFill = categoryColor || statusColor;
+  const fillColor = isHighlighted ? lightenColor(baseFill, 0.4) : baseFill;
 
   return (
     <g
@@ -49,12 +53,8 @@ export function TaskNode({
         className={`node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`}
         style={{
           fill: fillColor,
-          ...(task.category && !isSelected
-            ? {
-                stroke: CATEGORIES[task.category]?.color,
-                strokeWidth: 3,
-              }
-            : {}),
+          stroke: isSelected ? undefined : statusColor,
+          strokeWidth: 3,
         }}
         onMouseDown={onMouseDown}
         onClick={onClick}
@@ -91,6 +91,7 @@ export function TaskNode({
             width={Math.max(task.text.length * 8, 80)}
             height="24"
             rx="4"
+            style={{ fill: statusColor }}
           />
           <text textAnchor="middle" dy="0.35em">
             {task.text}
