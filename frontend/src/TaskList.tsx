@@ -73,7 +73,12 @@ export function TaskList({
       onSetMenuPosition(null);
     } else {
       const rect = e.currentTarget.getBoundingClientRect();
-      onSetMenuPosition({ top: rect.bottom + 4, left: rect.right });
+      const menuHeight = 320;
+      const spaceBelow = window.innerHeight - rect.bottom - 4;
+      const top = spaceBelow >= menuHeight
+        ? rect.bottom + 4
+        : rect.top - menuHeight - 4;
+      onSetMenuPosition({ top, left: rect.right });
       onSetOpenMenuId(taskId);
     }
   };

@@ -14,7 +14,7 @@ function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 0, height: 0 });
   const categories = getCategories(theme);
   const statuses = getStatuses(theme);
@@ -56,6 +56,11 @@ function App() {
 
   const canvasRef = useRef<CanvasHandle>(null);
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Apply initial theme to DOM
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
