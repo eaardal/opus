@@ -87,3 +87,70 @@
 .canvas-menu-item:hover {
   background: var(--menu-item-hover);
 }
+
+.help-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.help-dialog {
+  background: var(--menu-bg);
+  border: 1px solid var(--menu-border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  min-width: 340px;
+  box-shadow: 0 8px 24px var(--menu-shadow);
+}
+
+.help-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.help-dialog-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.help-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.help-close-btn:hover {
+  background: var(--menu-item-hover);
+  color: var(--text-primary);
+}
+
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.help-table td {
+  padding: 5px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.help-key {
+  color: var(--text-primary);
+  font-weight: 500;
+  padding-right: 16px !important;
+  white-space: nowrap;
+}

@@ -140,14 +140,6 @@ export function Sidebar({
         onFocusTaskId={onFocusTaskId}
         registerTaskItemRef={registerTaskItemRef}
       />
-      <div className="help-text">
-        <p>Cmd/Ctrl+S to save</p>
-        <p>Cmd/Ctrl+Enter to add new task</p>
-        <p>Shift+drag between nodes to connect</p>
-        <p>Shift+click connection to remove</p>
-        <p>Space+drag to pan canvas</p>
-        <p>Scroll to zoom</p>
-      </div>
     </div>
   );
 }

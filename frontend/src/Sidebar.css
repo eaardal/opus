@@ -75,15 +75,3 @@
 .add-btn:hover {
   background: var(--bg-control-hover);
 }
-
-.help-text {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-primary);
-}
-
-.help-text p {
-  margin: 4px 0;
-  color: var(--text-faint);
-  font-size: 11px;
-}

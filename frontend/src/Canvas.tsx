@@ -108,6 +108,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
   const panMode = spaceHeld || middleMouseHeld;
@@ -318,6 +319,17 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             >
               {theme === "light" ? "Dark Mode" : "Light Mode"}
             </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="canvas-menu-item"
+              onClick={() => {
+                setShowHelp(true);
+                setMenuOpen(false);
+              }}
+            >
+              How to Use
+            </button>
           </div>
         )}
       </div>
@@ -408,6 +420,29 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           />
         )}
       </svg>
+      {showHelp && (
+        <div className="help-overlay" onClick={() => setShowHelp(false)}>
+          <div className="help-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="help-dialog-header">
+              <h3>Keyboard Shortcuts</h3>
+              <button className="help-close-btn" onClick={() => setShowHelp(false)}>×</button>
+            </div>
+            <table className="help-table">
+              <tbody>
+                <tr><td className="help-key">Cmd/Ctrl + S</td><td>Save</td></tr>
+                <tr><td className="help-key">Cmd/Ctrl + Enter</td><td>Add new task</td></tr>
+                <tr><td className="help-key">Shift + drag</td><td>Connect nodes</td></tr>
+                <tr><td className="help-key">Shift + click connection</td><td>Remove connection</td></tr>
+                <tr><td className="help-key">Space + drag</td><td>Pan canvas</td></tr>
+                <tr><td className="help-key">Middle mouse + drag</td><td>Pan canvas</td></tr>
+                <tr><td className="help-key">Scroll wheel</td><td>Zoom in/out</td></tr>
+                <tr><td className="help-key">Escape</td><td>Clear selection</td></tr>
+                <tr><td className="help-key">Double-click group title</td><td>Edit group name</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
