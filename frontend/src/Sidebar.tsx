@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { PanelLeftOpen, PanelLeftClose } from "lucide-react";
 import "./Sidebar.css";
 import { ActionBar } from "./ActionBar";
 import { TaskList } from "./TaskList";
@@ -78,14 +80,39 @@ export function Sidebar({
   registerTaskItemRef,
   onAddGroup,
 }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <div className="sidebar sidebar-collapsed">
+        <button
+          className="sidebar-toggle"
+          onClick={() => setCollapsed(false)}
+          aria-label="Expand sidebar"
+        >
+          <PanelLeftOpen size={18} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="sidebar" style={{ width, minWidth: width }}>
-      <ActionBar
-        currentFilePath={currentFilePath}
-        hasUnsavedChanges={hasUnsavedChanges}
-        onOpen={onOpen}
-        onSave={onSave}
-      />
+      <div className="sidebar-header">
+        <ActionBar
+          currentFilePath={currentFilePath}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onOpen={onOpen}
+          onSave={onSave}
+        />
+        <button
+          className="sidebar-toggle"
+          onClick={() => setCollapsed(true)}
+          aria-label="Collapse sidebar"
+        >
+          <PanelLeftClose size={18} />
+        </button>
+      </div>
       <h2>Tasks</h2>
       <div className="add-buttons">
         <button className="add-btn" onClick={onAddTask}>

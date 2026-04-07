@@ -8,6 +8,45 @@
   gap: 8px;
 }
 
+.sidebar-collapsed {
+  width: 40px !important;
+  min-width: 40px !important;
+  padding: 8px;
+  align-items: center;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sidebar-header .top-section {
+  flex: 1;
+}
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sidebar-toggle:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
 .sidebar h2 {
   margin: 0 0 16px 0;
   color: var(--text-primary);
