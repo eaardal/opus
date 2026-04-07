@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./GroupRect.css";
-import { Group, Task } from "./Sidebar";
+import { Group, Task, TaskStatus } from "./Sidebar";
+import { StatusConfig } from "./theme";
 
 const RESIZE_HANDLE_SIZE = 12;
 const MIN_WIDTH = 80;
@@ -16,6 +17,7 @@ const PROGRESS_BAR_MARGIN = 8;
 interface GroupRectProps {
   group: Group;
   tasks: Task[];
+  statuses: Record<TaskStatus, StatusConfig>;
   isSelected: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
@@ -27,6 +29,7 @@ interface GroupRectProps {
 export function GroupRect({
   group,
   tasks,
+  statuses,
   isSelected,
   onMouseDown: onGroupMouseDown,
   onMove,
@@ -43,6 +46,9 @@ export function GroupRect({
   );
   const doneTasks = containedTasks.filter(
     (t) => t.status === "completed" || t.status === "archived",
+  );
+  const inProgressTasks = containedTasks.filter(
+    (t) => t.status === "in_progress",
   );
   const allDone = containedTasks.length > 0 && doneTasks.length === containedTasks.length;
 
@@ -156,7 +162,8 @@ export function GroupRect({
         </text>
       )}
       {containedTasks.length > 0 && (() => {
-        const pct = doneTasks.length / containedTasks.length;
+        const donePct = doneTasks.length / containedTasks.length;
+        const inProgressPct = inProgressTasks.length / containedTasks.length;
         const barWidth = group.width - PROGRESS_BAR_MARGIN * 2;
         return (
           <g>
@@ -168,12 +175,23 @@ export function GroupRect({
               height={PROGRESS_BAR_HEIGHT}
               rx="2"
             />
-            {pct > 0 && (
+            {inProgressPct > 0 && (
+              <rect
+                className="group-progress-in-progress"
+                x={PROGRESS_BAR_MARGIN}
+                y={PROGRESS_BAR_Y}
+                width={barWidth * (donePct + inProgressPct)}
+                height={PROGRESS_BAR_HEIGHT}
+                rx="2"
+                style={{ fill: statuses.in_progress.color }}
+              />
+            )}
+            {donePct > 0 && (
               <rect
                 className="group-progress-fill"
                 x={PROGRESS_BAR_MARGIN}
                 y={PROGRESS_BAR_Y}
-                width={barWidth * pct}
+                width={barWidth * donePct}
                 height={PROGRESS_BAR_HEIGHT}
                 rx="2"
               />

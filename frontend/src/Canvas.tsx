@@ -434,6 +434,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             key={group.id}
             group={group}
             tasks={tasks}
+            statuses={statuses}
             isSelected={selectedGroups.has(group.id)}
             onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}
@@ -496,7 +497,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           />
         )}
       </svg>
-      <ProgressBar tasks={tasks} />
+      <ProgressBar tasks={tasks} statuses={statuses} />
       {showHelp && (
         <div className="help-overlay" onClick={() => setShowHelp(false)}>
           <div className="help-dialog" onClick={(e) => e.stopPropagation()}>
