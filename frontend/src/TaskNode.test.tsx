@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { TaskNode } from "./TaskNode";
 import type { Task } from "./Sidebar";
-import { STATUSES, CATEGORIES } from "./Sidebar";
+import { getStatuses, getCategories } from "./theme";
+
+const STATUSES = getStatuses("dark");
+const CATEGORIES = getCategories("dark");
 
 const baseTask: Task = {
   id: "task-1",
@@ -17,6 +20,8 @@ const noop = () => {};
 function renderTaskNode(overrides: Partial<Task> = {}, nodeState = {}) {
   const task: Task = { ...baseTask, ...overrides };
   const defaultState = {
+    categories: CATEGORIES,
+    statuses: STATUSES,
     isDragging: false,
     isHighlighted: false,
     isSelected: false,
@@ -74,6 +79,8 @@ describe("TaskNode", () => {
           <TaskNode
             task={baseTask}
             index={2}
+            categories={CATEGORIES}
+            statuses={STATUSES}
             isDragging={false}
             isHighlighted={false}
             isSelected={false}

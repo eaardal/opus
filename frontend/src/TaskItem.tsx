@@ -1,9 +1,12 @@
 import "./TaskItem.css";
-import { Task, TaskStatus, CATEGORIES, STATUSES } from "./Sidebar";
+import { Task, TaskStatus } from "./Sidebar";
+import { CategoryConfig, StatusConfig } from "./theme";
 
 interface TaskItemProps {
   task: Task;
   index: number;
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
   isHighlighted: boolean;
   isMenuOpen: boolean;
   menuPosition: { top: number; left: number } | null;
@@ -21,6 +24,8 @@ interface TaskItemProps {
 export function TaskItem({
   task,
   index,
+  categories,
+  statuses,
   isHighlighted,
   isMenuOpen,
   menuPosition,
@@ -45,7 +50,7 @@ export function TaskItem({
         className="task-number"
         style={
           task.category
-            ? { background: CATEGORIES[task.category]?.color }
+            ? { background: categories[task.category]?.color }
             : undefined
         }
       >
@@ -73,10 +78,7 @@ export function TaskItem({
           >
             <div className="menu-section-label">Status</div>
             {(
-              Object.entries(STATUSES) as [
-                TaskStatus,
-                { label: string; color: string },
-              ][]
+              Object.entries(statuses) as [TaskStatus, StatusConfig][]
             ).map(([key, { label, color }]) => (
               <button
                 key={key}
@@ -91,7 +93,7 @@ export function TaskItem({
               </button>
             ))}
             <div className="menu-section-label">Category</div>
-            {Object.entries(CATEGORIES).map(
+            {Object.entries(categories).map(
               ([key, { label, color }]) => (
                 <button
                   key={key}

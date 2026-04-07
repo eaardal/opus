@@ -2,9 +2,12 @@ import { useRef, useEffect } from "react";
 import "./TaskList.css";
 import { Task, TaskStatus } from "./Sidebar";
 import { TaskItem } from "./TaskItem";
+import { CategoryConfig, StatusConfig } from "./theme";
 
 interface TaskListProps {
   tasks: Task[];
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
   highlightedTaskId: string | null;
   openMenuId: string | null;
   menuPosition: { top: number; left: number } | null;
@@ -23,6 +26,8 @@ interface TaskListProps {
 
 export function TaskList({
   tasks,
+  categories,
+  statuses,
   highlightedTaskId,
   openMenuId,
   menuPosition,
@@ -80,6 +85,8 @@ export function TaskList({
           key={task.id}
           task={task}
           index={index}
+          categories={categories}
+          statuses={statuses}
           isHighlighted={highlightedTaskId === task.id}
           isMenuOpen={openMenuId === task.id}
           menuPosition={menuPosition}

@@ -1,5 +1,7 @@
 import "./TaskNode.css";
-import { Task, CATEGORIES, STATUSES } from "./Sidebar";
+import { Task } from "./Sidebar";
+import { CategoryConfig, StatusConfig } from "./theme";
+import { TaskStatus } from "./Sidebar";
 
 function lightenColor(hex: string, amount: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -13,6 +15,8 @@ function lightenColor(hex: string, amount: number): string {
 interface TaskNodeProps {
   task: Task;
   index: number;
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
   isDragging: boolean;
   isHighlighted: boolean;
   isSelected: boolean;
@@ -26,6 +30,8 @@ interface TaskNodeProps {
 export function TaskNode({
   task,
   index,
+  categories,
+  statuses,
   isDragging,
   isHighlighted,
   isSelected,
@@ -35,8 +41,8 @@ export function TaskNode({
   onMouseEnter,
   onMouseLeave,
 }: TaskNodeProps) {
-  const statusColor = STATUSES[task.status]?.color || STATUSES.pending.color;
-  const category = task.category ? CATEGORIES[task.category] : undefined;
+  const statusColor = statuses[task.status]?.color || statuses.pending.color;
+  const category = task.category ? categories[task.category] : undefined;
   const categoryColor = category?.color;
   const shape = category?.shape || "circle";
   const baseFill = categoryColor || statusColor;
@@ -76,7 +82,7 @@ export function TaskNode({
         cy={shape === "diamond" ? -30 : -25}
         r="10"
         className="node-number-badge"
-        style={task.category ? { fill: CATEGORIES[task.category]?.color } : undefined}
+        style={task.category ? { fill: categories[task.category]?.color } : undefined}
       />
       <text
         x="0"
@@ -93,7 +99,7 @@ export function TaskNode({
         className="node-emoji"
         onMouseDown={onMouseDown}
       >
-        {STATUSES[task.status]?.emoji || "💤"}
+        {statuses[task.status]?.emoji || "💤"}
       </text>
       {task.text && (
         <g className="tooltip" transform="translate(0, 40)">

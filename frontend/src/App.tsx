@@ -8,6 +8,7 @@ import {
 } from "../wailsjs/go/main/App";
 import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
 import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
+import { getCategories, getStatuses } from "./theme";
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -15,6 +16,8 @@ function App() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 0, height: 0 });
+  const categories = getCategories(theme);
+  const statuses = getStatuses(theme);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{
     from: string;
@@ -439,6 +442,8 @@ function App() {
       <Sidebar
         width={sidebarWidth}
         tasks={tasks}
+        categories={categories}
+        statuses={statuses}
         currentFilePath={currentFilePath}
         hasUnsavedChanges={hasUnsavedChanges}
         highlightedTaskId={highlightedTaskId}
@@ -469,6 +474,8 @@ function App() {
       <Canvas
         ref={canvasRef}
         tasks={tasks}
+        categories={categories}
+        statuses={statuses}
         connections={connections}
         draggingNode={draggingNode}
         connecting={connecting}

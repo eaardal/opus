@@ -1,6 +1,7 @@
 import "./Sidebar.css";
 import { ActionBar } from "./ActionBar";
 import { TaskList } from "./TaskList";
+import { CategoryConfig, StatusConfig } from "./theme";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
 
@@ -24,23 +25,11 @@ export interface Group {
 
 export type NodeShape = "circle" | "diamond";
 
-export const CATEGORIES: Record<string, { label: string; color: string; shape?: NodeShape }> = {
-  backend: { label: "Backend", color: "#f6b093" },
-  frontend: { label: "Frontend", color: "#a0c4f1" },
-  ux: { label: "UX", color: "#f0a6ce" },
-  integration: { label: "Integration Point", color: "#ffffff", shape: "diamond" },
-};
-
-export const STATUSES: Record<TaskStatus, { label: string; color: string; emoji: string }> = {
-  pending: { label: "Pending", color: "#3a3a5a", emoji: "💤" },
-  in_progress: { label: "In Progress", color: "#3737af", emoji: "👀" },
-  completed: { label: "Completed", color: "#2ea058", emoji: "✅" },
-  archived: { label: "Archived", color: "#5e5e5e", emoji: "🪦" },
-};
-
 interface SidebarProps {
   width: number;
   tasks: Task[];
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
   currentFilePath: string | null;
   hasUnsavedChanges: boolean;
   highlightedTaskId: string | null;
@@ -66,6 +55,8 @@ interface SidebarProps {
 export function Sidebar({
   width,
   tasks,
+  categories,
+  statuses,
   currentFilePath,
   hasUnsavedChanges,
   highlightedTaskId,
@@ -106,6 +97,8 @@ export function Sidebar({
       </div>
       <TaskList
         tasks={tasks}
+        categories={categories}
+        statuses={statuses}
         highlightedTaskId={highlightedTaskId}
         openMenuId={openMenuId}
         menuPosition={menuPosition}

@@ -1,8 +1,9 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
-import { Task, Group } from "./Sidebar";
+import { Task, Group, TaskStatus } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
+import { CategoryConfig, StatusConfig } from "./theme";
 import { GroupRect } from "./GroupRect";
 import { SaveImageAs } from "../wailsjs/go/main/App";
 
@@ -38,6 +39,8 @@ export interface CanvasHandle {
 
 interface CanvasProps {
   tasks: Task[];
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
   connections: Connection[];
   draggingNode: string | null;
   connecting: ConnectingState | null;
@@ -72,6 +75,8 @@ const MAX_ZOOM = 5;
 export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   {
     tasks,
+    categories,
+    statuses,
     connections,
     draggingNode,
     connecting,
@@ -355,6 +360,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             key={task.id}
             task={task}
             index={index}
+            categories={categories}
+            statuses={statuses}
             isDragging={draggingNode === task.id}
             isHighlighted={highlightedTaskId === task.id}
             isSelected={selectedNodes.has(task.id)}
