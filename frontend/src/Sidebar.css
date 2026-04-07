@@ -18,11 +18,8 @@
 .sidebar-header {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
-}
-
-.sidebar-header .top-section {
-  flex: 1;
 }
 
 .sidebar-toggle {
@@ -38,7 +35,10 @@
   padding: 0;
   border-radius: 6px;
   flex-shrink: 0;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .sidebar-toggle:hover {

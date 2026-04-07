@@ -1,38 +1,40 @@
 .actionbar {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
 }
 
-.top-section {
+.action-icon-btn {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-bottom: 1px solid var(--border-primary);
-  padding: 8px 0;
-}
-
-.action-btn {
-  flex: 1;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   background: var(--bg-tertiary);
-  color: var(--text-muted);
   border: 1px solid var(--border-secondary);
-  padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 6px;
+  color: var(--text-muted);
   cursor: pointer;
-  font-size: 12px;
+  flex-shrink: 0;
   transition:
-    background 0.2s,
-    color 0.2s;
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 
-.action-btn:hover {
+.action-icon-btn:hover {
   background: var(--bg-elevated);
   color: var(--text-primary);
+  border-color: var(--border-focus);
 }
 
 .file-info {
   display: flex;
   align-items: center;
+  min-width: 0;
+  margin-left: 4px;
 }
 
 .file-name {
@@ -46,5 +48,6 @@
 .unsaved-indicator {
   color: var(--unsaved-color);
   font-size: 10px;
-  margin-left: 6px;
+  margin-left: 4px;
+  flex-shrink: 0;
 }

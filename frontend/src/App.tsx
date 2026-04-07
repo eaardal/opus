@@ -15,7 +15,12 @@ function App() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [theme, setTheme] = useState<"dark" | "light">("light");
-  const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 0, height: 0 });
+  const [viewBox, setViewBox] = useState<ViewBox>({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
   const categories = getCategories(theme);
   const statuses = getStatuses(theme);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
@@ -35,9 +40,9 @@ function App() {
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
-    null
+    null,
   );
-  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [sidebarWidth, setSidebarWidth] = useState(350);
   const [isResizing, setIsResizing] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
@@ -91,7 +96,11 @@ function App() {
   }, [tasks, connections, groups, theme]);
 
   const handleSave = useCallback(async () => {
-    const data = JSON.stringify({ tasks, connections, groups, theme, viewBox }, null, 2);
+    const data = JSON.stringify(
+      { tasks, connections, groups, theme, viewBox },
+      null,
+      2,
+    );
     try {
       if (currentFilePath) {
         await SaveFile(currentFilePath, data);
@@ -205,12 +214,12 @@ function App() {
     const taskName = task?.text || "this task";
     const confirmed = await ConfirmDialog(
       "Delete Task",
-      `Delete "${taskName}"?`
+      `Delete "${taskName}"?`,
     );
     if (confirmed) {
       setTasks((prev) => prev.filter((t) => t.id !== id));
       setConnections((prev) =>
-        prev.filter((c) => c.from !== id && c.to !== id)
+        prev.filter((c) => c.from !== id && c.to !== id),
       );
     }
   };
@@ -233,19 +242,17 @@ function App() {
 
   const resizeGroup = (id: string, width: number, height: number) => {
     setGroups((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, width, height } : g))
+      prev.map((g) => (g.id === id ? { ...g, width, height } : g)),
     );
   };
 
   const updateGroupTitle = (id: string, title: string) => {
-    setGroups((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, title } : g))
-    );
+    setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, title } : g)));
   };
 
   const handleCanvasMouseDown = (
     e: React.MouseEvent,
-    svgElement: SVGSVGElement | null
+    svgElement: SVGSVGElement | null,
   ) => {
     if (e.target === svgElement) {
       const coords = canvasRef.current?.getSvgCoords(e) || { x: 0, y: 0 };
@@ -328,8 +335,8 @@ function App() {
       if (draggingNode) {
         setTasks((prev) =>
           prev.map((t) =>
-            t.id === draggingNode ? { ...t, x: coords.x, y: coords.y } : t
-          )
+            t.id === draggingNode ? { ...t, x: coords.x, y: coords.y } : t,
+          ),
         );
       } else if (connecting) {
         setConnecting({ ...connecting, mouseX: coords.x, mouseY: coords.y });
@@ -345,7 +352,7 @@ function App() {
               return { ...t, x: originalPos.x + dx, y: originalPos.y + dy };
             }
             return t;
-          })
+          }),
         );
         setGroups((prev) =>
           prev.map((g) => {
@@ -354,16 +361,16 @@ function App() {
               return { ...g, x: originalPos.x + dx, y: originalPos.y + dy };
             }
             return g;
-          })
+          }),
         );
       }
     },
-    [draggingNode, connecting, selection, draggingSelection]
+    [draggingNode, connecting, selection, draggingSelection],
   );
 
   const handleCanvasMouseUp = (
     _e: React.MouseEvent,
-    coords: { x: number; y: number }
+    coords: { x: number; y: number },
   ) => {
     if (connecting) {
       const targetTask = tasks.find((t) => {
@@ -374,7 +381,7 @@ function App() {
 
       if (targetTask && targetTask.id !== connecting.from) {
         const exists = connections.some(
-          (c) => c.from === connecting.from && c.to === targetTask.id
+          (c) => c.from === connecting.from && c.to === targetTask.id,
         );
         if (!exists) {
           setConnections([
@@ -428,10 +435,12 @@ function App() {
   const handleRemoveConnection = (
     e: React.MouseEvent,
     from: string,
-    to: string
+    to: string,
   ) => {
     if (e.shiftKey) {
-      setConnections(connections.filter((c) => !(c.from === from && c.to === to)));
+      setConnections(
+        connections.filter((c) => !(c.from === from && c.to === to)),
+      );
     }
   };
 
@@ -440,7 +449,7 @@ function App() {
       if (el) taskItemRefs.current.set(id, el);
       else taskItemRefs.current.delete(id);
     },
-    []
+    [],
   );
 
   return (
