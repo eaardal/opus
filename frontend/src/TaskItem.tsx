@@ -116,12 +116,15 @@ export function TaskItem({
                 Clear category
               </button>
             )}
+            <button
+              className="menu-item delete-item"
+              onClick={onDelete}
+            >
+              Delete
+            </button>
           </div>
         )}
       </div>
-      <button className="delete-btn" onClick={onDelete}>
-        ×
-      </button>
     </div>
   );
 }

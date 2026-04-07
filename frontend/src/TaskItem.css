@@ -125,20 +125,13 @@
   flex-shrink: 0;
 }
 
-.delete-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-faint);
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition:
-    color 0.2s,
-    background 0.2s;
+.delete-item {
+  color: var(--delete-color) !important;
+  border-top: 1px solid var(--border-secondary);
+  margin-top: 4px;
+  padding-top: 8px;
 }
 
-.delete-btn:hover {
-  color: var(--delete-color);
-  background: var(--delete-bg);
+.delete-item:hover {
+  background: var(--delete-bg) !important;
 }
