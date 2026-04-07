@@ -433,6 +433,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <GroupRect
             key={group.id}
             group={group}
+            tasks={tasks}
             isSelected={selectedGroups.has(group.id)}
             onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}

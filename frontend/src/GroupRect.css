@@ -11,6 +11,11 @@
   stroke: var(--group-stroke-hover);
 }
 
+.group-rect.all-done {
+  fill: rgba(76, 175, 80, 0.08);
+  stroke: #4caf50;
+}
+
 .group-rect.selected {
   stroke: var(--selection-stroke);
   stroke-width: 2;
@@ -65,6 +70,15 @@ g:hover > .group-zoom-btn {
   stroke: var(--group-title-color);
   stroke-width: 1.5;
   stroke-linecap: round;
+}
+
+.group-progress-track {
+  fill: var(--bg-tertiary);
+}
+
+.group-progress-fill {
+  fill: #4caf50;
+  transition: width 0.3s;
 }
 
 .group-resize-handle {

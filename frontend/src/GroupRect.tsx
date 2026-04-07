@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./GroupRect.css";
-import { Group } from "./Sidebar";
+import { Group, Task } from "./Sidebar";
 
 const RESIZE_HANDLE_SIZE = 12;
 const MIN_WIDTH = 80;
@@ -9,8 +9,13 @@ const MIN_HEIGHT = 60;
 const ZOOM_BTN_SIZE = 20;
 const ZOOM_BTN_MARGIN = 6;
 
+const PROGRESS_BAR_Y = 30;
+const PROGRESS_BAR_HEIGHT = 4;
+const PROGRESS_BAR_MARGIN = 8;
+
 interface GroupRectProps {
   group: Group;
+  tasks: Task[];
   isSelected: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
@@ -21,6 +26,7 @@ interface GroupRectProps {
 
 export function GroupRect({
   group,
+  tasks,
   isSelected,
   onMouseDown: onGroupMouseDown,
   onMove,
@@ -28,6 +34,18 @@ export function GroupRect({
   onTitleChange,
   onZoomTo,
 }: GroupRectProps) {
+  const containedTasks = tasks.filter(
+    (t) =>
+      t.x >= group.x &&
+      t.x <= group.x + group.width &&
+      t.y >= group.y &&
+      t.y <= group.y + group.height,
+  );
+  const doneTasks = containedTasks.filter(
+    (t) => t.status === "completed" || t.status === "archived",
+  );
+  const allDone = containedTasks.length > 0 && doneTasks.length === containedTasks.length;
+
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(group.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +118,7 @@ export function GroupRect({
   return (
     <g transform={`translate(${group.x}, ${group.y})`}>
       <rect
-        className={`group-rect ${isSelected ? "selected" : ""}`}
+        className={`group-rect ${isSelected ? "selected" : ""} ${allDone ? "all-done" : ""}`}
         width={group.width}
         height={group.height}
         rx="8"
@@ -137,6 +155,32 @@ export function GroupRect({
           {group.title || "Untitled Group"}
         </text>
       )}
+      {containedTasks.length > 0 && (() => {
+        const pct = doneTasks.length / containedTasks.length;
+        const barWidth = group.width - PROGRESS_BAR_MARGIN * 2;
+        return (
+          <g>
+            <rect
+              className="group-progress-track"
+              x={PROGRESS_BAR_MARGIN}
+              y={PROGRESS_BAR_Y}
+              width={barWidth}
+              height={PROGRESS_BAR_HEIGHT}
+              rx="2"
+            />
+            {pct > 0 && (
+              <rect
+                className="group-progress-fill"
+                x={PROGRESS_BAR_MARGIN}
+                y={PROGRESS_BAR_Y}
+                width={barWidth * pct}
+                height={PROGRESS_BAR_HEIGHT}
+                rx="2"
+              />
+            )}
+          </g>
+        );
+      })()}
       <g
         className="group-zoom-btn"
         transform={`translate(${group.width - ZOOM_BTN_SIZE - ZOOM_BTN_MARGIN}, ${ZOOM_BTN_MARGIN})`}
