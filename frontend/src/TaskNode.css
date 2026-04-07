@@ -35,6 +35,12 @@
   user-select: none;
 }
 
+.node-emoji {
+  font-size: 18px;
+  pointer-events: none;
+  user-select: none;
+}
+
 .node-number-badge {
   fill: #4a4a6a;
   stroke: #6a6a8a;

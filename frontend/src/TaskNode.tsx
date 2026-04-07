@@ -77,11 +77,11 @@ export function TaskNode({
       </text>
       <text
         textAnchor="middle"
-        dy="0.3em"
-        className="node-text"
+        dy="0.35em"
+        className="node-emoji"
         onMouseDown={onMouseDown}
       >
-        {task.text.slice(0, 8) || "?"}
+        {STATUSES[task.status]?.emoji || "💤"}
       </text>
       {task.text && (
         <g className="tooltip" transform="translate(0, 40)">

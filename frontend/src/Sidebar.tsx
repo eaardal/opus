@@ -28,11 +28,11 @@ export const CATEGORIES: Record<string, { label: string; color: string }> = {
   ux: { label: "UX", color: "#f472b6" },
 };
 
-export const STATUSES: Record<TaskStatus, { label: string; color: string }> = {
-  pending: { label: "Pending", color: "#3a3a5a" },
-  in_progress: { label: "In Progress", color: "#3737af" },
-  completed: { label: "Completed", color: "#2ea058" },
-  archived: { label: "Archived", color: "#5e5e5e" },
+export const STATUSES: Record<TaskStatus, { label: string; color: string; emoji: string }> = {
+  pending: { label: "Pending", color: "#3a3a5a", emoji: "💤" },
+  in_progress: { label: "In Progress", color: "#3737af", emoji: "👀" },
+  completed: { label: "Completed", color: "#2ea058", emoji: "✅" },
+  archived: { label: "Archived", color: "#5e5e5e", emoji: "🪦" },
 };
 
 interface SidebarProps {
