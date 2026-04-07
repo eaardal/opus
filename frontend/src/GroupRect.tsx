@@ -3,7 +3,8 @@ import "./GroupRect.css";
 import { Group, Task, TaskStatus } from "./Sidebar";
 import { StatusConfig } from "./theme";
 
-const RESIZE_HANDLE_SIZE = 12;
+const HANDLE_SIZE = 12;
+const EDGE_THICKNESS = 8;
 const MIN_WIDTH = 80;
 const MIN_HEIGHT = 60;
 
@@ -14,6 +15,19 @@ const PROGRESS_BAR_Y = 30;
 const PROGRESS_BAR_HEIGHT = 4;
 const PROGRESS_BAR_MARGIN = 8;
 
+type ResizeEdge = "n" | "s" | "e" | "w" | "nw" | "ne" | "sw" | "se";
+
+const CURSOR_MAP: Record<ResizeEdge, string> = {
+  n: "ns-resize",
+  s: "ns-resize",
+  e: "ew-resize",
+  w: "ew-resize",
+  nw: "nwse-resize",
+  ne: "nesw-resize",
+  sw: "nesw-resize",
+  se: "nwse-resize",
+};
+
 interface GroupRectProps {
   group: Group;
   tasks: Task[];
@@ -21,7 +35,7 @@ interface GroupRectProps {
   isSelected: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
-  onResize: (id: string, width: number, height: number) => void;
+  onResize: (id: string, x: number, y: number, width: number, height: number) => void;
   onTitleChange: (id: string, title: string) => void;
   onZoomTo: (id: string) => void;
 }
@@ -97,19 +111,51 @@ export function GroupRect({
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const handleResizeMouseDown = (e: React.MouseEvent) => {
+  const handleEdgeMouseDown = (edge: ResizeEdge) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const startX = e.clientX;
-    const startY = e.clientY;
+    const startMouseX = e.clientX;
+    const startMouseY = e.clientY;
+    const origX = group.x;
+    const origY = group.y;
     const origW = group.width;
     const origH = group.height;
 
+    const resizesLeft = edge.includes("w");
+    const resizesRight = edge.includes("e");
+    const resizesTop = edge.includes("n");
+    const resizesBottom = edge.includes("s");
+
     const handleMouseMove = (ev: MouseEvent) => {
-      const newW = Math.max(MIN_WIDTH, origW + (ev.clientX - startX));
-      const newH = Math.max(MIN_HEIGHT, origH + (ev.clientY - startY));
-      onResize(group.id, newW, newH);
+      const dx = ev.clientX - startMouseX;
+      const dy = ev.clientY - startMouseY;
+
+      let newX = origX;
+      let newY = origY;
+      let newW = origW;
+      let newH = origH;
+
+      if (resizesRight) {
+        newW = Math.max(MIN_WIDTH, origW + dx);
+      }
+      if (resizesBottom) {
+        newH = Math.max(MIN_HEIGHT, origH + dy);
+      }
+      if (resizesLeft) {
+        const maxDx = origW - MIN_WIDTH;
+        const clampedDx = Math.min(dx, maxDx);
+        newX = origX + clampedDx;
+        newW = origW - clampedDx;
+      }
+      if (resizesTop) {
+        const maxDy = origH - MIN_HEIGHT;
+        const clampedDy = Math.min(dy, maxDy);
+        newY = origY + clampedDy;
+        newH = origH - clampedDy;
+      }
+
+      onResize(group.id, newX, newY, newW, newH);
     };
 
     const handleMouseUp = () => {
@@ -216,13 +262,81 @@ export function GroupRect({
         <circle cx="9" cy="9" r="4" className="group-zoom-btn-icon" />
         <line x1="12" y1="12" x2="16" y2="16" className="group-zoom-btn-icon" />
       </g>
+
+      {/* Edge handles */}
       <rect
         className="group-resize-handle"
-        x={group.width - RESIZE_HANDLE_SIZE}
-        y={group.height - RESIZE_HANDLE_SIZE}
-        width={RESIZE_HANDLE_SIZE}
-        height={RESIZE_HANDLE_SIZE}
-        onMouseDown={handleResizeMouseDown}
+        x={HANDLE_SIZE}
+        y={-EDGE_THICKNESS / 2}
+        width={group.width - HANDLE_SIZE * 2}
+        height={EDGE_THICKNESS}
+        style={{ cursor: CURSOR_MAP.n }}
+        onMouseDown={handleEdgeMouseDown("n")}
+      />
+      <rect
+        className="group-resize-handle"
+        x={HANDLE_SIZE}
+        y={group.height - EDGE_THICKNESS / 2}
+        width={group.width - HANDLE_SIZE * 2}
+        height={EDGE_THICKNESS}
+        style={{ cursor: CURSOR_MAP.s }}
+        onMouseDown={handleEdgeMouseDown("s")}
+      />
+      <rect
+        className="group-resize-handle"
+        x={-EDGE_THICKNESS / 2}
+        y={HANDLE_SIZE}
+        width={EDGE_THICKNESS}
+        height={group.height - HANDLE_SIZE * 2}
+        style={{ cursor: CURSOR_MAP.w }}
+        onMouseDown={handleEdgeMouseDown("w")}
+      />
+      <rect
+        className="group-resize-handle"
+        x={group.width - EDGE_THICKNESS / 2}
+        y={HANDLE_SIZE}
+        width={EDGE_THICKNESS}
+        height={group.height - HANDLE_SIZE * 2}
+        style={{ cursor: CURSOR_MAP.e }}
+        onMouseDown={handleEdgeMouseDown("e")}
+      />
+
+      {/* Corner handles */}
+      <rect
+        className="group-resize-handle"
+        x={-HANDLE_SIZE / 2}
+        y={-HANDLE_SIZE / 2}
+        width={HANDLE_SIZE}
+        height={HANDLE_SIZE}
+        style={{ cursor: CURSOR_MAP.nw }}
+        onMouseDown={handleEdgeMouseDown("nw")}
+      />
+      <rect
+        className="group-resize-handle"
+        x={group.width - HANDLE_SIZE / 2}
+        y={-HANDLE_SIZE / 2}
+        width={HANDLE_SIZE}
+        height={HANDLE_SIZE}
+        style={{ cursor: CURSOR_MAP.ne }}
+        onMouseDown={handleEdgeMouseDown("ne")}
+      />
+      <rect
+        className="group-resize-handle"
+        x={-HANDLE_SIZE / 2}
+        y={group.height - HANDLE_SIZE / 2}
+        width={HANDLE_SIZE}
+        height={HANDLE_SIZE}
+        style={{ cursor: CURSOR_MAP.sw }}
+        onMouseDown={handleEdgeMouseDown("sw")}
+      />
+      <rect
+        className="group-resize-handle"
+        x={group.width - HANDLE_SIZE / 2}
+        y={group.height - HANDLE_SIZE / 2}
+        width={HANDLE_SIZE}
+        height={HANDLE_SIZE}
+        style={{ cursor: CURSOR_MAP.se }}
+        onMouseDown={handleEdgeMouseDown("se")}
       />
     </g>
   );

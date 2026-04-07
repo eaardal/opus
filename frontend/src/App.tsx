@@ -265,9 +265,9 @@ function App() {
     setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, x, y } : g)));
   };
 
-  const resizeGroup = (id: string, width: number, height: number) => {
+  const resizeGroup = (id: string, x: number, y: number, width: number, height: number) => {
     setGroups((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, width, height } : g)),
+      prev.map((g) => (g.id === id ? { ...g, x, y, width, height } : g)),
     );
   };
 

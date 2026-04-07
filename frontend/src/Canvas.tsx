@@ -62,7 +62,7 @@ interface CanvasProps {
   selectedGroups: Set<string>;
   onGroupMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onGroupMove: (id: string, x: number, y: number) => void;
-  onGroupResize: (id: string, width: number, height: number) => void;
+  onGroupResize: (id: string, x: number, y: number, width: number, height: number) => void;
   onGroupTitleChange: (id: string, title: string) => void;
   onGroupZoomTo: (id: string) => void;
   viewBox: ViewBox;
