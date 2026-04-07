@@ -89,7 +89,12 @@ function App() {
   }, []);
 
   // Track unsaved changes
+  const skipUnsavedRef = useRef(false);
   useEffect(() => {
+    if (skipUnsavedRef.current) {
+      skipUnsavedRef.current = false;
+      return;
+    }
     if (tasks.length > 0 || connections.length > 0 || groups.length > 0) {
       setHasUnsavedChanges(true);
     }
@@ -212,6 +217,7 @@ function App() {
     try {
       const result = await OpenFile();
       if (result) {
+        skipUnsavedRef.current = true;
         const parsed = JSON.parse(result.content);
         if (parsed.tasks) setTasks(parsed.tasks);
         if (parsed.connections) setConnections(parsed.connections);
