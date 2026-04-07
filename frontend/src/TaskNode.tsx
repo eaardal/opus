@@ -36,11 +36,17 @@ export function TaskNode({
   onMouseLeave,
 }: TaskNodeProps) {
   const statusColor = STATUSES[task.status]?.color || STATUSES.pending.color;
-  const categoryColor = task.category
-    ? CATEGORIES[task.category]?.color
-    : undefined;
+  const category = task.category ? CATEGORIES[task.category] : undefined;
+  const categoryColor = category?.color;
+  const shape = category?.shape || "circle";
   const baseFill = categoryColor || statusColor;
   const fillColor = isHighlighted ? lightenColor(baseFill, 0.4) : baseFill;
+  const nodeClass = `node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`;
+  const nodeStyle = {
+    fill: fillColor,
+    stroke: isSelected ? undefined : statusColor,
+    strokeWidth: 3,
+  };
 
   return (
     <g
@@ -48,27 +54,33 @@ export function TaskNode({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <circle
-        r="25"
-        className={`node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`}
-        style={{
-          fill: fillColor,
-          stroke: isSelected ? undefined : statusColor,
-          strokeWidth: 3,
-        }}
-        onMouseDown={onMouseDown}
-        onClick={onClick}
-      />
+      {shape === "diamond" ? (
+        <polygon
+          points="0,-30 30,0 0,30 -30,0"
+          className={nodeClass}
+          style={nodeStyle}
+          onMouseDown={onMouseDown}
+          onClick={onClick}
+        />
+      ) : (
+        <circle
+          r="25"
+          className={nodeClass}
+          style={nodeStyle}
+          onMouseDown={onMouseDown}
+          onClick={onClick}
+        />
+      )}
       <circle
         cx="0"
-        cy="-25"
+        cy={shape === "diamond" ? -30 : -25}
         r="10"
         className="node-number-badge"
         style={task.category ? { fill: CATEGORIES[task.category]?.color } : undefined}
       />
       <text
         x="0"
-        y="-25"
+        y={shape === "diamond" ? -30 : -25}
         textAnchor="middle"
         dy="0.35em"
         className="node-number"

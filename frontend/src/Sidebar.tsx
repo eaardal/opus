@@ -22,10 +22,13 @@ export interface Group {
   height: number;
 }
 
-export const CATEGORIES: Record<string, { label: string; color: string }> = {
+export type NodeShape = "circle" | "diamond";
+
+export const CATEGORIES: Record<string, { label: string; color: string; shape?: NodeShape }> = {
   backend: { label: "Backend", color: "#f6b093" },
   frontend: { label: "Frontend", color: "#a0c4f1" },
   ux: { label: "UX", color: "#f0a6ce" },
+  integration: { label: "Integration Point", color: "#ffffff", shape: "diamond" },
 };
 
 export const STATUSES: Record<TaskStatus, { label: string; color: string; emoji: string }> = {
