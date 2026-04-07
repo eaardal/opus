@@ -1,6 +1,15 @@
 import "./TaskNode.css";
 import { Task, CATEGORIES, STATUSES } from "./Sidebar";
 
+function lightenColor(hex: string, amount: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lighten = (c: number) =>
+    Math.min(255, Math.round(c + (255 - c) * amount));
+  return `rgb(${lighten(r)}, ${lighten(g)}, ${lighten(b)})`;
+}
+
 interface TaskNodeProps {
   task: Task;
   index: number;
@@ -26,6 +35,9 @@ export function TaskNode({
   onMouseEnter,
   onMouseLeave,
 }: TaskNodeProps) {
+  const baseColor = STATUSES[task.status]?.color || STATUSES.pending.color;
+  const fillColor = isHighlighted ? lightenColor(baseColor, 0.4) : baseColor;
+
   return (
     <g
       transform={`translate(${task.x}, ${task.y})`}
@@ -36,7 +48,7 @@ export function TaskNode({
         r="25"
         className={`node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`}
         style={{
-          fill: STATUSES[task.status]?.color || STATUSES.pending.color,
+          fill: fillColor,
           ...(task.category && !isSelected
             ? {
                 stroke: CATEGORIES[task.category]?.color,
@@ -71,7 +83,7 @@ export function TaskNode({
       >
         {task.text.slice(0, 8) || "?"}
       </text>
-      {isHovered && task.text && (
+      {task.text && (
         <g className="tooltip" transform="translate(0, 40)">
           <rect
             x={-Math.max(task.text.length * 4, 40)}
