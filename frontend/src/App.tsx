@@ -574,6 +574,7 @@ function App() {
         onSetTaskStatus={setTaskStatus}
         onSetTaskCategory={setTaskCategory}
         onDeleteTask={deleteTask}
+        onUpdateTaskText={updateTaskText}
       />
     </div>
   );

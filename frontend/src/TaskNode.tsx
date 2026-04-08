@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import "./TaskNode.css";
 import { Task } from "./Sidebar";
 import { CategoryConfig, StatusConfig } from "./theme";
@@ -26,6 +27,7 @@ interface TaskNodeProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
+  onUpdateText: (text: string) => void;
 }
 
 export function TaskNode({
@@ -42,7 +44,24 @@ export function TaskNode({
   onMouseEnter,
   onMouseLeave,
   onContextMenu,
+  onUpdateText,
 }: TaskNodeProps) {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(task.text);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commitEdit = () => {
+    setEditing(false);
+    onUpdateText(editValue);
+  };
+
   const statusColor = statuses[task.status]?.color || statuses.pending.color;
   const category = task.category ? categories[task.category] : undefined;
   const categoryColor = category?.color;
@@ -55,6 +74,10 @@ export function TaskNode({
     stroke: isSelected ? undefined : statusColor,
     strokeWidth: 3,
   };
+
+  const tooltipText = editing ? editValue : task.text;
+  const tooltipWidth = Math.max(tooltipText.length * 8, 80);
+  const tooltipX = -tooltipWidth / 2;
 
   return (
     <g
@@ -105,19 +128,48 @@ export function TaskNode({
       >
         {statuses[task.status]?.emoji || "💤"}
       </text>
-      {task.text && (
-        <g className="tooltip" transform="translate(0, 40)">
-          <rect
-            x={-Math.max(task.text.length * 4, 40)}
-            y="-12"
-            width={Math.max(task.text.length * 8, 80)}
-            height="24"
-            rx="4"
-            style={{ fill: statusColor }}
-          />
-          <text textAnchor="middle" dy="0.35em">
-            {task.text}
-          </text>
+      {(task.text || editing) && (
+        <g transform="translate(0, 40)">
+          {editing ? (
+            <foreignObject x={tooltipX} y="-12" width={tooltipWidth} height="24">
+              <input
+                ref={inputRef}
+                className="group-title-input"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={commitEdit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); commitEdit(); }
+                  if (e.key === "Escape") {
+                    setEditValue(task.text);
+                    setEditing(false);
+                  }
+                }}
+              />
+            </foreignObject>
+          ) : (
+            <g
+              className="tooltip"
+              style={{ cursor: "text" }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setEditValue(task.text);
+                setEditing(true);
+              }}
+            >
+              <rect
+                x={tooltipX}
+                y="-12"
+                width={tooltipWidth}
+                height="24"
+                rx="4"
+                style={{ fill: statusColor }}
+              />
+              <text textAnchor="middle" dy="0.35em">
+                {task.text}
+              </text>
+            </g>
+          )}
         </g>
       )}
     </g>

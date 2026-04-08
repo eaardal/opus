@@ -72,6 +72,7 @@ interface CanvasProps {
   onSetTaskStatus: (id: string, status: TaskStatus) => void;
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onDeleteTask: (id: string) => void;
+  onUpdateTaskText: (id: string, text: string) => void;
 }
 
 const ZOOM_SENSITIVITY = 0.001;
@@ -112,6 +113,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onSetTaskStatus,
     onSetTaskCategory,
     onDeleteTask,
+    onUpdateTaskText,
   },
   ref
 ) {
@@ -551,6 +553,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onMouseEnter={() => onNodeHover(task.id)}
             onMouseLeave={() => onNodeHover(null)}
             onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
+            onUpdateText={(text) => onUpdateTaskText(task.id, text)}
           />
         ))}
 
