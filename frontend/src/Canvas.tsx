@@ -69,6 +69,9 @@ interface CanvasProps {
   onViewBoxChange: (vb: ViewBox) => void;
   theme: "dark" | "light";
   onToggleTheme: () => void;
+  onSetTaskStatus: (id: string, status: TaskStatus) => void;
+  onSetTaskCategory: (id: string, category: string | undefined) => void;
+  onDeleteTask: (id: string) => void;
 }
 
 const ZOOM_SENSITIVITY = 0.001;
@@ -106,12 +109,17 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onViewBoxChange,
     theme,
     onToggleTheme,
+    onSetTaskStatus,
+    onSetTaskCategory,
+    onDeleteTask,
   },
   ref
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
+  const nodeContextMenuRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
@@ -163,6 +171,30 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!nodeContextMenu) return;
+    const handleClose = (e: MouseEvent) => {
+      if (nodeContextMenuRef.current && !nodeContextMenuRef.current.contains(e.target as Node)) {
+        setNodeContextMenu(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNodeContextMenu(null);
+    };
+    document.addEventListener("mousedown", handleClose);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClose);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [nodeContextMenu]);
+
+  const handleNodeContextMenu = useCallback((e: React.MouseEvent, taskId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setNodeContextMenu({ taskId, x: e.clientX, y: e.clientY });
+  }, []);
 
   const getSvgCoords = useCallback(
     (e: React.MouseEvent): { x: number; y: number } => {
@@ -518,6 +550,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onClick={() => onNodeClick(task.id)}
             onMouseEnter={() => onNodeHover(task.id)}
             onMouseLeave={() => onNodeHover(null)}
+            onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
           />
         ))}
 
@@ -580,6 +613,55 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           </div>
         </div>
       )}
+      {nodeContextMenu && (() => {
+        const task = tasks.find((t) => t.id === nodeContextMenu.taskId);
+        if (!task) return null;
+        return (
+          <div
+            ref={nodeContextMenuRef}
+            className="task-menu"
+            style={{ position: "fixed", top: nodeContextMenu.y, left: nodeContextMenu.x, transform: "none" }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div className="menu-section-label">Status</div>
+            {(Object.entries(statuses) as [TaskStatus, StatusConfig][]).map(([key, { label, color }]) => (
+              <button
+                key={key}
+                className={`menu-item ${task.status === key ? "active" : ""}`}
+                onClick={() => { onSetTaskStatus(task.id, key); setNodeContextMenu(null); }}
+              >
+                <span className="status-dot" style={{ background: color }} />
+                {label}
+              </button>
+            ))}
+            <div className="menu-section-label">Category</div>
+            {Object.entries(categories).map(([key, { label, color }]) => (
+              <button
+                key={key}
+                className={`menu-item ${task.category === key ? "active" : ""}`}
+                onClick={() => { onSetTaskCategory(task.id, key); setNodeContextMenu(null); }}
+              >
+                <span className="category-dot" style={{ background: color }} />
+                {label}
+              </button>
+            ))}
+            {task.category && (
+              <button
+                className="menu-item clear-category"
+                onClick={() => { onSetTaskCategory(task.id, undefined); setNodeContextMenu(null); }}
+              >
+                Clear category
+              </button>
+            )}
+            <button
+              className="menu-item delete-item"
+              onClick={() => { onDeleteTask(task.id); setNodeContextMenu(null); }}
+            >
+              Delete
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 });

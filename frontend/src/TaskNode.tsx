@@ -25,6 +25,7 @@ interface TaskNodeProps {
   onClick: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
 }
 
 export function TaskNode({
@@ -40,6 +41,7 @@ export function TaskNode({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  onContextMenu,
 }: TaskNodeProps) {
   const statusColor = statuses[task.status]?.color || statuses.pending.color;
   const category = task.category ? categories[task.category] : undefined;
@@ -67,6 +69,7 @@ export function TaskNode({
           style={nodeStyle}
           onMouseDown={onMouseDown}
           onClick={onClick}
+          onContextMenu={onContextMenu}
         />
       ) : (
         <circle
@@ -75,6 +78,7 @@ export function TaskNode({
           style={nodeStyle}
           onMouseDown={onMouseDown}
           onClick={onClick}
+          onContextMenu={onContextMenu}
         />
       )}
       <circle

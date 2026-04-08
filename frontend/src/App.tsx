@@ -571,6 +571,9 @@ function App() {
           setTheme(next);
           document.documentElement.setAttribute("data-theme", next);
         }}
+        onSetTaskStatus={setTaskStatus}
+        onSetTaskCategory={setTaskCategory}
+        onDeleteTask={deleteTask}
       />
     </div>
   );
