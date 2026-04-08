@@ -265,6 +265,65 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       const clone = svg.cloneNode(true) as SVGSVGElement;
       clone.setAttribute("width", String(w));
       clone.setAttribute("height", String(h));
+
+      // Resolve all CSS variables so the serialized SVG renders correctly when
+      // loaded as an <img> (external stylesheets and CSS vars are unavailable there).
+      const computedRoot = getComputedStyle(document.documentElement);
+      const cssVarNames = [
+        "--bg-primary", "--bg-secondary", "--bg-tertiary",
+        "--text-primary", "--text-secondary",
+        "--node-fill", "--node-stroke", "--node-badge-fill", "--node-badge-stroke",
+        "--tooltip-fill", "--tooltip-stroke",
+        "--connector-color", "--connector-pending",
+        "--selection-fill", "--selection-stroke",
+        "--group-fill", "--group-stroke", "--group-stroke-hover", "--group-title-color",
+      ];
+      const cssVarBlock = cssVarNames
+        .map(v => `${v}: ${computedRoot.getPropertyValue(v).trim()};`)
+        .join(" ");
+
+      const appFont = getComputedStyle(document.body).fontFamily;
+
+      const styleEl = document.createElementNS("http://www.w3.org/2000/svg", "style");
+      styleEl.textContent = `
+        :root { ${cssVarBlock} }
+        svg, text, tspan { font-family: ${appFont}; }
+        .node { fill: var(--node-fill); stroke: var(--node-stroke); stroke-width: 2; }
+        .node.highlighted { stroke-width: 3; }
+        .node.selected { stroke: var(--selection-stroke); stroke-width: 3; }
+        .node-text { fill: var(--text-primary); font-size: 10px; font-weight: 500; }
+        .node-emoji { font-size: 18px; }
+        .node-number-badge { fill: var(--node-badge-fill); stroke: var(--node-badge-stroke); stroke-width: 1; }
+        .node-number { fill: var(--text-primary); font-size: 10px; font-weight: 600; }
+        .tooltip rect { fill: var(--tooltip-fill); stroke: var(--tooltip-stroke); stroke-width: 1; }
+        .tooltip text { fill: var(--text-primary); font-size: 12px; }
+        .group-rect { fill: var(--group-fill); stroke: var(--group-stroke); stroke-width: 1.5; stroke-dasharray: 6, 3; }
+        .group-rect.all-done { fill: rgba(76, 175, 80, 0.08); stroke: #4caf50; }
+        .group-rect.selected { stroke: var(--selection-stroke); stroke-width: 2; }
+        .group-title { fill: var(--group-title-color); font-size: 13px; font-weight: 500; }
+        .group-zoom-btn-bg { fill: var(--group-fill); stroke: var(--group-stroke); stroke-width: 1; }
+        .group-zoom-btn-icon { fill: none; stroke: var(--group-title-color); stroke-width: 1.5; stroke-linecap: round; }
+        .group-progress-track { fill: var(--bg-tertiary); }
+        .group-progress-fill { fill: #4caf50; }
+        .group-progress-in-progress { fill: #ff9800; }
+        .group-resize-handle { display: none; }
+      `;
+      clone.prepend(styleEl);
+
+      // Also replace var() in presentation attributes since some browsers won't
+      // resolve them when SVG is rendered as a standalone document via <img>.
+      const resolveVarAttrs = (el: Element) => {
+        for (const attr of Array.from(el.attributes)) {
+          if (attr.value.includes("var(")) {
+            attr.value = attr.value.replace(/var\(([^)]+)\)/g, (_, name) =>
+              computedRoot.getPropertyValue(name.trim()).trim()
+            );
+          }
+        }
+        for (const child of Array.from(el.children)) resolveVarAttrs(child);
+      };
+      resolveVarAttrs(clone);
+
       const xml = new XMLSerializer().serializeToString(clone);
       const svgDataUrl = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
       const img = new Image();
