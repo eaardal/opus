@@ -63,6 +63,7 @@ export function TaskNode({
   };
 
   const statusColor = statuses[task.status]?.color || statuses.pending.color;
+  const statusFontColor = statuses[task.status]?.fontColor || statuses.pending.fontColor;
   const category = task.category ? categories[task.category] : undefined;
   const categoryColor = category?.color;
   const shape = category?.shape || "circle";
@@ -165,7 +166,7 @@ export function TaskNode({
                 rx="4"
                 style={{ fill: statusColor }}
               />
-              <text textAnchor="middle" dy="0.35em">
+              <text textAnchor="middle" dy="0.35em" style={{ fill: statusFontColor }}>
                 {task.text}
               </text>
             </g>
