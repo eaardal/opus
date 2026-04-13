@@ -1,0 +1,112 @@
+[tools]
+go = "1.23"
+
+[tasks.generate]
+description = "Generate Wails JS bindings from Go types"
+run = "wails generate module"
+
+[tasks.build]
+description = "Build Domino with Wails for the current platform"
+depends = ["generate"]
+run = "wails build -clean"
+
+[tasks."build:mac"]
+description = "Build Domino for macOS (universal binary: amd64 + arm64)"
+depends = ["generate"]
+run = "wails build -clean -platform darwin/universal"
+
+[tasks."build:windows"]
+description = "Build Domino for Windows (amd64)"
+depends = ["generate"]
+run = "wails build -clean -platform windows/amd64"
+
+[tasks."build:linux"]
+description = "Build Domino for Linux (amd64)"
+depends = ["generate"]
+run = "wails build -clean -platform linux/amd64"
+
+[tasks."package:mac"]
+description = "Package macOS build into a distributable .zip"
+depends = ["build:mac"]
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUT_DIR="build/bin"
+APP_NAME="Domino"
+DIST_DIR="dist"
+
+mkdir -p "$DIST_DIR"
+
+ZIP_NAME="${APP_NAME}-macOS-universal.zip"
+
+if [ -d "${OUT_DIR}/${APP_NAME}.app" ]; then
+  cd "$OUT_DIR"
+  zip -r "../../${DIST_DIR}/${ZIP_NAME}" "${APP_NAME}.app"
+  cd ../..
+  echo "Packaged: dist/${ZIP_NAME}"
+else
+  echo "Error: ${OUT_DIR}/${APP_NAME}.app not found. Run build:mac first." >&2
+  exit 1
+fi
+"""
+
+[tasks."package:windows"]
+description = "Package Windows build into a distributable .zip"
+depends = ["build:windows"]
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUT_DIR="build/bin"
+APP_NAME="Domino"
+DIST_DIR="dist"
+
+mkdir -p "$DIST_DIR"
+
+EXE="${OUT_DIR}/${APP_NAME}.exe"
+ZIP_NAME="${APP_NAME}-Windows-amd64.zip"
+
+if [ -f "$EXE" ]; then
+  zip -j "${DIST_DIR}/${ZIP_NAME}" "$EXE"
+  echo "Packaged: dist/${ZIP_NAME}"
+else
+  echo "Error: ${EXE} not found. Run build:windows first." >&2
+  exit 1
+fi
+"""
+
+[tasks."package:linux"]
+description = "Package Linux build into a distributable .tar.gz"
+depends = ["build:linux"]
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUT_DIR="build/bin"
+APP_NAME="Domino"
+DIST_DIR="dist"
+
+mkdir -p "$DIST_DIR"
+
+BIN="${OUT_DIR}/${APP_NAME}"
+TAR_NAME="${APP_NAME}-Linux-amd64.tar.gz"
+
+if [ -f "$BIN" ]; then
+  tar -czf "${DIST_DIR}/${TAR_NAME}" -C "$OUT_DIR" "$APP_NAME"
+  echo "Packaged: dist/${TAR_NAME}"
+else
+  echo "Error: ${BIN} not found. Run build:linux first." >&2
+  exit 1
+fi
+"""
+
+[tasks.package]
+description = "Build and package Domino for macOS, Windows, and Linux"
+depends = ["package:mac", "package:windows"] #"package:linux"]
+run = """
+#!/usr/bin/env bash
+echo ""
+echo "All distributions ready in dist/:"
+ls -lh dist/
+"""
