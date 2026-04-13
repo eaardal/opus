@@ -30,6 +30,8 @@ function renderTaskNode(overrides: Partial<Task> = {}, nodeState = {}) {
     onClick: noop,
     onMouseEnter: noop,
     onMouseLeave: noop,
+    onContextMenu: noop,
+    onUpdateText: noop,
   };
   const { container } = render(
     <svg>
@@ -89,6 +91,8 @@ describe("TaskNode", () => {
             onClick={noop}
             onMouseEnter={noop}
             onMouseLeave={noop}
+            onContextMenu={noop}
+            onUpdateText={noop}
           />
         </svg>
       );

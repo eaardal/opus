@@ -120,6 +120,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const nodeContextMenuRef = useRef<HTMLDivElement>(null);
+  const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -287,6 +288,48 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     svg.addEventListener("wheel", handleWheel, { passive: false });
     return () => svg.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const avgTouchPos = (touches: TouchList) => ({
+      x: Array.from(touches).reduce((s, t) => s + t.clientX, 0) / touches.length,
+      y: Array.from(touches).reduce((s, t) => s + t.clientY, 0) / touches.length,
+    });
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length >= 3) {
+        e.preventDefault();
+        const { x, y } = avgTouchPos(e.touches);
+        touchPanRef.current = { startX: x, startY: y, origVx: viewBoxRef.current.x, origVy: viewBoxRef.current.y };
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchPanRef.current || e.touches.length < 3) return;
+      e.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const { x, y } = avgTouchPos(e.touches);
+      const scale = viewBoxRef.current.width / rect.width;
+      const dx = (x - touchPanRef.current.startX) * scale;
+      const dy = (y - touchPanRef.current.startY) * scale;
+      onViewBoxChange({ ...viewBoxRef.current, x: touchPanRef.current.origVx - dx, y: touchPanRef.current.origVy - dy });
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 3) touchPanRef.current = null;
+    };
+
+    svg.addEventListener("touchstart", handleTouchStart, { passive: false });
+    svg.addEventListener("touchmove", handleTouchMove, { passive: false });
+    svg.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      svg.removeEventListener("touchstart", handleTouchStart);
+      svg.removeEventListener("touchmove", handleTouchMove);
+      svg.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [onViewBoxChange]);
 
   const exportCanvasAsPng = useCallback(async () => {
     const svg = svgRef.current;
