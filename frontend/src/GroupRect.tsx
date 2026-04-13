@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./GroupRect.css";
 import { Group, Task, TaskStatus } from "./Sidebar";
-import { StatusConfig } from "./theme";
+import { GroupBoxConfig, StatusConfig } from "./theme";
 
 const HANDLE_SIZE = 12;
 const EDGE_THICKNESS = 8;
@@ -32,6 +32,7 @@ interface GroupRectProps {
   group: Group;
   tasks: Task[];
   statuses: Record<TaskStatus, StatusConfig>;
+  groupBox: GroupBoxConfig;
   isSelected: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
@@ -44,6 +45,7 @@ export function GroupRect({
   group,
   tasks,
   statuses,
+  groupBox,
   isSelected,
   onMouseDown: onGroupMouseDown,
   onMove,
@@ -170,11 +172,12 @@ export function GroupRect({
   return (
     <g transform={`translate(${group.x}, ${group.y})`}>
       <rect
-        className={`group-rect ${isSelected ? "selected" : ""} ${allDone ? "all-done" : ""}`}
+        className={`group-rect ${isSelected ? "selected" : ""}`}
         width={group.width}
         height={group.height}
         rx="8"
         onMouseDown={handleBodyMouseDown}
+        style={allDone ? { fill: groupBox.allDoneFill, stroke: groupBox.allDoneStroke } : undefined}
       />
       {editing ? (
         <foreignObject x="8" y="6" width={group.width - 16} height="24">
@@ -240,6 +243,7 @@ export function GroupRect({
                 width={barWidth * donePct}
                 height={PROGRESS_BAR_HEIGHT}
                 rx="2"
+                style={{ fill: groupBox.progressCompletedFill }}
               />
             )}
           </g>

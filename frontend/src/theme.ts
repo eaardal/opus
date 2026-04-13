@@ -15,6 +15,20 @@ export interface StatusConfig {
   emoji: string;
 }
 
+export interface GroupBoxConfig {
+  allDoneFill: string;
+  allDoneStroke: string;
+  progressCompletedFill: string;
+}
+
+export interface ConnectorConfig {
+  color: string;
+  pendingColor: string;
+  removeColor: string;
+  strokeWidth: number;
+  pendingDasharray: string;
+}
+
 const CATEGORIES_DARK: Record<string, CategoryConfig> = {
   backend: { label: "Backend", color: "#f6b093" },
   frontend: { label: "Frontend", color: "#a0c4f1" },
@@ -91,10 +105,46 @@ const STATUSES_LIGHT: Record<TaskStatus, StatusConfig> = {
   },
 };
 
+const GROUP_BOX_DARK: GroupBoxConfig = {
+  allDoneFill: "rgba(46, 160, 88, 0.08)",
+  allDoneStroke: "#2ea058",
+  progressCompletedFill: "#2ea058",
+};
+
+const GROUP_BOX_LIGHT: GroupBoxConfig = {
+  allDoneFill: "rgba(86, 207, 124, 0.1)",
+  allDoneStroke: "#56cf7c",
+  progressCompletedFill: "#56cf7c",
+};
+
+const CONNECTOR_DARK: ConnectorConfig = {
+  color: "#666",
+  pendingColor: "#999",
+  removeColor: "#ff6b6b",
+  strokeWidth: 2,
+  pendingDasharray: "5,5",
+};
+
+const CONNECTOR_LIGHT: ConnectorConfig = {
+  color: "#929292",
+  pendingColor: "#3c3c3c",
+  removeColor: "#e04040",
+  strokeWidth: 2,
+  pendingDasharray: "5,5",
+};
+
 export function getCategories(theme: Theme): Record<string, CategoryConfig> {
   return theme === "light" ? CATEGORIES_LIGHT : CATEGORIES_DARK;
 }
 
 export function getStatuses(theme: Theme): Record<TaskStatus, StatusConfig> {
   return theme === "light" ? STATUSES_LIGHT : STATUSES_DARK;
+}
+
+export function getGroupBox(theme: Theme): GroupBoxConfig {
+  return theme === "light" ? GROUP_BOX_LIGHT : GROUP_BOX_DARK;
+}
+
+export function getConnector(theme: Theme): ConnectorConfig {
+  return theme === "light" ? CONNECTOR_LIGHT : CONNECTOR_DARK;
 }

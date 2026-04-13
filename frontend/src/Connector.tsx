@@ -1,10 +1,12 @@
 import "./Connector.css";
 import { Task } from "./Sidebar";
+import { ConnectorConfig } from "./theme";
 
 interface ConnectorProps {
   fromTask: Task;
   toTask: Task;
   shiftPressed: boolean;
+  connector: ConnectorConfig;
   onRemove: (e: React.MouseEvent) => void;
 }
 
@@ -35,6 +37,7 @@ export function Connector({
   fromTask,
   toTask,
   shiftPressed,
+  connector,
   onRemove,
 }: ConnectorProps) {
   const { path, endX, endY } = getArrowPath(fromTask, toTask);
@@ -43,8 +46,8 @@ export function Connector({
     <g className={`connection-group ${shiftPressed ? "shift-active" : ""}`}>
       <path
         d={path}
-        stroke="var(--connector-color)"
-        strokeWidth="2"
+        stroke={connector.color}
+        strokeWidth={connector.strokeWidth}
         fill="none"
         markerEnd="url(#arrowhead)"
         className="connection"
@@ -67,6 +70,7 @@ interface PendingConnectorProps {
   fromY: number;
   toX: number;
   toY: number;
+  connector: ConnectorConfig;
 }
 
 export function PendingConnector({
@@ -74,6 +78,7 @@ export function PendingConnector({
   fromY,
   toX,
   toY,
+  connector,
 }: PendingConnectorProps) {
   return (
     <line
@@ -81,9 +86,9 @@ export function PendingConnector({
       y1={fromY}
       x2={toX}
       y2={toY}
-      stroke="var(--connector-pending)"
-      strokeWidth="2"
-      strokeDasharray="5,5"
+      stroke={connector.pendingColor}
+      strokeWidth={connector.strokeWidth}
+      strokeDasharray={connector.pendingDasharray}
     />
   );
 }

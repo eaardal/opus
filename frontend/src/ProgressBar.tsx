@@ -1,13 +1,14 @@
 import "./ProgressBar.css";
 import { Task, TaskStatus } from "./Sidebar";
-import { StatusConfig } from "./theme";
+import { GroupBoxConfig, StatusConfig } from "./theme";
 
 interface ProgressBarProps {
   tasks: Task[];
   statuses: Record<TaskStatus, StatusConfig>;
+  groupBox: GroupBoxConfig;
 }
 
-export function ProgressBar({ tasks, statuses }: ProgressBarProps) {
+export function ProgressBar({ tasks, statuses, groupBox }: ProgressBarProps) {
   if (tasks.length === 0) return null;
 
   const done = tasks.filter(
@@ -27,7 +28,10 @@ export function ProgressBar({ tasks, statuses }: ProgressBarProps) {
             background: statuses.in_progress.color,
           }}
         />
-        <div className="progress-bar-fill" style={{ width: `${donePct}%` }} />
+        <div
+          className="progress-bar-fill"
+          style={{ width: `${donePct}%`, background: groupBox.progressCompletedFill }}
+        />
       </div>
       <span className="progress-bar-label">
         {done}/{tasks.length} ({donePct}%)

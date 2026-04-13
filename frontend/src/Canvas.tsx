@@ -5,7 +5,7 @@ import { Task, Group, TaskStatus } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
 import { ProgressBar } from "./ProgressBar";
-import { CategoryConfig, StatusConfig } from "./theme";
+import { CategoryConfig, StatusConfig, getConnector, getGroupBox } from "./theme";
 import { GroupRect } from "./GroupRect";
 import { SaveImageAs } from "../wailsjs/go/main/App";
 
@@ -117,6 +117,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   },
   ref
 ) {
+  const groupBox = getGroupBox(theme);
+  const connector = getConnector(theme);
+
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const nodeContextMenuRef = useRef<HTMLDivElement>(null);
@@ -375,14 +378,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         .tooltip rect { fill: var(--tooltip-fill); stroke: var(--tooltip-stroke); stroke-width: 1; }
         .tooltip text { fill: var(--text-primary); font-size: 12px; }
         .group-rect { fill: var(--group-fill); stroke: var(--group-stroke); stroke-width: 1.5; stroke-dasharray: 6, 3; }
-        .group-rect.all-done { fill: rgba(76, 175, 80, 0.08); stroke: #4caf50; }
         .group-rect.selected { stroke: var(--selection-stroke); stroke-width: 2; }
         .group-title { fill: var(--group-title-color); font-size: 13px; font-weight: 500; }
         .group-zoom-btn-bg { fill: var(--group-fill); stroke: var(--group-stroke); stroke-width: 1; }
         .group-zoom-btn-icon { fill: none; stroke: var(--group-title-color); stroke-width: 1.5; stroke-linecap: round; }
         .group-progress-track { fill: var(--bg-tertiary); }
-        .group-progress-fill { fill: #4caf50; }
-        .group-progress-in-progress { fill: #ff9800; }
+        .group-progress-fill { transition: width 0.3s; }
         .group-resize-handle { display: none; }
       `;
       clone.prepend(styleEl);
@@ -561,7 +562,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             refY="3.5"
             orient="auto"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="var(--connector-color)" />
+            <polygon points="0 0, 10 3.5, 0 7" fill={connector.color} />
           </marker>
         </defs>
 
@@ -571,6 +572,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             group={group}
             tasks={tasks}
             statuses={statuses}
+            groupBox={groupBox}
             isSelected={selectedGroups.has(group.id)}
             onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}
@@ -611,6 +613,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               fromTask={fromTask}
               toTask={toTask}
               shiftPressed={shiftPressed}
+              connector={connector}
               onRemove={(e) => onRemoveConnection(e, conn.from, conn.to)}
             />
           );
@@ -622,6 +625,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             fromY={tasks.find((t) => t.id === connecting.from)?.y || 0}
             toX={connecting.mouseX}
             toY={connecting.mouseY}
+            connector={connector}
           />
         )}
 
@@ -635,7 +639,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           />
         )}
       </svg>
-      <ProgressBar tasks={tasks} statuses={statuses} />
+      <ProgressBar tasks={tasks} statuses={statuses} groupBox={groupBox} />
       {showHelp && (
         <div className="help-overlay" onClick={() => setShowHelp(false)}>
           <div className="help-dialog" onClick={(e) => e.stopPropagation()}>

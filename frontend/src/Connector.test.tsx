@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { Connector, PendingConnector } from "./Connector";
 import type { Task } from "./Sidebar";
+import type { ConnectorConfig } from "./theme";
 
 const baseFromTask: Task = {
   id: "from",
@@ -21,6 +22,14 @@ const baseToTask: Task = {
 
 const noop = () => {};
 
+const baseConnector: ConnectorConfig = {
+  color: "#666",
+  pendingColor: "#999",
+  removeColor: "#ff6b6b",
+  strokeWidth: 2,
+  pendingDasharray: "5,5",
+};
+
 describe("Connector", () => {
   describe("structure and rendering", () => {
     it("renders connection group with path and target circle", () => {
@@ -33,6 +42,7 @@ describe("Connector", () => {
             fromTask={baseFromTask}
             toTask={baseToTask}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={noop}
           />
         </svg>
@@ -53,6 +63,7 @@ describe("Connector", () => {
             fromTask={baseFromTask}
             toTask={baseToTask}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={noop}
           />
         </svg>
@@ -74,6 +85,7 @@ describe("Connector", () => {
             fromTask={baseFromTask}
             toTask={baseToTask}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={noop}
           />
         </svg>
@@ -99,6 +111,7 @@ describe("Connector", () => {
             fromTask={baseFromTask}
             toTask={baseToTask}
             shiftPressed={true}
+            connector={baseConnector}
             onRemove={noop}
           />
         </svg>
@@ -117,6 +130,7 @@ describe("Connector", () => {
             fromTask={baseFromTask}
             toTask={baseToTask}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={noop}
           />
         </svg>
@@ -139,6 +153,7 @@ describe("Connector", () => {
             fromTask={from}
             toTask={to}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={noop}
           />
         </svg>
@@ -160,6 +175,7 @@ describe("Connector", () => {
             fromTask={from}
             toTask={to}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={noop}
           />
         </svg>
@@ -184,6 +200,7 @@ describe("Connector", () => {
             fromTask={baseFromTask}
             toTask={baseToTask}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={onRemove}
           />
         </svg>
@@ -204,6 +221,7 @@ describe("Connector", () => {
             fromTask={baseFromTask}
             toTask={baseToTask}
             shiftPressed={false}
+            connector={baseConnector}
             onRemove={onRemove}
           />
         </svg>
@@ -219,7 +237,7 @@ describe("PendingConnector", () => {
   it("renders a dashed line from (fromX, fromY) to (toX, toY)", () => {
     const { container } = render(
       <svg>
-        <PendingConnector fromX={10} fromY={20} toX={110} toY={120} />
+        <PendingConnector fromX={10} fromY={20} toX={110} toY={120} connector={baseConnector} />
       </svg>
     );
     const line = container.querySelector("line");
