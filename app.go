@@ -7,11 +7,14 @@ import (
 	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"opus/atlassian"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx      context.Context
+	atlassian *atlassian.Auth
 }
 
 // NewApp creates a new App application struct
@@ -23,6 +26,38 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.atlassian = atlassian.New(func(url string) {
+		runtime.BrowserOpenURL(ctx, url)
+	})
+}
+
+// AtlassianAuthStatus is the auth state returned to the frontend.
+type AtlassianAuthStatus struct {
+	LoggedIn    bool   `json:"loggedIn"`
+	DisplayName string `json:"displayName"`
+	Email       string `json:"email"`
+}
+
+// GetAtlassianAuthStatus returns the current Atlassian authentication state.
+// Reads persisted tokens from disk — no network request is made.
+func (a *App) GetAtlassianAuthStatus() AtlassianAuthStatus {
+	status := a.atlassian.GetStatus()
+	return AtlassianAuthStatus{
+		LoggedIn:    status.LoggedIn,
+		DisplayName: status.DisplayName,
+		Email:       status.Email,
+	}
+}
+
+// StartAtlassianLogin opens the Atlassian OAuth 2.0 consent page in the
+// system browser and blocks until login completes or times out (5 min).
+func (a *App) StartAtlassianLogin() error {
+	return a.atlassian.StartLogin()
+}
+
+// AtlassianLogout removes the stored Atlassian tokens from disk.
+func (a *App) AtlassianLogout() error {
+	return a.atlassian.Logout()
 }
 
 // Greet returns a greeting for the given name

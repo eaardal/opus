@@ -7,7 +7,13 @@ import { TaskNode } from "./TaskNode";
 import { ProgressBar } from "./ProgressBar";
 import { CategoryConfig, StatusConfig, getConnector, getGroupBox } from "./theme";
 import { GroupRect } from "./GroupRect";
-import { SaveImageAs } from "../wailsjs/go/main/App";
+import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogout } from "../wailsjs/go/main/App";
+
+interface AtlassianStatus {
+  loggedIn: boolean;
+  displayName: string;
+  email: string;
+}
 
 export interface Connection {
   from: string;
@@ -127,6 +133,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const [menuOpen, setMenuOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [atlassianStatus, setAtlassianStatus] = useState<AtlassianStatus>({ loggedIn: false, displayName: "", email: "" });
+  const [atlassianLoginInProgress, setAtlassianLoginInProgress] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
   const panMode = spaceHeld || middleMouseHeld;
@@ -333,6 +341,37 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       svg.removeEventListener("touchend", handleTouchEnd);
     };
   }, [onViewBoxChange]);
+
+  useEffect(() => {
+    GetAtlassianAuthStatus()
+      .then((s) => setAtlassianStatus(s))
+      .catch(console.error);
+  }, []);
+
+  const handleAtlassianLogin = useCallback(async () => {
+    setMenuOpen(false);
+    setAtlassianLoginInProgress(true);
+    try {
+      await StartAtlassianLogin();
+    } catch (err) {
+      console.error("Atlassian login failed:", err);
+    } finally {
+      setAtlassianLoginInProgress(false);
+      GetAtlassianAuthStatus()
+        .then((s) => setAtlassianStatus(s))
+        .catch(console.error);
+    }
+  }, []);
+
+  const handleAtlassianLogout = useCallback(async () => {
+    setMenuOpen(false);
+    try {
+      await AtlassianLogout();
+    } catch (err) {
+      console.error("Atlassian logout failed:", err);
+    }
+    setAtlassianStatus({ loggedIn: false, displayName: "", email: "" });
+  }, []);
 
   const exportCanvasAsPng = useCallback(async () => {
     const svg = svgRef.current;
@@ -541,6 +580,32 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             >
               How to Use
             </button>
+            <hr className="canvas-menu-divider" />
+            {atlassianStatus.loggedIn ? (
+              <>
+                <div className="canvas-menu-info" role="menuitem" aria-disabled="true">
+                  Logged in as {atlassianStatus.displayName}
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="canvas-menu-item"
+                  onClick={handleAtlassianLogout}
+                >
+                  Logout from Atlassian
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                role="menuitem"
+                className="canvas-menu-item"
+                onClick={handleAtlassianLogin}
+                disabled={atlassianLoginInProgress}
+              >
+                {atlassianLoginInProgress ? "Logging in…" : "Login to Atlassian"}
+              </button>
+            )}
           </div>
         )}
       </div>

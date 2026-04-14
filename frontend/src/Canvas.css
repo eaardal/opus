@@ -145,6 +145,31 @@
   background: var(--menu-item-hover);
 }
 
+.canvas-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.canvas-menu-item:disabled:hover {
+  background: none;
+}
+
+.canvas-menu-divider {
+  border: none;
+  border-top: 1px solid var(--menu-border);
+  margin: 4px 0;
+}
+
+.canvas-menu-info {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 .help-overlay {
   position: absolute;

@@ -4,3 +4,4 @@ frontend/dist
 dist/
 .idea/
 .DS_Store
+.env.local
