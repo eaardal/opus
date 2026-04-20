@@ -27,8 +27,12 @@ function App() {
         </nav>
       </div>
       <div className="app-shell-content">
-        {activeModule === "tasks" && <TaskMgtApp />}
-        {activeModule === "teams" && <TeamMgt />}
+        <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
+          <TaskMgtApp />
+        </div>
+        <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
+          <TeamMgt />
+        </div>
       </div>
     </div>
   );

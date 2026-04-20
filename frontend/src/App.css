@@ -59,3 +59,14 @@
   overflow: hidden;
   display: flex;
 }
+
+.module-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.module-hidden {
+  display: none;
+}
