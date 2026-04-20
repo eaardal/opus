@@ -38,6 +38,11 @@ const CATEGORIES_DARK: Record<string, CategoryConfig> = {
     color: "#ffffff",
     shape: "diamond",
   },
+  qa: {
+    label: "QA",
+    color: "#e8d97a",
+    shape: "diamond",
+  },
 };
 
 const CATEGORIES_LIGHT: Record<string, CategoryConfig> = {
@@ -47,6 +52,11 @@ const CATEGORIES_LIGHT: Record<string, CategoryConfig> = {
   integration: {
     label: "Integration Point",
     color: "#f5f5f5",
+    shape: "diamond",
+  },
+  qa: {
+    label: "QA",
+    color: "#f5eeaa",
     shape: "diamond",
   },
 };
