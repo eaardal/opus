@@ -9,11 +9,18 @@ import {
 import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
 import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
 import { getCategories, getStatuses } from "./theme";
+import { useHistory } from "./useHistory";
 
 function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const { present, push, replace, undo, redo, reset, markSaved, canUndo, canRedo, hasUnsavedChanges } = useHistory({
+    tasks: [],
+    connections: [],
+    groups: [],
+  });
+  const { tasks, connections, groups } = present;
+  const presentRef = useRef(present);
+  presentRef.current = present;
+
   const [theme, setTheme] = useState<"dark" | "light">("light");
   const [viewBox, setViewBox] = useState<ViewBox>({
     x: 0,
@@ -38,7 +45,6 @@ function App() {
     left: number;
   } | null>(null);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
     null,
   );
@@ -69,12 +75,24 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "Shift") setShiftPressed(true);
       if (e.key === "Escape") {
         setSelectedNodes(new Set());
         setSelectedGroups(new Set());
         setSelection(null);
         setDraggingSelection(null);
+      }
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        undo();
+      }
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.shiftKey ? e.key === "z" : e.key === "y")
+      ) {
+        e.preventDefault();
+        redo();
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -86,19 +104,7 @@ function App() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
-
-  // Track unsaved changes
-  const skipUnsavedRef = useRef(false);
-  useEffect(() => {
-    if (skipUnsavedRef.current) {
-      skipUnsavedRef.current = false;
-      return;
-    }
-    if (tasks.length > 0 || connections.length > 0 || groups.length > 0) {
-      setHasUnsavedChanges(true);
-    }
-  }, [tasks, connections, groups, theme]);
+  }, [undo, redo]);
 
   const handleSave = useCallback(async () => {
     const data = JSON.stringify(
@@ -109,18 +115,18 @@ function App() {
     try {
       if (currentFilePath) {
         await SaveFile(currentFilePath, data);
-        setHasUnsavedChanges(false);
+        markSaved();
       } else {
         const filePath = await SaveFileAs(data);
         if (filePath) {
           setCurrentFilePath(filePath);
-          setHasUnsavedChanges(false);
+          markSaved();
         }
       }
     } catch (err) {
       console.error("Save failed:", err);
     }
-  }, [tasks, connections, groups, theme, viewBox, currentFilePath]);
+  }, [tasks, connections, groups, theme, viewBox, currentFilePath, markSaved]);
 
   // Keyboard shortcut for save (Cmd+S / Ctrl+S)
   useEffect(() => {
@@ -169,7 +175,7 @@ function App() {
       y: 60,
       status: "pending",
     };
-    setTasks([...tasks, newTask]);
+    push({ tasks: [...present.tasks, newTask], connections, groups });
     setFocusTaskId(newTask.id);
   };
 
@@ -181,16 +187,28 @@ function App() {
   };
 
   const updateTaskText = (id: string, text: string) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, text } : t)));
+    push({
+      tasks: tasks.map((t) => (t.id === id ? { ...t, text } : t)),
+      connections,
+      groups,
+    });
   };
 
   const setTaskCategory = (id: string, category: string | undefined) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, category } : t)));
+    push({
+      tasks: tasks.map((t) => (t.id === id ? { ...t, category } : t)),
+      connections,
+      groups,
+    });
     setOpenMenuId(null);
   };
 
   const setTaskStatus = (id: string, status: TaskStatus) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, status } : t)));
+    push({
+      tasks: tasks.map((t) => (t.id === id ? { ...t, status } : t)),
+      connections,
+      groups,
+    });
     setOpenMenuId(null);
   };
 
@@ -202,11 +220,8 @@ function App() {
       );
       if (!confirmed) return;
     }
-    setTasks([]);
-    setConnections([]);
-    setGroups([]);
+    reset({ tasks: [], connections: [], groups: [] });
     setCurrentFilePath(null);
-    setHasUnsavedChanges(false);
     setViewBox({ x: 0, y: 0, width: 0, height: 0 });
     setHighlightedTaskId(null);
     setSelectedNodes(new Set());
@@ -217,17 +232,17 @@ function App() {
     try {
       const result = await OpenFile();
       if (result) {
-        skipUnsavedRef.current = true;
         const parsed = JSON.parse(result.content);
-        if (parsed.tasks) setTasks(parsed.tasks);
-        if (parsed.connections) setConnections(parsed.connections);
-        if (parsed.groups) setGroups(parsed.groups);
+        reset({
+          tasks: parsed.tasks ?? [],
+          connections: parsed.connections ?? [],
+          groups: parsed.groups ?? [],
+        });
         const loadedTheme = parsed.theme === "light" ? "light" : "dark";
         setTheme(loadedTheme);
         document.documentElement.setAttribute("data-theme", loadedTheme);
         if (parsed.viewBox) setViewBox(parsed.viewBox);
         setCurrentFilePath(result.filePath);
-        setHasUnsavedChanges(false);
       }
     } catch (err) {
       console.error("Open failed:", err);
@@ -242,10 +257,11 @@ function App() {
       `Delete "${taskName}"?`,
     );
     if (confirmed) {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
-      setConnections((prev) =>
-        prev.filter((c) => c.from !== id && c.to !== id),
-      );
+      push({
+        tasks: tasks.filter((t) => t.id !== id),
+        connections: connections.filter((c) => c.from !== id && c.to !== id),
+        groups,
+      });
     }
   };
 
@@ -258,21 +274,41 @@ function App() {
       width: 200,
       height: 150,
     };
-    setGroups([...groups, newGroup]);
+    push({ tasks, connections, groups: [...groups, newGroup] });
   };
 
-  const moveGroup = (id: string, x: number, y: number) => {
-    setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, x, y } : g)));
-  };
+  const handleGroupMoveStart = useCallback(() => {
+    push(presentRef.current);
+  }, [push]);
 
-  const resizeGroup = (id: string, x: number, y: number, width: number, height: number) => {
-    setGroups((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, x, y, width, height } : g)),
-    );
-  };
+  const handleGroupResizeStart = useCallback(() => {
+    push(presentRef.current);
+  }, [push]);
+
+  const moveGroup = useCallback((id: string, x: number, y: number) => {
+    const { tasks: t, connections: c, groups: g } = presentRef.current;
+    replace({
+      tasks: t,
+      connections: c,
+      groups: g.map((gr) => (gr.id === id ? { ...gr, x, y } : gr)),
+    });
+  }, [replace]);
+
+  const resizeGroup = useCallback((id: string, x: number, y: number, width: number, height: number) => {
+    const { tasks: t, connections: c, groups: g } = presentRef.current;
+    replace({
+      tasks: t,
+      connections: c,
+      groups: g.map((gr) => (gr.id === id ? { ...gr, x, y, width, height } : gr)),
+    });
+  }, [replace]);
 
   const updateGroupTitle = (id: string, title: string) => {
-    setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, title } : g)));
+    push({
+      tasks,
+      connections,
+      groups: groups.map((g) => (g.id === id ? { ...g, title } : g)),
+    });
   };
 
   const zoomToGroup = (id: string) => {
@@ -355,9 +391,11 @@ function App() {
     if (e.shiftKey) {
       setConnecting({ from: taskId, mouseX: coords.x, mouseY: coords.y });
     } else if (selectedNodes.has(taskId)) {
+      push(present);
       startSelectionDrag(coords);
     } else {
       setSelectedNodes(new Set());
+      push(present);
       setDraggingNode(taskId);
     }
   };
@@ -367,6 +405,7 @@ function App() {
     e.stopPropagation();
     const coords = canvasRef.current?.getSvgCoords(e) || { x: 0, y: 0 };
     if (selectedGroups.has(groupId)) {
+      push(present);
       startSelectionDrag(coords);
     }
   };
@@ -381,12 +420,15 @@ function App() {
 
   const handleCanvasMouseMove = useCallback(
     (_e: React.MouseEvent, coords: { x: number; y: number }) => {
+      const { tasks: currentTasks, connections: currentConnections, groups: currentGroups } = presentRef.current;
       if (draggingNode) {
-        setTasks((prev) =>
-          prev.map((t) =>
+        replace({
+          tasks: currentTasks.map((t) =>
             t.id === draggingNode ? { ...t, x: coords.x, y: coords.y } : t,
           ),
-        );
+          connections: currentConnections,
+          groups: currentGroups,
+        });
       } else if (connecting) {
         setConnecting({ ...connecting, mouseX: coords.x, mouseY: coords.y });
       } else if (selection) {
@@ -394,27 +436,20 @@ function App() {
       } else if (draggingSelection) {
         const dx = coords.x - draggingSelection.startX;
         const dy = coords.y - draggingSelection.startY;
-        setTasks((prev) =>
-          prev.map((t) => {
+        replace({
+          tasks: currentTasks.map((t) => {
             const originalPos = draggingSelection.nodePositions.get(t.id);
-            if (originalPos) {
-              return { ...t, x: originalPos.x + dx, y: originalPos.y + dy };
-            }
-            return t;
+            return originalPos ? { ...t, x: originalPos.x + dx, y: originalPos.y + dy } : t;
           }),
-        );
-        setGroups((prev) =>
-          prev.map((g) => {
+          connections: currentConnections,
+          groups: currentGroups.map((g) => {
             const originalPos = draggingSelection.groupPositions.get(g.id);
-            if (originalPos) {
-              return { ...g, x: originalPos.x + dx, y: originalPos.y + dy };
-            }
-            return g;
+            return originalPos ? { ...g, x: originalPos.x + dx, y: originalPos.y + dy } : g;
           }),
-        );
+        });
       }
     },
-    [draggingNode, connecting, selection, draggingSelection],
+    [draggingNode, connecting, selection, draggingSelection, replace],
   );
 
   const handleCanvasMouseUp = (
@@ -433,10 +468,11 @@ function App() {
           (c) => c.from === connecting.from && c.to === targetTask.id,
         );
         if (!exists) {
-          setConnections([
-            ...connections,
-            { from: connecting.from, to: targetTask.id },
-          ]);
+          push({
+            tasks,
+            connections: [...connections, { from: connecting.from, to: targetTask.id }],
+            groups,
+          });
         }
       }
     }
@@ -487,9 +523,11 @@ function App() {
     to: string,
   ) => {
     if (e.shiftKey) {
-      setConnections(
-        connections.filter((c) => !(c.from === from && c.to === to)),
-      );
+      push({
+        tasks,
+        connections: connections.filter((c) => !(c.from === from && c.to === to)),
+        groups,
+      });
     }
   };
 
@@ -560,7 +598,9 @@ function App() {
         selectedGroups={selectedGroups}
         onGroupMouseDown={handleGroupMouseDown}
         onGroupMove={moveGroup}
+        onGroupMoveStart={handleGroupMoveStart}
         onGroupResize={resizeGroup}
+        onGroupResizeStart={handleGroupResizeStart}
         onGroupTitleChange={updateGroupTitle}
         onGroupZoomTo={zoomToGroup}
         viewBox={viewBox}
@@ -575,6 +615,10 @@ function App() {
         onSetTaskCategory={setTaskCategory}
         onDeleteTask={deleteTask}
         onUpdateTaskText={updateTaskText}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
       />
     </div>
   );

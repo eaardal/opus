@@ -37,7 +37,9 @@ interface GroupRectProps {
   panMode: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
+  onMoveStart: () => void;
   onResize: (id: string, x: number, y: number, width: number, height: number) => void;
+  onResizeStart: () => void;
   onTitleChange: (id: string, title: string) => void;
   onZoomTo: (id: string) => void;
 }
@@ -51,7 +53,9 @@ export function GroupRect({
   panMode,
   onMouseDown: onGroupMouseDown,
   onMove,
+  onMoveStart,
   onResize,
+  onResizeStart,
   onTitleChange,
   onZoomTo,
 }: GroupRectProps) {
@@ -96,6 +100,8 @@ export function GroupRect({
     e.preventDefault();
     e.stopPropagation();
 
+    onMoveStart();
+
     const startX = e.clientX;
     const startY = e.clientY;
     const origX = group.x;
@@ -120,6 +126,8 @@ export function GroupRect({
     if (panMode || e.button === 1) return;
     e.preventDefault();
     e.stopPropagation();
+
+    onResizeStart();
 
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;

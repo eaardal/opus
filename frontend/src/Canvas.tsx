@@ -1,6 +1,6 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
-import { Maximize, Focus } from "lucide-react";
+import { Maximize, Focus, Undo2, Redo2 } from "lucide-react";
 import { Task, Group, TaskStatus } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
@@ -68,7 +68,9 @@ interface CanvasProps {
   selectedGroups: Set<string>;
   onGroupMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onGroupMove: (id: string, x: number, y: number) => void;
+  onGroupMoveStart: () => void;
   onGroupResize: (id: string, x: number, y: number, width: number, height: number) => void;
+  onGroupResizeStart: () => void;
   onGroupTitleChange: (id: string, title: string) => void;
   onGroupZoomTo: (id: string) => void;
   viewBox: ViewBox;
@@ -79,6 +81,10 @@ interface CanvasProps {
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onDeleteTask: (id: string) => void;
   onUpdateTaskText: (id: string, text: string) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 const ZOOM_SENSITIVITY = 0.001;
@@ -109,7 +115,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     selectedGroups,
     onGroupMouseDown,
     onGroupMove,
+    onGroupMoveStart,
     onGroupResize,
+    onGroupResizeStart,
     onGroupTitleChange,
     onGroupZoomTo,
     viewBox,
@@ -120,6 +128,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onSetTaskCategory,
     onDeleteTask,
     onUpdateTaskText,
+    canUndo,
+    canRedo,
+    onUndo,
+    onRedo,
   },
   ref
 ) {
@@ -522,6 +534,26 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         <button
           type="button"
           className="canvas-toolbar-btn"
+          onClick={onUndo}
+          disabled={!canUndo}
+          aria-label="Undo"
+          data-tooltip="Undo (Ctrl+Z)"
+        >
+          <Undo2 size={16} />
+        </button>
+        <button
+          type="button"
+          className="canvas-toolbar-btn"
+          onClick={onRedo}
+          disabled={!canRedo}
+          aria-label="Redo"
+          data-tooltip="Redo (Ctrl+Shift+Z)"
+        >
+          <Redo2 size={16} />
+        </button>
+        <button
+          type="button"
+          className="canvas-toolbar-btn"
           onClick={fitToScreen}
           aria-label="Fit to screen"
           data-tooltip="Fit to screen"
@@ -642,7 +674,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             panMode={panMode}
             onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}
+            onMoveStart={onGroupMoveStart}
             onResize={onGroupResize}
+            onResizeStart={onGroupResizeStart}
             onTitleChange={onGroupTitleChange}
             onZoomTo={onGroupZoomTo}
           />
@@ -716,12 +750,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             <table className="help-table">
               <tbody>
                 <tr><td className="help-key">Cmd/Ctrl + S</td><td>Save</td></tr>
+                <tr><td className="help-key">Cmd/Ctrl + Z</td><td>Undo</td></tr>
+                <tr><td className="help-key">Cmd/Ctrl + Shift + Z</td><td>Redo</td></tr>
                 <tr><td className="help-key">Cmd/Ctrl + Enter</td><td>Add new task</td></tr>
                 <tr><td className="help-key">Shift + drag</td><td>Connect nodes</td></tr>
                 <tr><td className="help-key">Shift + click connection</td><td>Remove connection</td></tr>
                 <tr><td className="help-key">Space + drag</td><td>Pan canvas</td></tr>
                 <tr><td className="help-key">Middle mouse + drag</td><td>Pan canvas</td></tr>
                 <tr><td className="help-key">Scroll wheel</td><td>Zoom in/out</td></tr>
+                <tr><td className="help-key">Drag on canvas</td><td>Select — node/group must be fully inside the selection area</td></tr>
                 <tr><td className="help-key">Escape</td><td>Clear selection</td></tr>
                 <tr><td className="help-key">Double-click group title</td><td>Edit group name</td></tr>
               </tbody>
