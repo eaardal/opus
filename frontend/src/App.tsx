@@ -171,8 +171,8 @@ function App() {
     const newTask: Task = {
       id: crypto.randomUUID(),
       text: "",
-      x: 60,
-      y: 60,
+      x: viewBox.x + 50,
+      y: viewBox.y + 50,
       status: "pending",
     };
     push({ tasks: [...present.tasks, newTask], connections, groups });
@@ -281,8 +281,8 @@ function App() {
     const newGroup: Group = {
       id: crypto.randomUUID(),
       title: "New Group",
-      x: 100,
-      y: 100,
+      x: viewBox.x + 20,
+      y: viewBox.y + 20,
       width: 200,
       height: 150,
     };
@@ -314,6 +314,22 @@ function App() {
       groups: g.map((gr) => (gr.id === id ? { ...gr, x, y, width, height } : gr)),
     });
   }, [replace]);
+
+  const deleteGroup = async (id: string) => {
+    const group = groups.find((g) => g.id === id);
+    const groupName = group?.title || "this group";
+    const confirmed = await ConfirmDialog(
+      "Delete Group",
+      `Delete "${groupName}"? The tasks inside will not be deleted.`,
+    );
+    if (confirmed) {
+      push({
+        tasks,
+        connections,
+        groups: groups.filter((g) => g.id !== id),
+      });
+    }
+  };
 
   const toggleGroupLock = (id: string) => {
     push({
@@ -625,6 +641,7 @@ function App() {
         onGroupTitleChange={updateGroupTitle}
         onGroupZoomTo={zoomToGroup}
         onGroupToggleLock={toggleGroupLock}
+        onGroupDelete={deleteGroup}
         viewBox={viewBox}
         onViewBoxChange={setViewBox}
         theme={theme}

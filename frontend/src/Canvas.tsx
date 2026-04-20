@@ -74,6 +74,7 @@ interface CanvasProps {
   onGroupTitleChange: (id: string, title: string) => void;
   onGroupZoomTo: (id: string) => void;
   onGroupToggleLock: (id: string) => void;
+  onGroupDelete: (id: string) => void;
   viewBox: ViewBox;
   onViewBoxChange: (vb: ViewBox) => void;
   theme: "dark" | "light";
@@ -123,6 +124,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupTitleChange,
     onGroupZoomTo,
     onGroupToggleLock,
+    onGroupDelete,
     viewBox,
     onViewBoxChange,
     theme,
@@ -145,10 +147,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const nodeContextMenuRef = useRef<HTMLDivElement>(null);
+  const groupContextMenuRef = useRef<HTMLDivElement>(null);
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
+  const [groupContextMenu, setGroupContextMenu] = useState<{ groupId: string; x: number; y: number } | null>(null);
   const [canvasContextMenu, setCanvasContextMenu] = useState<{ screenX: number; screenY: number; svgX: number; svgY: number } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [atlassianStatus, setAtlassianStatus] = useState<AtlassianStatus>({ loggedIn: false, displayName: "", email: "" });
@@ -223,6 +227,24 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }, [nodeContextMenu]);
 
   useEffect(() => {
+    if (!groupContextMenu) return;
+    const handleClose = (e: MouseEvent) => {
+      if (groupContextMenuRef.current && !groupContextMenuRef.current.contains(e.target as Node)) {
+        setGroupContextMenu(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setGroupContextMenu(null);
+    };
+    document.addEventListener("mousedown", handleClose);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClose);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [groupContextMenu]);
+
+  useEffect(() => {
     if (!canvasContextMenu) return;
     const handleClose = (e: MouseEvent) => {
       if (canvasContextMenuRef.current && !canvasContextMenuRef.current.contains(e.target as Node)) {
@@ -246,19 +268,24 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     setNodeContextMenu({ taskId, x: e.clientX, y: e.clientY });
   }, []);
 
-  const getSvgCoords = useCallback(
-    (e: React.MouseEvent): { x: number; y: number } => {
+  const toSvgCoords = useCallback(
+    (clientX: number, clientY: number): { x: number; y: number } => {
       const svg = svgRef.current;
       if (!svg) return { x: 0, y: 0 };
       const pt = svg.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
+      pt.x = clientX;
+      pt.y = clientY;
       const ctm = svg.getScreenCTM();
       if (!ctm) return { x: 0, y: 0 };
       const svgPt = pt.matrixTransform(ctm.inverse());
       return { x: svgPt.x, y: svgPt.y };
     },
     []
+  );
+
+  const getSvgCoords = useCallback(
+    (e: React.MouseEvent): { x: number; y: number } => toSvgCoords(e.clientX, e.clientY),
+    [toSvgCoords]
   );
 
   useImperativeHandle(ref, () => ({
@@ -712,6 +739,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onTitleChange={onGroupTitleChange}
             onZoomTo={onGroupZoomTo}
             onToggleLock={onGroupToggleLock}
+            onDelete={onGroupDelete}
+            onContextMenu={(e, id) => setGroupContextMenu({ groupId: id, x: e.clientX, y: e.clientY })}
+            toSvgCoords={toSvgCoords}
           />
         ))}
 
@@ -838,6 +868,24 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             }}
           >
             New task here
+          </button>
+        </div>
+      )}
+      {groupContextMenu && (
+        <div
+          ref={groupContextMenuRef}
+          className="task-menu"
+          style={{ position: "fixed", top: groupContextMenu.y, left: groupContextMenu.x, transform: "none" }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <button
+            className="menu-item delete-item delete-item-only"
+            onClick={() => {
+              onGroupDelete(groupContextMenu.groupId);
+              setGroupContextMenu(null);
+            }}
+          >
+            Delete group
           </button>
         </div>
       )}

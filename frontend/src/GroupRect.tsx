@@ -44,6 +44,9 @@ interface GroupRectProps {
   onTitleChange: (id: string, title: string) => void;
   onZoomTo: (id: string) => void;
   onToggleLock: (id: string) => void;
+  onDelete: (id: string) => void;
+  onContextMenu: (e: React.MouseEvent, groupId: string) => void;
+  toSvgCoords: (clientX: number, clientY: number) => { x: number; y: number };
 }
 
 export function GroupRect({
@@ -61,6 +64,9 @@ export function GroupRect({
   onTitleChange,
   onZoomTo,
   onToggleLock,
+  onDelete,
+  onContextMenu: onGroupContextMenu,
+  toSvgCoords,
 }: GroupRectProps) {
   const containedTasks = tasks.filter(
     (t) =>
@@ -106,15 +112,13 @@ export function GroupRect({
 
     onMoveStart();
 
-    const startX = e.clientX;
-    const startY = e.clientY;
+    const startSvg = toSvgCoords(e.clientX, e.clientY);
     const origX = group.x;
     const origY = group.y;
 
     const handleMouseMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-      onMove(group.id, origX + dx, origY + dy);
+      const currentSvg = toSvgCoords(ev.clientX, ev.clientY);
+      onMove(group.id, origX + currentSvg.x - startSvg.x, origY + currentSvg.y - startSvg.y);
     };
 
     const handleMouseUp = () => {
@@ -134,8 +138,7 @@ export function GroupRect({
 
     onResizeStart();
 
-    const startMouseX = e.clientX;
-    const startMouseY = e.clientY;
+    const startSvg = toSvgCoords(e.clientX, e.clientY);
     const origX = group.x;
     const origY = group.y;
     const origW = group.width;
@@ -147,8 +150,9 @@ export function GroupRect({
     const resizesBottom = edge.includes("s");
 
     const handleMouseMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - startMouseX;
-      const dy = ev.clientY - startMouseY;
+      const currentSvg = toSvgCoords(ev.clientX, ev.clientY);
+      const dx = currentSvg.x - startSvg.x;
+      const dy = currentSvg.y - startSvg.y;
 
       let newX = origX;
       let newY = origY;
@@ -187,7 +191,14 @@ export function GroupRect({
   };
 
   return (
-    <g transform={`translate(${group.x}, ${group.y})`}>
+    <g
+      transform={`translate(${group.x}, ${group.y})`}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onGroupContextMenu(e, group.id);
+      }}
+    >
       <rect
         className={`group-rect ${isSelected ? "selected" : ""} ${group.locked ? "locked" : ""}`}
         width={group.width}
@@ -296,6 +307,25 @@ export function GroupRect({
             <circle cx="10" cy="13.5" r="1.5" className="group-lock-icon-fill" />
           </g>
         )}
+      </g>
+      <g
+        className="group-delete-btn"
+        transform={`translate(${group.width - ZOOM_BTN_SIZE * 3 - ZOOM_BTN_MARGIN - LOCK_BTN_GAP * 2}, ${ZOOM_BTN_MARGIN})`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(group.id);
+        }}
+      >
+        <rect
+          width={ZOOM_BTN_SIZE}
+          height={ZOOM_BTN_SIZE}
+          rx="4"
+          className="group-zoom-btn-bg group-delete-btn-bg"
+        />
+        {/* Trash can icon */}
+        <rect x="8" y="3" width="4" height="3" rx="1" className="group-zoom-btn-icon" />
+        <line x1="4" y1="7" x2="16" y2="7" className="group-zoom-btn-icon" />
+        <path d="M6,7 L7,17 Q7,18 8,18 L12,18 Q13,18 13,17 L14,7" className="group-zoom-btn-icon" />
       </g>
       <g
         className="group-zoom-btn"

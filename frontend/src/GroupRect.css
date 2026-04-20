@@ -43,14 +43,16 @@
 }
 
 .group-zoom-btn,
-.group-lock-btn {
+.group-lock-btn,
+.group-delete-btn {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s;
 }
 
 g:hover > .group-zoom-btn,
-g:hover > .group-lock-btn {
+g:hover > .group-lock-btn,
+g:hover > .group-delete-btn {
   opacity: 1;
 }
 
@@ -65,6 +67,11 @@ g:hover > .group-lock-btn {
 .group-lock-btn:hover .group-zoom-btn-bg {
   fill: var(--group-stroke-hover);
   stroke: var(--group-title-color);
+}
+
+.group-delete-btn:hover .group-delete-btn-bg {
+  fill: #c0392b;
+  stroke: #922b21;
 }
 
 .group-lock-icon-fill {
