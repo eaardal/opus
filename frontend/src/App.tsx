@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import "./App.css";
 import TaskMgtApp from "./taskMgt/App";
 import { TeamMgt } from "./teamMgt/TeamMgt";
+import { TeamMgtHandle } from "./teamMgt/types";
 
 type ActiveModule = "tasks" | "teams";
 
 function App() {
   const [activeModule, setActiveModule] = useState<ActiveModule>("tasks");
+  const teamMgtRef = useRef<TeamMgtHandle>(null);
 
   return (
     <div className="app-shell">
@@ -31,7 +33,7 @@ function App() {
           <TaskMgtApp />
         </div>
         <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
-          <TeamMgt />
+          <TeamMgt ref={teamMgtRef} />
         </div>
       </div>
     </div>
