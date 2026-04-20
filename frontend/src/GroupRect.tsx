@@ -10,6 +10,7 @@ const MIN_HEIGHT = 60;
 
 const ZOOM_BTN_SIZE = 20;
 const ZOOM_BTN_MARGIN = 6;
+const LOCK_BTN_GAP = 4;
 
 const PROGRESS_BAR_Y = 30;
 const PROGRESS_BAR_HEIGHT = 4;
@@ -42,6 +43,7 @@ interface GroupRectProps {
   onResizeStart: () => void;
   onTitleChange: (id: string, title: string) => void;
   onZoomTo: (id: string) => void;
+  onToggleLock: (id: string) => void;
 }
 
 export function GroupRect({
@@ -58,6 +60,7 @@ export function GroupRect({
   onResizeStart,
   onTitleChange,
   onZoomTo,
+  onToggleLock,
 }: GroupRectProps) {
   const containedTasks = tasks.filter(
     (t) =>
@@ -93,6 +96,7 @@ export function GroupRect({
   const handleBodyMouseDown = (e: React.MouseEvent) => {
     if (editing) return;
     if (panMode || e.button === 1) return;
+    if (group.locked && !e.shiftKey) return;
     if (isSelected) {
       onGroupMouseDown(e, group.id);
       return;
@@ -124,6 +128,7 @@ export function GroupRect({
 
   const handleEdgeMouseDown = (edge: ResizeEdge) => (e: React.MouseEvent) => {
     if (panMode || e.button === 1) return;
+    if (group.locked && !e.shiftKey) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -184,7 +189,7 @@ export function GroupRect({
   return (
     <g transform={`translate(${group.x}, ${group.y})`}>
       <rect
-        className={`group-rect ${isSelected ? "selected" : ""}`}
+        className={`group-rect ${isSelected ? "selected" : ""} ${group.locked ? "locked" : ""}`}
         width={group.width}
         height={group.height}
         rx="8"
@@ -213,7 +218,8 @@ export function GroupRect({
           className="group-title"
           x="12"
           y="20"
-          onDoubleClick={() => {
+          onDoubleClick={(e) => {
+            if (group.locked && !e.shiftKey) return;
             setEditValue(group.title);
             setEditing(true);
           }}
@@ -262,8 +268,38 @@ export function GroupRect({
         );
       })()}
       <g
-        className="group-zoom-btn"
+        className="group-lock-btn"
         transform={`translate(${group.width - ZOOM_BTN_SIZE - ZOOM_BTN_MARGIN}, ${ZOOM_BTN_MARGIN})`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleLock(group.id);
+        }}
+      >
+        <rect
+          width={ZOOM_BTN_SIZE}
+          height={ZOOM_BTN_SIZE}
+          rx="4"
+          className="group-zoom-btn-bg"
+        />
+        {group.locked ? (
+          /* Closed padlock */
+          <g>
+            <path d="M7,9 L7,6 C7,3 13,3 13,6 L13,9" className="group-zoom-btn-icon" />
+            <rect x="5" y="9" width="10" height="8" rx="2" className="group-zoom-btn-icon" />
+            <circle cx="10" cy="13.5" r="1.5" className="group-lock-icon-fill" />
+          </g>
+        ) : (
+          /* Open padlock — shackle open on right */
+          <g>
+            <path d="M7,9 L7,5 C7,2 13,2 13,5" className="group-zoom-btn-icon" />
+            <rect x="5" y="9" width="10" height="8" rx="2" className="group-zoom-btn-icon" />
+            <circle cx="10" cy="13.5" r="1.5" className="group-lock-icon-fill" />
+          </g>
+        )}
+      </g>
+      <g
+        className="group-zoom-btn"
+        transform={`translate(${group.width - ZOOM_BTN_SIZE * 2 - ZOOM_BTN_MARGIN - LOCK_BTN_GAP}, ${ZOOM_BTN_MARGIN})`}
         onClick={(e) => {
           e.stopPropagation();
           onZoomTo(group.id);

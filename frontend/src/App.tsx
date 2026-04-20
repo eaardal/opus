@@ -315,6 +315,14 @@ function App() {
     });
   }, [replace]);
 
+  const toggleGroupLock = (id: string) => {
+    push({
+      tasks,
+      connections,
+      groups: groups.map((g) => (g.id === id ? { ...g, locked: !g.locked } : g)),
+    });
+  };
+
   const updateGroupTitle = (id: string, title: string) => {
     push({
       tasks,
@@ -512,6 +520,7 @@ function App() {
       const newSelectedGroups = new Set<string>();
       groups.forEach((g) => {
         if (
+          !g.locked &&
           g.x >= minX &&
           g.x + g.width <= maxX &&
           g.y >= minY &&
@@ -615,6 +624,7 @@ function App() {
         onGroupResizeStart={handleGroupResizeStart}
         onGroupTitleChange={updateGroupTitle}
         onGroupZoomTo={zoomToGroup}
+        onGroupToggleLock={toggleGroupLock}
         viewBox={viewBox}
         onViewBoxChange={setViewBox}
         theme={theme}

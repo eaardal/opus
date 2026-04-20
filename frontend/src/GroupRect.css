@@ -16,6 +16,10 @@
   stroke-width: 2;
 }
 
+.group-rect.locked {
+  cursor: default;
+}
+
 .group-title {
   fill: var(--group-title-color);
   font-size: 13px;
@@ -38,13 +42,15 @@
   box-sizing: border-box;
 }
 
-.group-zoom-btn {
+.group-zoom-btn,
+.group-lock-btn {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s;
 }
 
-g:hover > .group-zoom-btn {
+g:hover > .group-zoom-btn,
+g:hover > .group-lock-btn {
   opacity: 1;
 }
 
@@ -55,9 +61,20 @@ g:hover > .group-zoom-btn {
   transition: fill 0.15s, stroke 0.15s;
 }
 
-.group-zoom-btn:hover .group-zoom-btn-bg {
+.group-zoom-btn:hover .group-zoom-btn-bg,
+.group-lock-btn:hover .group-zoom-btn-bg {
   fill: var(--group-stroke-hover);
   stroke: var(--group-title-color);
+}
+
+.group-lock-icon-fill {
+  fill: var(--group-title-color);
+  stroke: none;
+}
+
+/* Always show lock button when locked so user can see it and unlock */
+g:has(.group-rect.locked) > .group-lock-btn {
+  opacity: 1;
 }
 
 .group-zoom-btn-icon {

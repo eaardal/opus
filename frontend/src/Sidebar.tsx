@@ -23,6 +23,7 @@ export interface Group {
   y: number;
   width: number;
   height: number;
+  locked?: boolean;
 }
 
 export type NodeShape = "circle" | "diamond";
