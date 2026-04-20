@@ -63,7 +63,8 @@ export function TaskNode({
   };
 
   const statusColor = statuses[task.status]?.color || statuses.pending.color;
-  const statusFontColor = statuses[task.status]?.fontColor || statuses.pending.fontColor;
+  const statusFontColor =
+    statuses[task.status]?.fontColor || statuses.pending.fontColor;
   const category = task.category ? categories[task.category] : undefined;
   const categoryColor = category?.color;
   const shape = category?.shape || "circle";
@@ -76,9 +77,55 @@ export function TaskNode({
     strokeWidth: 3,
   };
 
+  const MAX_TOOLTIP_WIDTH = 170;
+  const CHAR_WIDTH = 8;
+  const LINE_HEIGHT = 16;
+  const TOOLTIP_V_PADDING = 8;
+  const MAX_CHARS = Math.floor(MAX_TOOLTIP_WIDTH / CHAR_WIDTH);
+
   const tooltipText = editing ? editValue : task.text;
-  const tooltipWidth = Math.max(tooltipText.length * 8, 80);
+
+  const wrapLines = (text: string): string[] => {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let line = "";
+    for (const word of words) {
+      if (word.length > MAX_CHARS) {
+        if (line) {
+          lines.push(line);
+          line = "";
+        }
+        let rest = word;
+        while (rest.length > MAX_CHARS) {
+          lines.push(rest.slice(0, MAX_CHARS));
+          rest = rest.slice(MAX_CHARS);
+        }
+        line = rest;
+      } else {
+        const test = line ? `${line} ${word}` : word;
+        if (test.length > MAX_CHARS && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+    }
+    if (line) lines.push(line);
+    return lines.length > 0 ? lines : [""];
+  };
+
+  const tooltipLines = wrapLines(tooltipText);
+  const longestLine = tooltipLines.reduce(
+    (a, b) => (a.length > b.length ? a : b),
+    "",
+  );
+  const tooltipWidth = Math.min(
+    Math.max(longestLine.length * CHAR_WIDTH, 80),
+    MAX_TOOLTIP_WIDTH,
+  );
   const tooltipX = -tooltipWidth / 2;
+  const tooltipHeight = tooltipLines.length * LINE_HEIGHT + TOOLTIP_V_PADDING;
 
   return (
     <g
@@ -110,7 +157,9 @@ export function TaskNode({
         cy={shape === "diamond" ? -30 : -25}
         r="10"
         className="node-number-badge"
-        style={task.category ? { fill: categories[task.category]?.color } : undefined}
+        style={
+          task.category ? { fill: categories[task.category]?.color } : undefined
+        }
       />
       <text
         x="0"
@@ -132,7 +181,12 @@ export function TaskNode({
       {(task.text || editing) && (
         <g transform="translate(0, 40)">
           {editing ? (
-            <foreignObject x={tooltipX} y="-12" width={tooltipWidth} height="24">
+            <foreignObject
+              x={-MAX_TOOLTIP_WIDTH / 2}
+              y="-12"
+              width={MAX_TOOLTIP_WIDTH}
+              height="24"
+            >
               <input
                 ref={inputRef}
                 className="group-title-input"
@@ -140,7 +194,10 @@ export function TaskNode({
                 onChange={(e) => setEditValue(e.target.value)}
                 onBlur={commitEdit}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.preventDefault(); commitEdit(); }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitEdit();
+                  }
                   if (e.key === "Escape") {
                     setEditValue(task.text);
                     setEditing(false);
@@ -162,12 +219,20 @@ export function TaskNode({
                 x={tooltipX}
                 y="-12"
                 width={tooltipWidth}
-                height="24"
+                height={tooltipHeight}
                 rx="4"
                 style={{ fill: statusColor }}
               />
-              <text textAnchor="middle" dy="0.35em" style={{ fill: statusFontColor }}>
-                {task.text}
+              <text textAnchor="middle" style={{ fill: statusFontColor }}>
+                {tooltipLines.map((line, i) => (
+                  <tspan
+                    key={i}
+                    x="0"
+                    dy={i === 0 ? "0.35em" : `${LINE_HEIGHT}px`}
+                  >
+                    {line}
+                  </tspan>
+                ))}
               </text>
             </g>
           )}
