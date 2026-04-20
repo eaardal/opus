@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import "./TaskItem.css";
 import { Task, TaskStatus } from "./Sidebar";
 import { CategoryConfig, StatusConfig } from "./theme";
@@ -39,6 +40,23 @@ export function TaskItem({
   registerRef,
   registerInputRef,
 }: TaskItemProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [adjustedTop, setAdjustedTop] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (!isMenuOpen || !menuRef.current || !menuPosition) {
+      setAdjustedTop(null);
+      return;
+    }
+    const rect = menuRef.current.getBoundingClientRect();
+    const overflow = rect.bottom - (window.innerHeight - 8);
+    if (overflow > 0) {
+      setAdjustedTop(Math.max(8, menuPosition.top - overflow));
+    } else {
+      setAdjustedTop(null);
+    }
+  }, [isMenuOpen, menuPosition]);
+
   return (
     <div
       ref={registerRef}
@@ -72,8 +90,9 @@ export function TaskItem({
         </button>
         {isMenuOpen && menuPosition && (
           <div
+            ref={menuRef}
             className="task-menu"
-            style={{ top: menuPosition.top, left: menuPosition.left }}
+            style={{ top: adjustedTop ?? menuPosition.top, left: menuPosition.left }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="menu-section-label">Status</div>
