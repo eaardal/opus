@@ -34,6 +34,7 @@ interface GroupRectProps {
   statuses: Record<TaskStatus, StatusConfig>;
   groupBox: GroupBoxConfig;
   isSelected: boolean;
+  panMode: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onResize: (id: string, x: number, y: number, width: number, height: number) => void;
@@ -47,6 +48,7 @@ export function GroupRect({
   statuses,
   groupBox,
   isSelected,
+  panMode,
   onMouseDown: onGroupMouseDown,
   onMove,
   onResize,
@@ -86,6 +88,7 @@ export function GroupRect({
 
   const handleBodyMouseDown = (e: React.MouseEvent) => {
     if (editing) return;
+    if (panMode || e.button === 1) return;
     if (isSelected) {
       onGroupMouseDown(e, group.id);
       return;
@@ -114,6 +117,7 @@ export function GroupRect({
   };
 
   const handleEdgeMouseDown = (edge: ResizeEdge) => (e: React.MouseEvent) => {
+    if (panMode || e.button === 1) return;
     e.preventDefault();
     e.stopPropagation();
 

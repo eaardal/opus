@@ -639,6 +639,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             statuses={statuses}
             groupBox={groupBox}
             isSelected={selectedGroups.has(group.id)}
+            panMode={panMode}
             onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}
             onResize={onGroupResize}
