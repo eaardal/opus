@@ -712,17 +712,17 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           />
         ))}
 
-        {tasks.map((task, index) => (
+        {tasks.filter((task) => task.id !== hoveredNode).map((task, index) => (
           <TaskNode
             key={task.id}
             task={task}
-            index={index}
+            index={tasks.indexOf(task)}
             categories={categories}
             statuses={statuses}
             isDragging={draggingNode === task.id}
             isHighlighted={highlightedTaskId === task.id}
             isSelected={selectedNodes.has(task.id)}
-            isHovered={hoveredNode === task.id}
+            isHovered={false}
             onMouseDown={(e) => onNodeMouseDown(e, task.id)}
             onClick={() => onNodeClick(task.id)}
             onMouseEnter={() => onNodeHover(task.id)}
@@ -748,6 +748,30 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             />
           );
         })}
+
+        {hoveredNode && (() => {
+          const task = tasks.find((t) => t.id === hoveredNode);
+          if (!task) return null;
+          return (
+            <TaskNode
+              key={task.id}
+              task={task}
+              index={tasks.indexOf(task)}
+              categories={categories}
+              statuses={statuses}
+              isDragging={draggingNode === task.id}
+              isHighlighted={highlightedTaskId === task.id}
+              isSelected={selectedNodes.has(task.id)}
+              isHovered={true}
+              onMouseDown={(e) => onNodeMouseDown(e, task.id)}
+              onClick={() => onNodeClick(task.id)}
+              onMouseEnter={() => onNodeHover(task.id)}
+              onMouseLeave={() => onNodeHover(null)}
+              onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
+              onUpdateText={(text) => onUpdateTaskText(task.id, text)}
+            />
+          );
+        })()}
 
         {connecting && (
           <PendingConnector
