@@ -741,7 +741,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onTitleChange={onGroupTitleChange}
             onZoomTo={onGroupZoomTo}
             onToggleLock={onGroupToggleLock}
-            onDelete={onGroupDelete}
             onContextMenu={(e, id) => {
               const svgPos = toSvgCoords(e.clientX, e.clientY);
               setGroupContextMenu({ groupId: id, x: e.clientX, y: e.clientY, svgX: svgPos.x, svgY: svgPos.y });
@@ -885,33 +884,54 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           </button>
         </div>
       )}
-      {groupContextMenu && (
-        <div
-          ref={groupContextMenuRef}
-          className="task-menu"
-          style={{ position: "fixed", top: groupContextMenu.y, left: groupContextMenu.x, transform: "none" }}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <button
-            className="menu-item"
-            onClick={() => {
-              onCreateTaskAt(groupContextMenu.svgX, groupContextMenu.svgY);
-              setGroupContextMenu(null);
-            }}
+      {groupContextMenu && (() => {
+        const ctxGroup = groups.find((g) => g.id === groupContextMenu.groupId);
+        return (
+          <div
+            ref={groupContextMenuRef}
+            className="task-menu"
+            style={{ position: "fixed", top: groupContextMenu.y, left: groupContextMenu.x, transform: "none" }}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            New task here
-          </button>
-          <button
-            className="menu-item delete-item"
-            onClick={() => {
-              onGroupDelete(groupContextMenu.groupId);
-              setGroupContextMenu(null);
-            }}
-          >
-            Delete group
-          </button>
-        </div>
-      )}
+            <button
+              className="menu-item"
+              onClick={() => {
+                onCreateTaskAt(groupContextMenu.svgX, groupContextMenu.svgY);
+                setGroupContextMenu(null);
+              }}
+            >
+              New task here
+            </button>
+            <button
+              className="menu-item"
+              onClick={() => {
+                onGroupZoomTo(groupContextMenu.groupId);
+                setGroupContextMenu(null);
+              }}
+            >
+              Zoom to group
+            </button>
+            <button
+              className="menu-item"
+              onClick={() => {
+                onGroupToggleLock(groupContextMenu.groupId);
+                setGroupContextMenu(null);
+              }}
+            >
+              {ctxGroup?.locked ? "Unlock group" : "Lock group"}
+            </button>
+            <button
+              className="menu-item delete-item"
+              onClick={() => {
+                onGroupDelete(groupContextMenu.groupId);
+                setGroupContextMenu(null);
+              }}
+            >
+              Delete group
+            </button>
+          </div>
+        );
+      })()}
       {nodeContextMenu && (() => {
         const task = tasks.find((t) => t.id === nodeContextMenu.taskId);
         if (!task) return null;

@@ -44,7 +44,6 @@ interface GroupRectProps {
   onTitleChange: (id: string, title: string) => void;
   onZoomTo: (id: string) => void;
   onToggleLock: (id: string) => void;
-  onDelete: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, groupId: string) => void;
   toSvgCoords: (clientX: number, clientY: number) => { x: number; y: number };
 }
@@ -64,7 +63,6 @@ export function GroupRect({
   onTitleChange,
   onZoomTo,
   onToggleLock,
-  onDelete,
   onContextMenu: onGroupContextMenu,
   toSvgCoords,
 }: GroupRectProps) {
@@ -308,26 +306,7 @@ export function GroupRect({
           </g>
         )}
       </g>
-      <g
-        className="group-delete-btn"
-        transform={`translate(${group.width - ZOOM_BTN_SIZE * 3 - ZOOM_BTN_MARGIN - LOCK_BTN_GAP * 2}, ${ZOOM_BTN_MARGIN})`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(group.id);
-        }}
-      >
-        <rect
-          width={ZOOM_BTN_SIZE}
-          height={ZOOM_BTN_SIZE}
-          rx="4"
-          className="group-zoom-btn-bg group-delete-btn-bg"
-        />
-        {/* Trash can icon */}
-        <rect x="8" y="3" width="4" height="3" rx="1" className="group-zoom-btn-icon" />
-        <line x1="4" y1="7" x2="16" y2="7" className="group-zoom-btn-icon" />
-        <path d="M6,7 L7,17 Q7,18 8,18 L12,18 Q13,18 13,17 L14,7" className="group-zoom-btn-icon" />
-      </g>
-      <g
+<g
         className="group-zoom-btn"
         transform={`translate(${group.width - ZOOM_BTN_SIZE * 2 - ZOOM_BTN_MARGIN - LOCK_BTN_GAP}, ${ZOOM_BTN_MARGIN})`}
         onClick={(e) => {

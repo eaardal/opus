@@ -43,16 +43,14 @@
 }
 
 .group-zoom-btn,
-.group-lock-btn,
-.group-delete-btn {
+.group-lock-btn {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s;
 }
 
 g:hover > .group-zoom-btn,
-g:hover > .group-lock-btn,
-g:hover > .group-delete-btn {
+g:hover > .group-lock-btn {
   opacity: 1;
 }
 
@@ -69,10 +67,6 @@ g:hover > .group-delete-btn {
   stroke: var(--group-title-color);
 }
 
-.group-delete-btn:hover .group-delete-btn-bg {
-  fill: #c0392b;
-  stroke: #922b21;
-}
 
 .group-lock-icon-fill {
   fill: var(--group-title-color);
