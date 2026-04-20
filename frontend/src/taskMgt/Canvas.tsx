@@ -7,7 +7,7 @@ import { TaskNode } from "./TaskNode";
 import { ProgressBar } from "./ProgressBar";
 import { CategoryConfig, StatusConfig, getConnector, getGroupBox } from "./theme";
 import { GroupRect } from "./GroupRect";
-import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogout } from "../wailsjs/go/main/App";
+import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogout } from "../../wailsjs/go/main/App";
 
 interface AtlassianStatus {
   loggedIn: boolean;

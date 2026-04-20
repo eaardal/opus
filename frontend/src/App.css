@@ -1,31 +1,61 @@
-#App {
+.app-shell {
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
-.sidebar-resize-handle {
-  width: 4px;
-  margin-left: -4px;
-  background: transparent;
-  cursor: col-resize;
-  transition: background 0.15s;
+.top-app-bar {
+  height: 48px;
   flex-shrink: 0;
-  position: relative;
-  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  z-index: 50;
 }
 
-.sidebar-resize-handle:hover,
-.sidebar-resize-handle.active {
-  background: var(--bg-control);
-}
-
-#App.resizing {
-  cursor: col-resize;
+.app-bar-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.4px;
   user-select: none;
 }
 
-#App.resizing * {
-  cursor: col-resize;
+.app-bar-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.app-bar-tab {
+  padding: 5px 14px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.app-bar-tab:hover {
+  background: var(--menu-item-hover);
+  color: var(--text-primary);
+}
+
+.app-bar-tab.active {
+  background: var(--menu-item-hover);
+  color: var(--text-primary);
+}
+
+.app-shell-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
 }

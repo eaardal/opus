@@ -1,0 +1,25 @@
+.team-mgt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+.team-mgt-placeholder {
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.team-mgt-placeholder h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.team-mgt-placeholder p {
+  margin: 0;
+  font-size: 14px;
+}

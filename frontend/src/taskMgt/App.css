@@ -1,0 +1,31 @@
+#App {
+  display: flex;
+  height: 100%;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.sidebar-resize-handle {
+  width: 4px;
+  margin-left: -4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.active {
+  background: var(--bg-control);
+}
+
+#App.resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+#App.resizing * {
+  cursor: col-resize;
+}

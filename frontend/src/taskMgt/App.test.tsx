@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import App from "./App";
 
 // Mock Wails runtime functions
-vi.mock("../wailsjs/go/main/App", () => ({
+vi.mock("../../wailsjs/go/main/App", () => ({
   ConfirmDialog: vi.fn(),
   OpenFile: vi.fn(),
   SaveFile: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("../wailsjs/go/main/App", () => ({
   SaveImageAs: vi.fn(),
 }));
 
-import { ConfirmDialog, OpenFile, SaveFile, SaveFileAs } from "../wailsjs/go/main/App";
+import { ConfirmDialog, OpenFile, SaveFile, SaveFileAs } from "../../wailsjs/go/main/App";
 
 describe("App", () => {
   beforeEach(() => {
