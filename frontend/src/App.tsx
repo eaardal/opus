@@ -191,6 +191,18 @@ function App() {
     setFocusTaskId(newTask.id);
   };
 
+  const addGroupAt = (x: number, y: number) => {
+    const newGroup: Group = {
+      id: crypto.randomUUID(),
+      title: "New Group",
+      x,
+      y,
+      width: 200,
+      height: 150,
+    };
+    push({ tasks, connections, groups: [...groups, newGroup] });
+  };
+
   const handleTaskKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -655,6 +667,7 @@ function App() {
         onDeleteTask={deleteTask}
         onUpdateTaskText={updateTaskText}
         onCreateTaskAt={addTaskAt}
+        onCreateGroupAt={addGroupAt}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={undo}

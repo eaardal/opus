@@ -84,6 +84,7 @@ interface CanvasProps {
   onDeleteTask: (id: string) => void;
   onUpdateTaskText: (id: string, text: string) => void;
   onCreateTaskAt: (x: number, y: number) => void;
+  onCreateGroupAt: (x: number, y: number) => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -134,6 +135,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onDeleteTask,
     onUpdateTaskText,
     onCreateTaskAt,
+    onCreateGroupAt,
     canUndo,
     canRedo,
     onUndo,
@@ -152,7 +154,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
-  const [groupContextMenu, setGroupContextMenu] = useState<{ groupId: string; x: number; y: number } | null>(null);
+  const [groupContextMenu, setGroupContextMenu] = useState<{ groupId: string; x: number; y: number; svgX: number; svgY: number } | null>(null);
   const [canvasContextMenu, setCanvasContextMenu] = useState<{ screenX: number; screenY: number; svgX: number; svgY: number } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [atlassianStatus, setAtlassianStatus] = useState<AtlassianStatus>({ loggedIn: false, displayName: "", email: "" });
@@ -740,7 +742,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onZoomTo={onGroupZoomTo}
             onToggleLock={onGroupToggleLock}
             onDelete={onGroupDelete}
-            onContextMenu={(e, id) => setGroupContextMenu({ groupId: id, x: e.clientX, y: e.clientY })}
+            onContextMenu={(e, id) => {
+              const svgPos = toSvgCoords(e.clientX, e.clientY);
+              setGroupContextMenu({ groupId: id, x: e.clientX, y: e.clientY, svgX: svgPos.x, svgY: svgPos.y });
+            }}
             toSvgCoords={toSvgCoords}
           />
         ))}
@@ -869,6 +874,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           >
             New task here
           </button>
+          <button
+            className="menu-item"
+            onClick={() => {
+              onCreateGroupAt(canvasContextMenu.svgX, canvasContextMenu.svgY);
+              setCanvasContextMenu(null);
+            }}
+          >
+            New group here
+          </button>
         </div>
       )}
       {groupContextMenu && (
@@ -879,7 +893,16 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           onContextMenu={(e) => e.preventDefault()}
         >
           <button
-            className="menu-item delete-item delete-item-only"
+            className="menu-item"
+            onClick={() => {
+              onCreateTaskAt(groupContextMenu.svgX, groupContextMenu.svgY);
+              setGroupContextMenu(null);
+            }}
+          >
+            New task here
+          </button>
+          <button
+            className="menu-item delete-item"
             onClick={() => {
               onGroupDelete(groupContextMenu.groupId);
               setGroupContextMenu(null);
