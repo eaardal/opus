@@ -106,6 +106,42 @@ function App() {
     };
   }, [undo, redo]);
 
+  useEffect(() => {
+    const handleDeleteSelected = async (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      if (selectedNodes.size === 0 && selectedGroups.size === 0) return;
+
+      const selectedTaskList = tasks.filter((t) => selectedNodes.has(t.id));
+      const selectedGroupList = groups.filter((g) => selectedGroups.has(g.id));
+
+      const lines = [
+        ...selectedTaskList.map((t) => `  • Task: "${t.text || "(unnamed)"}"`),
+        ...selectedGroupList.map((g) => `  • Group: "${g.title || "(unnamed)"}"`),
+      ].join("\n");
+
+      const confirmed = await ConfirmDialog(
+        "Delete Selected",
+        `Delete the following?\n\n${lines}${selectedTaskList.length > 0 ? "\n\nConnections to deleted tasks will also be removed." : ""}`,
+      );
+
+      if (confirmed) {
+        const deletedTaskIds = new Set(selectedTaskList.map((t) => t.id));
+        const deletedGroupIds = new Set(selectedGroupList.map((g) => g.id));
+        push({
+          tasks: tasks.filter((t) => !deletedTaskIds.has(t.id)),
+          connections: connections.filter((c) => !deletedTaskIds.has(c.from) && !deletedTaskIds.has(c.to)),
+          groups: groups.filter((g) => !deletedGroupIds.has(g.id)),
+        });
+        setSelectedNodes(new Set());
+        setSelectedGroups(new Set());
+      }
+    };
+
+    window.addEventListener("keydown", handleDeleteSelected);
+    return () => window.removeEventListener("keydown", handleDeleteSelected);
+  }, [selectedNodes, selectedGroups, tasks, groups, connections, push]);
+
   const handleSave = useCallback(async () => {
     const data = JSON.stringify(
       { tasks, connections, groups, theme, viewBox },
