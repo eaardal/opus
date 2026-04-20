@@ -81,6 +81,7 @@ interface CanvasProps {
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onDeleteTask: (id: string) => void;
   onUpdateTaskText: (id: string, text: string) => void;
+  onCreateTaskAt: (x: number, y: number) => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -128,6 +129,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onSetTaskCategory,
     onDeleteTask,
     onUpdateTaskText,
+    onCreateTaskAt,
     canUndo,
     canRedo,
     onUndo,
@@ -141,9 +143,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const nodeContextMenuRef = useRef<HTMLDivElement>(null);
+  const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
+  const [canvasContextMenu, setCanvasContextMenu] = useState<{ screenX: number; screenY: number; svgX: number; svgY: number } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [atlassianStatus, setAtlassianStatus] = useState<AtlassianStatus>({ loggedIn: false, displayName: "", email: "" });
   const [atlassianLoginInProgress, setAtlassianLoginInProgress] = useState(false);
@@ -216,6 +220,24 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     };
   }, [nodeContextMenu]);
 
+  useEffect(() => {
+    if (!canvasContextMenu) return;
+    const handleClose = (e: MouseEvent) => {
+      if (canvasContextMenuRef.current && !canvasContextMenuRef.current.contains(e.target as Node)) {
+        setCanvasContextMenu(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCanvasContextMenu(null);
+    };
+    document.addEventListener("mousedown", handleClose);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClose);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [canvasContextMenu]);
+
   const handleNodeContextMenu = useCallback((e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -241,6 +263,13 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     getSvgCoords,
     getSvgElement: () => svgRef.current,
   }));
+
+  const handleCanvasContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (e.target !== svgRef.current) return;
+    e.preventDefault();
+    const coords = getSvgCoords(e);
+    setCanvasContextMenu({ screenX: e.clientX, screenY: e.clientY, svgX: coords.x, svgY: coords.y });
+  }, [getSvgCoords]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 1) {
@@ -649,6 +678,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onContextMenu={handleCanvasContextMenu}
       >
         <defs>
           <marker
@@ -764,6 +794,24 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+      {canvasContextMenu && (
+        <div
+          ref={canvasContextMenuRef}
+          className="task-menu"
+          style={{ position: "fixed", top: canvasContextMenu.screenY, left: canvasContextMenu.screenX, transform: "none" }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <button
+            className="menu-item"
+            onClick={() => {
+              onCreateTaskAt(canvasContextMenu.svgX, canvasContextMenu.svgY);
+              setCanvasContextMenu(null);
+            }}
+          >
+            New task here
+          </button>
         </div>
       )}
       {nodeContextMenu && (() => {

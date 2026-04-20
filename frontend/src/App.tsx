@@ -179,6 +179,18 @@ function App() {
     setFocusTaskId(newTask.id);
   };
 
+  const addTaskAt = (x: number, y: number) => {
+    const newTask: Task = {
+      id: crypto.randomUUID(),
+      text: "",
+      x,
+      y,
+      status: "pending",
+    };
+    push({ tasks: [...present.tasks, newTask], connections, groups });
+    setFocusTaskId(newTask.id);
+  };
+
   const handleTaskKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -615,6 +627,7 @@ function App() {
         onSetTaskCategory={setTaskCategory}
         onDeleteTask={deleteTask}
         onUpdateTaskText={updateTaskText}
+        onCreateTaskAt={addTaskAt}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={undo}
