@@ -105,6 +105,9 @@
   gap: 6px;
   min-width: 150px;
   flex-shrink: 0;
+  background: rgba(220, 50, 50, 0.06);
+  border-radius: 6px;
+  padding: 6px;
 }
 
 .tq-section-label--blocked {
@@ -143,6 +146,9 @@
   gap: 6px;
   min-width: 150px;
   flex-shrink: 0;
+  background: rgba(50, 180, 80, 0.06);
+  border-radius: 6px;
+  padding: 6px;
 }
 
 .tq-queue-section {
