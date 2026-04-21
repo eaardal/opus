@@ -146,8 +146,8 @@
   gap: 6px;
   min-height: 44px;
   border-radius: 6px;
-  padding: 4px;
-  align-items: center;
+  padding: 14px 4px 4px 4px;
+  align-items: flex-start;
   transition:
     background 0.1s,
     outline 0.1s;
@@ -161,6 +161,7 @@
 }
 
 .tq-task-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -168,13 +169,29 @@
   border: 1px solid var(--menu-border);
   border-left: 3px solid transparent;
   border-radius: 6px;
-  padding: 4px 6px 4px 7px;
+  padding: 14px 6px 4px 7px;
   font-size: 12px;
   cursor: grab;
   min-width: 100px;
   width: 160px;
   flex-shrink: 0;
   user-select: none;
+}
+
+.tq-card-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--menu-border);
+  border-radius: 10px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .tq-card-group {
@@ -210,13 +227,13 @@
   color: var(--text-dim);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
-  line-height: 1.6;
+  line-height: 1;
 }
 
 .tq-card-emoji {
   font-size: 11px;
   flex-shrink: 0;
-  line-height: 1.6;
+  line-height: 1;
 }
 
 .tq-task-text {

@@ -138,10 +138,12 @@ function TaskCard({ task, seqNum, groupTitle, isHighlighted, categories, statuse
       onClick={onClick}
       style={{ borderLeftColor: accentColor }}
     >
-      {groupTitle && <span className="tq-card-group" title={groupTitle}>{groupTitle}</span>}
-      <div className="tq-card-main">
+      <div className="tq-card-badge">
         <span className="tq-card-seq">#{seqNum}</span>
         <span className="tq-card-emoji" title={statusConfig.label}>{statusConfig.emoji}</span>
+      </div>
+      {groupTitle && <span className="tq-card-group" title={groupTitle}>{groupTitle}</span>}
+      <div className="tq-card-main">
         <span className="tq-task-text">{task.text || "(unnamed)"}</span>
         <button className="tq-task-remove" onClick={e => { e.stopPropagation(); onRemove(); }} tabIndex={-1}>×</button>
       </div>
