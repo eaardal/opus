@@ -345,6 +345,19 @@ function App({
     });
   };
 
+  const assignPersonAndSetInProgress = (taskId: string, personId: string) => {
+    push({
+      tasks: tasks.map(t => {
+        if (t.id !== taskId) return t;
+        const existing = t.assignedPersonIds ?? [];
+        const assignedPersonIds = existing.includes(personId) ? existing : [...existing, personId];
+        return { ...t, assignedPersonIds, status: "in_progress" as const };
+      }),
+      connections,
+      groups,
+    });
+  };
+
   const updateGroupTitle = (id: string, title: string) => {
     push({
       tasks,
@@ -651,6 +664,7 @@ function App({
         onGroupDelete={deleteGroup}
         people={people}
         onAssignPeople={assignPeople}
+        onAssignPersonAndSetInProgress={assignPersonAndSetInProgress}
         viewBox={viewBox}
         onViewBoxChange={setViewBox}
         theme={theme}

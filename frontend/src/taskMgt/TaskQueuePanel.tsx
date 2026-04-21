@@ -211,6 +211,7 @@ interface TaskQueuePanelProps {
   statuses: Record<TaskStatus, StatusConfig>;
   highlightedTaskId: string | null;
   onAssignPersonToTask: (taskId: string, personIds: string[]) => void;
+  onAssignPersonAndSetInProgress: (taskId: string, personId: string) => void;
   onSetTaskStatus: (taskId: string, status: TaskStatus) => void;
   onHighlightTask: (taskId: string | null) => void;
   onClose: () => void;
@@ -225,6 +226,7 @@ export function TaskQueuePanel({
   statuses,
   highlightedTaskId,
   onAssignPersonToTask,
+  onAssignPersonAndSetInProgress,
   onSetTaskStatus,
   onHighlightTask,
   onClose,
@@ -341,12 +343,10 @@ export function TaskQueuePanel({
   };
 
   const addTaskToSlot = (personId: string, taskId: string, target: "current" | "queue") => {
-    assignTaskToPerson(taskId, personId);
     if (target === "current") {
-      const task = tasks.find(t => t.id === taskId);
-      if (task && task.status !== "in_progress") {
-        onSetTaskStatus(taskId, "in_progress");
-      }
+      onAssignPersonAndSetInProgress(taskId, personId);
+    } else {
+      assignTaskToPerson(taskId, personId);
     }
   };
 

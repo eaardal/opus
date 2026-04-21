@@ -80,6 +80,7 @@ interface CanvasProps {
   onGroupDelete: (id: string) => void;
   people: Person[];
   onAssignPeople: (taskId: string, personIds: string[]) => void;
+  onAssignPersonAndSetInProgress: (taskId: string, personId: string) => void;
   viewBox: ViewBox;
   onViewBoxChange: (vb: ViewBox) => void;
   theme: "dark" | "light";
@@ -135,6 +136,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupDelete,
     people,
     onAssignPeople,
+    onAssignPersonAndSetInProgress,
     viewBox,
     onViewBoxChange,
     theme,
@@ -713,6 +715,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           statuses={statuses}
           highlightedTaskId={highlightedTaskId}
           onAssignPersonToTask={onAssignPeople}
+          onAssignPersonAndSetInProgress={onAssignPersonAndSetInProgress}
           onSetTaskStatus={onSetTaskStatus}
           onHighlightTask={onHighlightTask}
           onClose={() => setIsTaskQueueOpen(false)}
