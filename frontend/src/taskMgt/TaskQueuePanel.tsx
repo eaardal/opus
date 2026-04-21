@@ -350,8 +350,8 @@ export function TaskQueuePanel({
               <div className="tq-person-col">
                 <PersonAvatar person={person} size={36} />
                 <span className="tq-person-name">{person.name || "(unnamed)"}</span>
-                <button className="tq-remove-person" onClick={() => removePerson(queue.personId)} aria-label="Remove from queue">×</button>
               </div>
+              <button className="tq-remove-person" onClick={() => removePerson(queue.personId)} aria-label="Remove from queue">×</button>
 
               <div className="tq-current-section">
                 <div className="tq-section-label">Current task</div>

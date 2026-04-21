@@ -41,7 +41,6 @@
   gap: 4px;
   width: 52px;
   flex-shrink: 0;
-  position: relative;
 }
 
 .tq-person-name {
@@ -57,8 +56,8 @@
 
 .tq-remove-person {
   position: absolute;
-  top: -14px;
-  right: -8px;
+  top: 8px;
+  right: 8px;
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -71,9 +70,12 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  line-height: 1;
+  line-height: 0;
   opacity: 0;
-  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    color 0.15s;
 }
 
 .tq-swimlane:hover .tq-remove-person {
@@ -135,7 +137,9 @@
   border-radius: 6px;
   padding: 4px;
   align-items: center;
-  transition: background 0.1s, outline 0.1s;
+  transition:
+    background 0.1s,
+    outline 0.1s;
   overflow-x: auto;
 }
 
@@ -200,7 +204,9 @@
   line-height: 1.4;
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity 0.1s, color 0.1s;
+  transition:
+    opacity 0.1s,
+    color 0.1s;
 }
 
 .tq-task-card:hover .tq-task-remove {
@@ -224,7 +230,9 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .tq-add-task-btn:hover {
@@ -252,7 +260,10 @@
   cursor: pointer;
   flex-shrink: 0;
   padding: 0;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .tq-add-more-btn:hover {
@@ -264,7 +275,7 @@
 .tq-add-person-lane {
   border: 1.5px dashed var(--border-secondary);
   border-radius: 8px;
-  padding: 10px 16px;
+  padding: 4px 8px;
   flex-shrink: 0;
 }
 
@@ -295,6 +306,7 @@
   border: 1.5px solid currentColor;
   font-size: 14px;
   font-weight: 600;
+  line-height: 0;
   flex-shrink: 0;
 }
 
@@ -313,7 +325,9 @@
   cursor: pointer;
   font-size: 14px;
   color: var(--text-secondary);
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   flex-shrink: 0;
 }
 
