@@ -198,6 +198,7 @@ interface TaskQueuePanelProps {
   highlightedTaskId: string | null;
   onTaskQueuesChange: (queues: PersonTaskQueue[]) => void;
   onAssignPersonToTask: (taskId: string, personIds: string[]) => void;
+  onSetTaskStatus: (taskId: string, status: TaskStatus) => void;
   onHighlightTask: (taskId: string | null) => void;
   onClose: () => void;
 }
@@ -211,6 +212,7 @@ export function TaskQueuePanel({
   highlightedTaskId,
   onTaskQueuesChange,
   onAssignPersonToTask,
+  onSetTaskStatus,
   onHighlightTask,
   onClose,
 }: TaskQueuePanelProps) {
@@ -249,6 +251,9 @@ export function TaskQueuePanel({
         const existing = task.assignedPersonIds ?? [];
         if (!existing.includes(personId)) {
           onAssignPersonToTask(taskId, [...existing, personId]);
+        }
+        if (task.status !== "in_progress") {
+          onSetTaskStatus(taskId, "in_progress");
         }
       }
     } else {
@@ -311,6 +316,9 @@ export function TaskQueuePanel({
         if (!existing.includes(personId)) {
           onAssignPersonToTask(drag.taskId, [...existing, personId]);
         }
+        if (task.status !== "in_progress") {
+          onSetTaskStatus(drag.taskId, "in_progress");
+        }
       }
     }
 
@@ -361,7 +369,7 @@ export function TaskQueuePanel({
               <button className="tq-remove-person" onClick={() => removePerson(queue.personId)} aria-label="Remove from queue">×</button>
 
               <div className="tq-current-section">
-                <div className="tq-section-label">Current task</div>
+                <div className="tq-section-label">In progress</div>
                 <div
                   className={`tq-tasks-row ${isCurrentDrop ? "tq-drop-active" : ""}`}
                   onDragOver={e => handleDragOver(e, queue.personId, "current")}

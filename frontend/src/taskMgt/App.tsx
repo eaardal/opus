@@ -42,6 +42,40 @@ function App({
   const [viewBox, setViewBox] = useState<ViewBox>(initialProject.viewBox);
   const [taskQueues, setTaskQueues] = useState<PersonTaskQueue[]>(initialProject.taskQueues ?? []);
 
+  // Sync swimlanes from task assignments — adds missing entries, never removes
+  useEffect(() => {
+    setTaskQueues(prev => {
+      let queues = prev;
+      let updated = false;
+      for (const task of tasks) {
+        if (task.status === "completed" || task.status === "archived") continue;
+        const slot = task.status === "in_progress" ? "current" : "queued";
+        for (const personId of task.assignedPersonIds ?? []) {
+          const queueForPerson = queues.find(q => q.personId === personId);
+          if (!queueForPerson) {
+            const entry = slot === "current"
+              ? { personId, currentTasks: [{ taskId: task.id }], queuedTasks: [] }
+              : { personId, currentTasks: [], queuedTasks: [{ taskId: task.id }] };
+            queues = [...queues, entry];
+            updated = true;
+          } else {
+            const alreadyPresent = [...queueForPerson.currentTasks, ...queueForPerson.queuedTasks].some(e => e.taskId === task.id);
+            if (!alreadyPresent) {
+              queues = queues.map(q => q.personId === personId
+                ? slot === "current"
+                  ? { ...q, currentTasks: [...q.currentTasks, { taskId: task.id }] }
+                  : { ...q, queuedTasks: [...q.queuedTasks, { taskId: task.id }] }
+                : q
+              );
+              updated = true;
+            }
+          }
+        }
+      }
+      return updated ? queues : prev;
+    });
+  }, [tasks]);
+
   // Report live state to workspace owner (skip first render to avoid marking dirty on mount)
   const isFirstRender = useRef(true);
   const onStateChangeRef = useRef(onStateChange);
@@ -251,12 +285,38 @@ function App({
   };
 
   const setTaskStatus = (id: string, status: TaskStatus) => {
+    const task = tasks.find(t => t.id === id);
     push({
       tasks: tasks.map((t) => (t.id === id ? { ...t, status } : t)),
       connections,
       groups,
     });
     setOpenMenuId(null);
+
+    if (status === "in_progress" && task) {
+      const assignedIds = task.assignedPersonIds ?? [];
+      if (assignedIds.length > 0) {
+        setTaskQueues(prev => {
+          let queues = [...prev];
+          for (const personId of assignedIds) {
+            const existing = queues.find(q => q.personId === personId);
+            if (!existing) {
+              queues = [...queues, { personId, currentTasks: [{ taskId: id }], queuedTasks: [] }];
+            } else {
+              const inCurrent = existing.currentTasks.some(e => e.taskId === id);
+              if (!inCurrent) {
+                const newQueued = existing.queuedTasks.filter(e => e.taskId !== id);
+                queues = queues.map(q => q.personId === personId
+                  ? { ...q, currentTasks: [...q.currentTasks, { taskId: id }], queuedTasks: newQueued }
+                  : q
+                );
+              }
+            }
+          }
+          return queues;
+        });
+      }
+    }
   };
 
   const deleteTask = async (id: string) => {
@@ -338,11 +398,42 @@ function App({
   };
 
   const assignPeople = (taskId: string, personIds: string[]) => {
+    const task = tasks.find(t => t.id === taskId);
+    const oldPersonIds = task?.assignedPersonIds ?? [];
+    const added = personIds.filter(id => !oldPersonIds.includes(id));
+
     push({
       tasks: tasks.map(t => t.id === taskId ? { ...t, assignedPersonIds: personIds } : t),
       connections,
       groups,
     });
+
+    if (added.length > 0 && task && task.status !== "completed" && task.status !== "archived") {
+      const slot = task.status === "in_progress" ? "current" : "queued";
+      setTaskQueues(prev => {
+        let queues = [...prev];
+        for (const personId of added) {
+          const existing = queues.find(q => q.personId === personId);
+          if (!existing) {
+            const entry = slot === "current"
+              ? { personId, currentTasks: [{ taskId }], queuedTasks: [] }
+              : { personId, currentTasks: [], queuedTasks: [{ taskId }] };
+            queues = [...queues, entry];
+          } else {
+            const alreadyPresent = [...existing.currentTasks, ...existing.queuedTasks].some(e => e.taskId === taskId);
+            if (!alreadyPresent) {
+              queues = queues.map(q => q.personId === personId
+                ? slot === "current"
+                  ? { ...q, currentTasks: [...q.currentTasks, { taskId }] }
+                  : { ...q, queuedTasks: [...q.queuedTasks, { taskId }] }
+                : q
+              );
+            }
+          }
+        }
+        return queues;
+      });
+    }
   };
 
   const updateGroupTitle = (id: string, title: string) => {

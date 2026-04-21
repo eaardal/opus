@@ -716,6 +716,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           highlightedTaskId={highlightedTaskId}
           onTaskQueuesChange={onTaskQueuesChange}
           onAssignPersonToTask={onAssignPeople}
+          onSetTaskStatus={onSetTaskStatus}
           onHighlightTask={onHighlightTask}
           onClose={() => setIsTaskQueueOpen(false)}
         />
