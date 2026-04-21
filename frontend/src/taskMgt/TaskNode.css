@@ -19,7 +19,8 @@
 }
 
 .node.highlighted {
-  stroke-width: 3 !important;
+  stroke: var(--highlight-border) !important;
+  stroke-width: 4 !important;
 }
 
 .node.selected {

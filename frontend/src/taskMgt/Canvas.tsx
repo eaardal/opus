@@ -97,6 +97,7 @@ interface CanvasProps {
   onRedo: () => void;
   taskQueues: PersonTaskQueue[];
   onTaskQueuesChange: (queues: PersonTaskQueue[]) => void;
+  onHighlightTask: (taskId: string | null) => void;
 }
 
 const ZOOM_SENSITIVITY = 0.001;
@@ -152,6 +153,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onRedo,
     taskQueues,
     onTaskQueuesChange,
+    onHighlightTask,
   },
   ref
 ) {
@@ -711,8 +713,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           people={people}
           categories={categories}
           statuses={statuses}
+          highlightedTaskId={highlightedTaskId}
           onTaskQueuesChange={onTaskQueuesChange}
           onAssignPersonToTask={onAssignPeople}
+          onHighlightTask={onHighlightTask}
           onClose={() => setIsTaskQueueOpen(false)}
         />
       )}

@@ -671,6 +671,7 @@ function App({
         onRedo={redo}
         taskQueues={taskQueues}
         onTaskQueuesChange={setTaskQueues}
+        onHighlightTask={setHighlightedTaskId}
       />
     </div>
   );

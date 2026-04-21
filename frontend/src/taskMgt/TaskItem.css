@@ -3,11 +3,14 @@
   gap: 6px;
   align-items: center;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: box-shadow 0.15s;
+  margin-left: 6px;
+  margin-right: 6px;
 }
 
 .task-item.highlighted {
-  background: var(--highlight-bg);
+  outline: 2px solid var(--highlight-border);
+  outline-offset: 3px;
 }
 
 .task-number {

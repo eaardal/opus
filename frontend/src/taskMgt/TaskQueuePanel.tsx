@@ -146,6 +146,7 @@ function PersonPicker({ people, position, onSelect, onClose }: PersonPickerProps
 interface TaskCardProps {
   task: Task;
   seqNum: number;
+  isHighlighted: boolean;
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   draggable?: boolean;
@@ -154,21 +155,23 @@ interface TaskCardProps {
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent) => void;
   onRemove: () => void;
+  onClick: () => void;
 }
 
-function TaskCard({ task, seqNum, categories, statuses, draggable, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: TaskCardProps) {
+function TaskCard({ task, seqNum, isHighlighted, categories, statuses, draggable, onDragStart, onDragEnd, onDragOver, onDrop, onRemove, onClick }: TaskCardProps) {
   const statusConfig = statuses[task.status] ?? statuses.pending;
   const categoryConfig = task.category ? categories[task.category] : null;
   const accentColor = categoryConfig?.color ?? statusConfig.color;
 
   return (
     <div
-      className="tq-task-card"
+      className={`tq-task-card${isHighlighted ? " tq-task-card--highlighted" : ""}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onClick={onClick}
       style={{ borderLeftColor: accentColor }}
     >
       <span className="tq-card-seq">#{seqNum}</span>
@@ -192,8 +195,10 @@ interface TaskQueuePanelProps {
   people: Person[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
+  highlightedTaskId: string | null;
   onTaskQueuesChange: (queues: PersonTaskQueue[]) => void;
   onAssignPersonToTask: (taskId: string, personIds: string[]) => void;
+  onHighlightTask: (taskId: string | null) => void;
   onClose: () => void;
 }
 
@@ -203,8 +208,10 @@ export function TaskQueuePanel({
   people,
   categories,
   statuses,
+  highlightedTaskId,
   onTaskQueuesChange,
   onAssignPersonToTask,
+  onHighlightTask,
   onClose,
 }: TaskQueuePanelProps) {
   const dragSourceRef = useRef<DragSource | null>(null);
@@ -369,6 +376,7 @@ export function TaskQueuePanel({
                         key={entry.taskId}
                         task={task}
                         seqNum={seqNum}
+                        isHighlighted={highlightedTaskId === entry.taskId}
                         categories={categories}
                         statuses={statuses}
                         draggable
@@ -377,6 +385,7 @@ export function TaskQueuePanel({
                         onDragOver={e => { e.stopPropagation(); handleDragOver(e, queue.personId, "current"); }}
                         onDrop={e => { e.stopPropagation(); handleDrop(e, queue.personId, "current", idx); }}
                         onRemove={() => removeTaskFromSlot(queue.personId, entry.taskId, "current")}
+                        onClick={() => onHighlightTask(highlightedTaskId === entry.taskId ? null : entry.taskId)}
                       />
                     );
                   })}
@@ -416,6 +425,7 @@ export function TaskQueuePanel({
                         key={entry.taskId}
                         task={task}
                         seqNum={seqNum}
+                        isHighlighted={highlightedTaskId === entry.taskId}
                         categories={categories}
                         statuses={statuses}
                         draggable
@@ -424,6 +434,7 @@ export function TaskQueuePanel({
                         onDragOver={e => { e.stopPropagation(); handleDragOver(e, queue.personId, "queue"); }}
                         onDrop={e => { e.stopPropagation(); handleDrop(e, queue.personId, "queue", idx); }}
                         onRemove={() => removeTaskFromSlot(queue.personId, entry.taskId, "queue")}
+                        onClick={() => onHighlightTask(highlightedTaskId === entry.taskId ? null : entry.taskId)}
                       />
                     );
                   })}

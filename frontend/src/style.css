@@ -33,6 +33,7 @@
   --selection-fill: rgba(244, 114, 182, 0.1);
   --selection-stroke: #f472b6;
   --highlight-bg: rgba(96, 165, 250, 0.15);
+  --highlight-border: #60a5fa;
 
   --group-fill: rgba(255, 255, 255, 0.04);
   --group-stroke: rgba(255, 255, 255, 0.2);
@@ -91,6 +92,7 @@
   --selection-fill: rgba(244, 114, 182, 0.15);
   --selection-stroke: #e0609a;
   --highlight-bg: rgba(96, 165, 250, 0.2);
+  --highlight-border: #85b0f6;
 
   --group-fill: rgba(0, 0, 0, 0.04);
   --group-stroke: rgba(0, 0, 0, 0.2);
@@ -114,15 +116,17 @@
   --delete-bg: rgba(208, 48, 48, 0.1);
 }
 
-html, body, #root {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 }

@@ -7,14 +7,6 @@ import { Person } from "../teamMgt/types";
 import { avatarColor } from "../shared/avatarUtils";
 
 
-function lightenColor(hex: string, amount: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const lighten = (c: number) =>
-    Math.min(255, Math.round(c + (255 - c) * amount));
-  return `rgb(${lighten(r)}, ${lighten(g)}, ${lighten(b)})`;
-}
 
 interface TaskNodeProps {
   task: Task;
@@ -74,12 +66,11 @@ export function TaskNode({
   const categoryColor = category?.color;
   const shape = category?.shape || "circle";
   const baseFill = categoryColor || statusColor;
-  const fillColor = isHighlighted ? lightenColor(baseFill, 0.4) : baseFill;
   const nodeClass = `node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`;
   const nodeStyle = {
-    fill: fillColor,
-    stroke: isSelected ? undefined : statusColor,
-    strokeWidth: 3,
+    fill: baseFill,
+    stroke: isHighlighted ? "var(--highlight-border)" : (isSelected ? undefined : statusColor),
+    strokeWidth: isHighlighted ? 4 : 3,
   };
 
   const MAX_TOOLTIP_WIDTH = 170;
