@@ -1,14 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./TeamCard.css";
 import { Person, Team } from "./types";
-
-const AVATAR_COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#06b6d4"];
-
-function avatarColor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
+import { avatarColor } from "../shared/avatarUtils";
 
 function MemberAvatar({ person, size = 32 }: { person: Person; size?: number }) {
   const initials = person.name.trim() ? person.name.trim()[0].toUpperCase() : "?";

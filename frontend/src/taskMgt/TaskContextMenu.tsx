@@ -3,22 +3,7 @@ import "./TaskContextMenu.css";
 import { Task, TaskStatus } from "./Sidebar";
 import { CategoryConfig, StatusConfig } from "./theme";
 import { Person } from "../teamMgt/types";
-
-const AVATAR_COLORS = [
-  "#6366f1",
-  "#ec4899",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#8b5cf6",
-  "#06b6d4",
-];
-function personAvatarColor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++)
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
+import { avatarColor as personAvatarColor } from "../shared/avatarUtils";
 
 function PersonAvatar({ person, size }: { person: Person; size: number }) {
   const initials = person.name.trim()
