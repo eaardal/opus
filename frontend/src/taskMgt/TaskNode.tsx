@@ -219,6 +219,16 @@ export function TaskNode({
                 rx="4"
                 style={{ fill: statusColor }}
               />
+              {isHighlighted && (
+                <rect
+                  x={tooltipX - 2}
+                  y="-14"
+                  width={tooltipWidth + 4}
+                  height={tooltipHeight + 4}
+                  rx="6"
+                  style={{ fill: "none", stroke: "var(--highlight-border)", strokeWidth: 2 }}
+                />
+              )}
               <text textAnchor="middle" style={{ fill: statusFontColor }}>
                 {tooltipLines.map((line, i) => (
                   <tspan
