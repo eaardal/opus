@@ -6,8 +6,6 @@ import { TaskStatus } from "./Sidebar";
 import { Person } from "../teamMgt/types";
 import { avatarColor } from "../shared/avatarUtils";
 
-
-
 interface TaskNodeProps {
   task: Task;
   index: number;
@@ -69,7 +67,11 @@ export function TaskNode({
   const nodeClass = `node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`;
   const nodeStyle = {
     fill: baseFill,
-    stroke: isHighlighted ? "var(--highlight-border)" : (isSelected ? undefined : statusColor),
+    stroke: isHighlighted
+      ? "var(--highlight-border)"
+      : isSelected
+        ? undefined
+        : statusColor,
     strokeWidth: isHighlighted ? 4 : 3,
   };
 
@@ -226,7 +228,11 @@ export function TaskNode({
                   width={tooltipWidth + 4}
                   height={tooltipHeight + 4}
                   rx="6"
-                  style={{ fill: "none", stroke: "var(--highlight-border)", strokeWidth: 2 }}
+                  style={{
+                    fill: "none",
+                    stroke: "var(--highlight-border)",
+                    strokeWidth: 2,
+                  }}
                 />
               )}
               <text textAnchor="middle" style={{ fill: statusFontColor }}>
@@ -242,18 +248,18 @@ export function TaskNode({
               </text>
               {assignedPersons.length > 0 &&
                 (() => {
-                  const AVATAR_R = 12;
+                  const AVATAR_R = 15;
                   const AVATAR_STEP = AVATAR_R * 2 - 2; // slight overlap
-                  const rightEdge = tooltipWidth / 2;
-                  const avatarY = -12; // tooltip top edge (50% overlap)
+                  const cx = tooltipWidth / 2;
+                  const firstAvatarY = -12; // tooltip top edge (50% overlap)
                   return (
                     <>
                       <defs>
                         {assignedPersons.map((person, i) => (
                           <clipPath key={i} id={`clip-ta-${task.id}-${i}`}>
                             <circle
-                              cx={rightEdge - i * AVATAR_STEP}
-                              cy={avatarY}
+                              cx={cx}
+                              cy={firstAvatarY + i * AVATAR_STEP}
                               r={AVATAR_R}
                             />
                           </clipPath>
@@ -261,7 +267,7 @@ export function TaskNode({
                       </defs>
                       {[...assignedPersons].reverse().map((person, ri) => {
                         const i = assignedPersons.length - 1 - ri;
-                        const cx = rightEdge - i * AVATAR_STEP;
+                        const cy = firstAvatarY + i * AVATAR_STEP;
                         const initials = person.name.trim()
                           ? person.name.trim()[0].toUpperCase()
                           : "?";
@@ -271,7 +277,7 @@ export function TaskNode({
                               <image
                                 href={person.picture}
                                 x={cx - AVATAR_R}
-                                y={avatarY - AVATAR_R}
+                                y={cy - AVATAR_R}
                                 width={AVATAR_R * 2}
                                 height={AVATAR_R * 2}
                                 clipPath={`url(#clip-ta-${task.id}-${i})`}
@@ -281,14 +287,14 @@ export function TaskNode({
                               <>
                                 <circle
                                   cx={cx}
-                                  cy={avatarY}
+                                  cy={cy}
                                   r={AVATAR_R}
                                   fill={avatarColor(person.id)}
                                   clipPath={`url(#clip-ta-${task.id}-${i})`}
                                 />
                                 <text
                                   x={cx}
-                                  y={avatarY}
+                                  y={cy}
                                   textAnchor="middle"
                                   dy="0.35em"
                                   fontSize="7"
@@ -302,10 +308,9 @@ export function TaskNode({
                                 </text>
                               </>
                             )}
-                            {/* Separator ring so overlapping avatars are distinct */}
                             <circle
                               cx={cx}
-                              cy={avatarY}
+                              cy={cy}
                               r={AVATAR_R}
                               fill="none"
                               stroke={statusColor}
