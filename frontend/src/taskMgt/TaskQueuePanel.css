@@ -491,6 +491,14 @@
   flex-shrink: 0;
 }
 
+.tq-empty-state {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: 4px 2px;
+  white-space: nowrap;
+}
+
 .tq-picker-empty {
   padding: 10px 12px;
   font-size: 12px;

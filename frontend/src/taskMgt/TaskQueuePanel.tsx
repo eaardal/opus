@@ -443,7 +443,17 @@ export function TaskQueuePanel({
               )}
 
               <div className="tq-current-section">
-                <div className="tq-section-label">In progress</div>
+                <div className="tq-section-header">
+                  <div className="tq-section-label">In progress</div>
+                  <button
+                    className="tq-add-more-btn"
+                    onClick={e => openTaskPicker(e, person.id, "current")}
+                    aria-label="Add task to in progress"
+                    title="Add task to in progress"
+                  >
+                    +
+                  </button>
+                </div>
                 <div
                   className={`tq-tasks-row ${isCurrentDrop ? "tq-drop-active" : ""}`}
                   onDragOver={e => handleDragOver(e, person.id, "current")}
@@ -471,9 +481,7 @@ export function TaskQueuePanel({
                     );
                   })}
                   {currentTasks.length === 0 && (
-                    <button className="tq-add-task-btn" onClick={e => openTaskPicker(e, person.id, "current")}>
-                      <span className="tq-add-task-icon">+</span> Add task
-                    </button>
+                    <span className="tq-empty-state">No tasks added yet</span>
                   )}
                 </div>
               </div>
@@ -519,9 +527,7 @@ export function TaskQueuePanel({
                     );
                   })}
                   {queuedTasks.length === 0 && (
-                    <button className="tq-add-task-btn" onClick={e => openTaskPicker(e, person.id, "queue")}>
-                      <span className="tq-add-task-icon">+</span> Add task
-                    </button>
+                    <span className="tq-empty-state">No tasks added yet</span>
                   )}
                 </div>
               </div>
