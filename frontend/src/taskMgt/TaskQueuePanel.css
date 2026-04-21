@@ -103,6 +103,12 @@
   overflow-x: auto;
 }
 
+.tq-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .tq-section-label {
   font-size: 10px;
   font-weight: 600;
@@ -220,22 +226,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  align-self: center;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  border: 1.5px dashed var(--border-secondary);
+  border: 1.5px solid var(--border-secondary);
   background: none;
-  color: var(--text-muted);
-  font-size: 18px;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 0.15s, border-color 0.15s;
+  padding: 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
 .tq-add-more-btn:hover {
   color: var(--text-primary);
   border-color: var(--text-muted);
+  background: var(--bg-control);
 }
 
 .tq-add-person-lane {
@@ -362,6 +370,41 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.tq-picker-task-item {
+  gap: 6px;
+}
+
+.tq-picker-seq {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+.tq-picker-task-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.tq-picker-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tq-picker-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .tq-picker-empty {

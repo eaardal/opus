@@ -709,6 +709,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           taskQueues={taskQueues}
           tasks={tasks}
           people={people}
+          categories={categories}
+          statuses={statuses}
           onTaskQueuesChange={onTaskQueuesChange}
           onAssignPersonToTask={onAssignPeople}
           onClose={() => setIsTaskQueueOpen(false)}

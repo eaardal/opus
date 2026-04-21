@@ -4,6 +4,8 @@ import { Task } from "./Sidebar";
 import { Person } from "../teamMgt/types";
 import { PersonTaskQueue, TaskQueueEntry } from "../workspace/types";
 import { avatarColor } from "../shared/avatarUtils";
+import { CategoryConfig, StatusConfig } from "./theme";
+import { TaskStatus } from "./Sidebar";
 
 interface PersonAvatarProps {
   person: Person;
@@ -35,16 +37,25 @@ interface TaskPickerProps {
   tasks: Task[];
   excludeIds: Set<string>;
   position: { x: number; y: number };
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
   onSelect: (taskId: string) => void;
   onClose: () => void;
 }
 
-function TaskPicker({ tasks, excludeIds, position, onSelect, onClose }: TaskPickerProps) {
+function matchesFilter(task: Task, seqNum: number, raw: string): boolean {
+  const lower = raw.toLowerCase().trim();
+  if (!lower) return true;
+  const numQuery = lower.startsWith("#") ? lower.slice(1) : lower;
+  if (/^\d+$/.test(numQuery) && String(seqNum).includes(numQuery)) return true;
+  return (task.text || "").toLowerCase().includes(lower);
+}
+
+function TaskPicker({ tasks, excludeIds, position, categories, statuses, onSelect, onClose }: TaskPickerProps) {
   const [filter, setFilter] = useState("");
-  const filtered = tasks.filter(t =>
-    !excludeIds.has(t.id) &&
-    (t.text || "").toLowerCase().includes(filter.toLowerCase())
-  );
+  const filtered = tasks
+    .map((t, i) => ({ task: t, seq: i + 1 }))
+    .filter(({ task, seq }) => !excludeIds.has(task.id) && matchesFilter(task, seq, filter));
 
   return (
     <>
@@ -56,7 +67,7 @@ function TaskPicker({ tasks, excludeIds, position, onSelect, onClose }: TaskPick
       >
         <input
           className="tq-picker-filter"
-          placeholder="Filter tasks..."
+          placeholder="Filter by name or #number..."
           value={filter}
           onChange={e => setFilter(e.target.value)}
           autoFocus
@@ -66,11 +77,34 @@ function TaskPicker({ tasks, excludeIds, position, onSelect, onClose }: TaskPick
           {filtered.length === 0 ? (
             <div className="tq-picker-empty">No tasks found</div>
           ) : (
-            filtered.map(task => (
-              <button key={task.id} className="tq-picker-item" onClick={() => { onSelect(task.id); onClose(); }}>
-                {task.text || "(unnamed task)"}
-              </button>
-            ))
+            filtered.map(({ task, seq }) => {
+              const statusConfig = statuses[task.status];
+              const categoryConfig = task.category ? categories[task.category] : null;
+              return (
+                <button
+                  key={task.id}
+                  className="tq-picker-item tq-picker-task-item"
+                  onClick={() => { onSelect(task.id); onClose(); }}
+                >
+                  <span className="tq-picker-seq">#{seq}</span>
+                  <span className="tq-picker-task-text">{task.text || "(unnamed task)"}</span>
+                  <span className="tq-picker-badges">
+                    {categoryConfig && (
+                      <span
+                        className="tq-picker-dot"
+                        style={{ background: categoryConfig.color }}
+                        title={categoryConfig.label}
+                      />
+                    )}
+                    <span
+                      className="tq-picker-dot"
+                      style={{ background: statusConfig.color, outline: "1px solid rgba(0,0,0,0.15)" }}
+                      title={statusConfig.label}
+                    />
+                  </span>
+                </button>
+              );
+            })
           )}
         </div>
       </div>
@@ -120,6 +154,8 @@ interface TaskQueuePanelProps {
   taskQueues: PersonTaskQueue[];
   tasks: Task[];
   people: Person[];
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
   onTaskQueuesChange: (queues: PersonTaskQueue[]) => void;
   onAssignPersonToTask: (taskId: string, personIds: string[]) => void;
   onClose: () => void;
@@ -129,6 +165,8 @@ export function TaskQueuePanel({
   taskQueues,
   tasks,
   people,
+  categories,
+  statuses,
   onTaskQueuesChange,
   onAssignPersonToTask,
   onClose,
@@ -241,14 +279,18 @@ export function TaskQueuePanel({
     dragSourceRef.current = null;
   };
 
+  const PICKER_WIDTH = 220;
+
   const openTaskPicker = (e: React.MouseEvent, personId: string, target: "current" | "queue") => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setTaskPickerState({ personId, target, position: { x: rect.left, y: rect.bottom + 4 } });
+    const x = Math.min(rect.left, window.innerWidth - PICKER_WIDTH - 8);
+    setTaskPickerState({ personId, target, position: { x, y: rect.bottom + 4 } });
   };
 
   const openPersonPicker = (e: React.MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setPersonPickerPosition({ x: rect.left, y: rect.bottom + 4 });
+    const x = Math.min(rect.left, window.innerWidth - PICKER_WIDTH - 8);
+    setPersonPickerPosition({ x, y: rect.bottom + 4 });
   };
 
   const getQueuedTaskIds = (personId: string): Set<string> => {
@@ -311,7 +353,17 @@ export function TaskQueuePanel({
               <div className="tq-section-divider" />
 
               <div className="tq-queue-section">
-                <div className="tq-section-label">Queue</div>
+                <div className="tq-section-header">
+                  <div className="tq-section-label">Queue</div>
+                  <button
+                    className="tq-add-more-btn"
+                    onClick={e => openTaskPicker(e, queue.personId, "queue")}
+                    aria-label="Add task to queue"
+                    title="Add task to queue"
+                  >
+                    +
+                  </button>
+                </div>
                 <div
                   className={`tq-tasks-row ${isQueueDrop ? "tq-drop-active" : ""}`}
                   onDragOver={e => handleDragOver(e, queue.personId, "queue")}
@@ -343,20 +395,13 @@ export function TaskQueuePanel({
                 </div>
               </div>
 
-              <button
-                className="tq-add-more-btn"
-                onClick={e => openTaskPicker(e, queue.personId, "queue")}
-                aria-label="Add task to queue"
-                title="Add task to queue"
-              >
-                +
-              </button>
-
               {taskPickerState?.personId === queue.personId && (
                 <TaskPicker
                   tasks={tasks}
                   excludeIds={queuedIds}
                   position={taskPickerState.position}
+                  categories={categories}
+                  statuses={statuses}
                   onSelect={taskId => addTaskToSlot(queue.personId, taskId, taskPickerState.target)}
                   onClose={() => setTaskPickerState(null)}
                 />
