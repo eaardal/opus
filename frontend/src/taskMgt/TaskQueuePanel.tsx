@@ -143,6 +143,42 @@ function PersonPicker({ people, position, onSelect, onClose }: PersonPickerProps
   );
 }
 
+interface TaskCardProps {
+  task: Task;
+  seqNum: number;
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onRemove: () => void;
+}
+
+function TaskCard({ task, seqNum, categories, statuses, draggable, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: TaskCardProps) {
+  const statusConfig = statuses[task.status] ?? statuses.pending;
+  const categoryConfig = task.category ? categories[task.category] : null;
+  const accentColor = categoryConfig?.color ?? statusConfig.color;
+
+  return (
+    <div
+      className="tq-task-card"
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      style={{ borderLeftColor: accentColor }}
+    >
+      <span className="tq-card-seq">#{seqNum}</span>
+      <span className="tq-card-emoji" title={statusConfig.label}>{statusConfig.emoji}</span>
+      <span className="tq-task-text">{task.text || "(unnamed)"}</span>
+      <button className="tq-task-remove" onClick={onRemove} tabIndex={-1}>×</button>
+    </div>
+  );
+}
+
 interface DragSource {
   personId: string;
   source: "current" | "queue";
@@ -327,19 +363,21 @@ export function TaskQueuePanel({
                   {queue.currentTasks.map((entry, idx) => {
                     const task = tasks.find(t => t.id === entry.taskId);
                     if (!task) return null;
+                    const seqNum = tasks.indexOf(task) + 1;
                     return (
-                      <div
+                      <TaskCard
                         key={entry.taskId}
-                        className="tq-task-card"
+                        task={task}
+                        seqNum={seqNum}
+                        categories={categories}
+                        statuses={statuses}
                         draggable
                         onDragStart={e => handleDragStart(e, queue.personId, "current", entry.taskId, idx)}
                         onDragEnd={handleDragEnd}
                         onDragOver={e => { e.stopPropagation(); handleDragOver(e, queue.personId, "current"); }}
                         onDrop={e => { e.stopPropagation(); handleDrop(e, queue.personId, "current", idx); }}
-                      >
-                        <span className="tq-task-text">{task.text || "(unnamed)"}</span>
-                        <button className="tq-task-remove" onClick={() => removeTaskFromSlot(queue.personId, entry.taskId, "current")}>×</button>
-                      </div>
+                        onRemove={() => removeTaskFromSlot(queue.personId, entry.taskId, "current")}
+                      />
                     );
                   })}
                   {queue.currentTasks.length === 0 && (
@@ -372,19 +410,21 @@ export function TaskQueuePanel({
                   {queue.queuedTasks.map((entry, idx) => {
                     const task = tasks.find(t => t.id === entry.taskId);
                     if (!task) return null;
+                    const seqNum = tasks.indexOf(task) + 1;
                     return (
-                      <div
+                      <TaskCard
                         key={entry.taskId}
-                        className="tq-task-card"
+                        task={task}
+                        seqNum={seqNum}
+                        categories={categories}
+                        statuses={statuses}
                         draggable
                         onDragStart={e => handleDragStart(e, queue.personId, "queue", entry.taskId, idx)}
                         onDragEnd={handleDragEnd}
                         onDragOver={e => { e.stopPropagation(); handleDragOver(e, queue.personId, "queue"); }}
                         onDrop={e => { e.stopPropagation(); handleDrop(e, queue.personId, "queue", idx); }}
-                      >
-                        <span className="tq-task-text">{task.text || "(unnamed)"}</span>
-                        <button className="tq-task-remove" onClick={() => removeTaskFromSlot(queue.personId, entry.taskId, "queue")}>×</button>
-                      </div>
+                        onRemove={() => removeTaskFromSlot(queue.personId, entry.taskId, "queue")}
+                      />
                     );
                   })}
                   {queue.queuedTasks.length === 0 && (
