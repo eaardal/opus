@@ -3,6 +3,14 @@ import "./TaskNode.css";
 import { Task } from "./Sidebar";
 import { CategoryConfig, StatusConfig } from "./theme";
 import { TaskStatus } from "./Sidebar";
+import { Person } from "../teamMgt/types";
+
+const AVATAR_COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#06b6d4"];
+function avatarColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 function lightenColor(hex: string, amount: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -22,6 +30,7 @@ interface TaskNodeProps {
   isHighlighted: boolean;
   isSelected: boolean;
   isHovered: boolean;
+  assignedPersons?: Person[];
   onMouseDown: (e: React.MouseEvent) => void;
   onClick: () => void;
   onMouseEnter: () => void;
@@ -39,6 +48,7 @@ export function TaskNode({
   isHighlighted,
   isSelected,
   isHovered,
+  assignedPersons = [],
   onMouseDown,
   onClick,
   onMouseEnter,
@@ -225,15 +235,57 @@ export function TaskNode({
               />
               <text textAnchor="middle" style={{ fill: statusFontColor }}>
                 {tooltipLines.map((line, i) => (
-                  <tspan
-                    key={i}
-                    x="0"
-                    dy={i === 0 ? "0.35em" : `${LINE_HEIGHT}px`}
-                  >
+                  <tspan key={i} x="0" dy={i === 0 ? "0.35em" : `${LINE_HEIGHT}px`}>
                     {line}
                   </tspan>
                 ))}
               </text>
+              {assignedPersons.length > 0 && (() => {
+                const AVATAR_R = 8;
+                const AVATAR_STEP = AVATAR_R * 2 - 2; // slight overlap
+                const rightEdge = tooltipWidth / 2;
+                const avatarY = -12; // tooltip top edge (50% overlap)
+                return (
+                  <>
+                    <defs>
+                      {assignedPersons.map((person, i) => (
+                        <clipPath key={i} id={`clip-ta-${task.id}-${i}`}>
+                          <circle cx={rightEdge - i * AVATAR_STEP} cy={avatarY} r={AVATAR_R} />
+                        </clipPath>
+                      ))}
+                    </defs>
+                    {[...assignedPersons].reverse().map((person, ri) => {
+                      const i = assignedPersons.length - 1 - ri;
+                      const cx = rightEdge - i * AVATAR_STEP;
+                      const initials = person.name.trim() ? person.name.trim()[0].toUpperCase() : "?";
+                      return (
+                        <g key={i}>
+                          {person.picture ? (
+                            <image
+                              href={person.picture}
+                              x={cx - AVATAR_R}
+                              y={avatarY - AVATAR_R}
+                              width={AVATAR_R * 2}
+                              height={AVATAR_R * 2}
+                              clipPath={`url(#clip-ta-${task.id}-${i})`}
+                              preserveAspectRatio="xMidYMid slice"
+                            />
+                          ) : (
+                            <>
+                              <circle cx={cx} cy={avatarY} r={AVATAR_R} fill={avatarColor(person.id)} clipPath={`url(#clip-ta-${task.id}-${i})`} />
+                              <text x={cx} y={avatarY} textAnchor="middle" dy="0.35em" fontSize="7" fill="#fff" style={{ fontWeight: 700, userSelect: "none" }}>
+                                {initials}
+                              </text>
+                            </>
+                          )}
+                          {/* Separator ring so overlapping avatars are distinct */}
+                          <circle cx={cx} cy={avatarY} r={AVATAR_R} fill="none" stroke={statusColor} strokeWidth="1.5" />
+                        </g>
+                      );
+                    })}
+                  </>
+                );
+              })()}
             </g>
           )}
         </g>

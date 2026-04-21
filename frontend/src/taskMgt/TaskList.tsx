@@ -3,6 +3,7 @@ import "./TaskList.css";
 import { Task, TaskStatus } from "./Sidebar";
 import { TaskItem } from "./TaskItem";
 import { CategoryConfig, StatusConfig } from "./theme";
+import { Person } from "../teamMgt/types";
 
 interface TaskListProps {
   tasks: Task[];
@@ -22,6 +23,8 @@ interface TaskListProps {
   onTaskKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onFocusTaskId: (id: string | null) => void;
   registerTaskItemRef: (id: string, el: HTMLDivElement | null) => void;
+  people: Person[];
+  onAssignPeople: (taskId: string, personIds: string[]) => void;
 }
 
 export function TaskList({
@@ -42,6 +45,8 @@ export function TaskList({
   onTaskKeyDown,
   onFocusTaskId,
   registerTaskItemRef,
+  people,
+  onAssignPeople,
 }: TaskListProps) {
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
@@ -55,27 +60,21 @@ export function TaskList({
     }
   }, [focusTaskId, tasks, onFocusTaskId]);
 
-  useEffect(() => {
-    const handleClickOutside = () => {
-      onSetOpenMenuId(null);
-      onSetMenuPosition(null);
-    };
-    if (openMenuId) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [openMenuId, onSetOpenMenuId, onSetMenuPosition]);
-
-  const handleToggleMenu = (taskId: string, e: React.MouseEvent) => {
+  const handleOpenMenu = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (openMenuId === taskId) {
       onSetOpenMenuId(null);
       onSetMenuPosition(null);
     } else {
       const rect = e.currentTarget.getBoundingClientRect();
-      onSetMenuPosition({ top: rect.bottom + 4, left: rect.right });
+      onSetMenuPosition({ top: rect.bottom + 4, left: rect.left });
       onSetOpenMenuId(taskId);
     }
+  };
+
+  const handleCloseMenu = () => {
+    onSetOpenMenuId(null);
+    onSetMenuPosition(null);
   };
 
   return (
@@ -97,13 +96,16 @@ export function TaskList({
           onSetHighlighted={(highlighted) =>
             onSetHighlightedTaskId(highlighted ? task.id : null)
           }
-          onToggleMenu={(e) => handleToggleMenu(task.id, e)}
+          onToggleMenu={(e) => handleOpenMenu(task.id, e)}
+          onCloseMenu={handleCloseMenu}
           onKeyDown={onTaskKeyDown}
           registerRef={(el) => registerTaskItemRef(task.id, el)}
           registerInputRef={(el) => {
             if (el) inputRefs.current.set(task.id, el);
             else inputRefs.current.delete(task.id);
           }}
+          people={people}
+          onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
         />
       ))}
     </div>

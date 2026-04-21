@@ -6,6 +6,7 @@ import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
 import { getCategories, getStatuses } from "./theme";
 import { useHistory } from "./useHistory";
 import { ProjectData, ProjectState, createDefaultProject } from "../workspace/types";
+import { Person } from "../teamMgt/types";
 
 const _defaultProject = createDefaultProject();
 
@@ -16,6 +17,7 @@ interface AppProps {
   activeProjectId?: string;
   onSwitchProject?: (id: string) => void;
   onOpenProjectAdmin?: () => void;
+  people?: Person[];
 }
 
 function App({
@@ -25,6 +27,7 @@ function App({
   activeProjectId = _defaultProject.id,
   onSwitchProject = () => {},
   onOpenProjectAdmin = () => {},
+  people = [],
 }: AppProps) {
   const { present, push, replace, undo, redo, canUndo, canRedo } = useHistory({
     tasks: initialProject.tasks,
@@ -333,6 +336,14 @@ function App({
     });
   };
 
+  const assignPeople = (taskId: string, personIds: string[]) => {
+    push({
+      tasks: tasks.map(t => t.id === taskId ? { ...t, assignedPersonIds: personIds } : t),
+      connections,
+      groups,
+    });
+  };
+
   const updateGroupTitle = (id: string, title: string) => {
     push({
       tasks,
@@ -597,6 +608,8 @@ function App({
         onFocusTaskId={setFocusTaskId}
         registerTaskItemRef={registerTaskItemRef}
         onAddGroup={addGroup}
+        people={people}
+        onAssignPeople={assignPeople}
       />
 
       <div
@@ -635,6 +648,8 @@ function App({
         onGroupZoomTo={zoomToGroup}
         onGroupToggleLock={toggleGroupLock}
         onGroupDelete={deleteGroup}
+        people={people}
+        onAssignPeople={assignPeople}
         viewBox={viewBox}
         onViewBoxChange={setViewBox}
         theme={theme}

@@ -8,6 +8,8 @@ import { ProgressBar } from "./ProgressBar";
 import { CategoryConfig, StatusConfig, getConnector, getGroupBox } from "./theme";
 import { GroupRect } from "./GroupRect";
 import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogout } from "../../wailsjs/go/main/App";
+import { Person } from "../teamMgt/types";
+import { TaskContextMenu } from "./TaskContextMenu";
 
 interface AtlassianStatus {
   loggedIn: boolean;
@@ -75,6 +77,8 @@ interface CanvasProps {
   onGroupZoomTo: (id: string) => void;
   onGroupToggleLock: (id: string) => void;
   onGroupDelete: (id: string) => void;
+  people: Person[];
+  onAssignPeople: (taskId: string, personIds: string[]) => void;
   viewBox: ViewBox;
   onViewBoxChange: (vb: ViewBox) => void;
   theme: "dark" | "light";
@@ -126,6 +130,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupZoomTo,
     onGroupToggleLock,
     onGroupDelete,
+    people,
+    onAssignPeople,
     viewBox,
     onViewBoxChange,
     theme,
@@ -148,7 +154,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
   const svgRef = useRef<SVGSVGElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
-  const nodeContextMenuRef = useRef<HTMLDivElement>(null);
   const groupContextMenuRef = useRef<HTMLDivElement>(null);
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
@@ -209,24 +214,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
-
-  useEffect(() => {
-    if (!nodeContextMenu) return;
-    const handleClose = (e: MouseEvent) => {
-      if (nodeContextMenuRef.current && !nodeContextMenuRef.current.contains(e.target as Node)) {
-        setNodeContextMenu(null);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setNodeContextMenu(null);
-    };
-    document.addEventListener("mousedown", handleClose);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClose);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [nodeContextMenu]);
 
   useEffect(() => {
     if (!groupContextMenu) return;
@@ -760,6 +747,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             isHighlighted={highlightedTaskId === task.id}
             isSelected={selectedNodes.has(task.id)}
             isHovered={false}
+            assignedPersons={task.assignedPersonIds?.map(id => people.find(p => p.id === id)).filter(Boolean) as Person[]}
             onMouseDown={(e) => onNodeMouseDown(e, task.id)}
             onClick={() => onNodeClick(task.id)}
             onMouseEnter={() => onNodeHover(task.id)}
@@ -800,6 +788,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               isHighlighted={highlightedTaskId === task.id}
               isSelected={selectedNodes.has(task.id)}
               isHovered={true}
+              assignedPersons={task.assignedPersonIds?.map(id => people.find(p => p.id === id)).filter(Boolean) as Person[]}
               onMouseDown={(e) => onNodeMouseDown(e, task.id)}
               onClick={() => onNodeClick(task.id)}
               onMouseEnter={() => onNodeHover(task.id)}
@@ -936,49 +925,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         const task = tasks.find((t) => t.id === nodeContextMenu.taskId);
         if (!task) return null;
         return (
-          <div
-            ref={nodeContextMenuRef}
-            className="task-menu"
-            style={{ position: "fixed", top: nodeContextMenu.y, left: nodeContextMenu.x, transform: "none" }}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <div className="menu-section-label">Status</div>
-            {(Object.entries(statuses) as [TaskStatus, StatusConfig][]).map(([key, { label, color }]) => (
-              <button
-                key={key}
-                className={`menu-item ${task.status === key ? "active" : ""}`}
-                onClick={() => { onSetTaskStatus(task.id, key); setNodeContextMenu(null); }}
-              >
-                <span className="status-dot" style={{ background: color }} />
-                {label}
-              </button>
-            ))}
-            <div className="menu-section-label">Category</div>
-            {Object.entries(categories).map(([key, { label, color }]) => (
-              <button
-                key={key}
-                className={`menu-item ${task.category === key ? "active" : ""}`}
-                onClick={() => { onSetTaskCategory(task.id, key); setNodeContextMenu(null); }}
-              >
-                <span className="category-dot" style={{ background: color }} />
-                {label}
-              </button>
-            ))}
-            {task.category && (
-              <button
-                className="menu-item clear-category"
-                onClick={() => { onSetTaskCategory(task.id, undefined); setNodeContextMenu(null); }}
-              >
-                Clear category
-              </button>
-            )}
-            <button
-              className="menu-item delete-item"
-              onClick={() => { onDeleteTask(task.id); setNodeContextMenu(null); }}
-            >
-              Delete
-            </button>
-          </div>
+          <TaskContextMenu
+            task={task}
+            x={nodeContextMenu.x}
+            y={nodeContextMenu.y}
+            categories={categories}
+            statuses={statuses}
+            people={people}
+            onSetStatus={(status) => { onSetTaskStatus(task.id, status); setNodeContextMenu(null); }}
+            onSetCategory={(category) => { onSetTaskCategory(task.id, category); setNodeContextMenu(null); }}
+            onDelete={() => { onDeleteTask(task.id); setNodeContextMenu(null); }}
+            onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
+            onClose={() => setNodeContextMenu(null)}
+          />
         );
       })()}
     </div>

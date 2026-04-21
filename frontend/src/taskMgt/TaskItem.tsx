@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState } from "react";
 import "./TaskItem.css";
 import { Task, TaskStatus } from "./Sidebar";
 import { CategoryConfig, StatusConfig } from "./theme";
+import { Person } from "../teamMgt/types";
+import { TaskContextMenu } from "./TaskContextMenu";
 
 interface TaskItemProps {
   task: Task;
@@ -17,9 +18,12 @@ interface TaskItemProps {
   onDelete: () => void;
   onSetHighlighted: (highlighted: boolean) => void;
   onToggleMenu: (e: React.MouseEvent) => void;
+  onCloseMenu: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   registerRef: (el: HTMLDivElement | null) => void;
   registerInputRef: (el: HTMLInputElement | null) => void;
+  people: Person[];
+  onAssignPeople: (personIds: string[]) => void;
 }
 
 export function TaskItem({
@@ -36,27 +40,13 @@ export function TaskItem({
   onDelete,
   onSetHighlighted,
   onToggleMenu,
+  onCloseMenu,
   onKeyDown,
   registerRef,
   registerInputRef,
+  people,
+  onAssignPeople,
 }: TaskItemProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [adjustedTop, setAdjustedTop] = useState<number | null>(null);
-
-  useLayoutEffect(() => {
-    if (!isMenuOpen || !menuRef.current || !menuPosition) {
-      setAdjustedTop(null);
-      return;
-    }
-    const rect = menuRef.current.getBoundingClientRect();
-    const overflow = rect.bottom - (window.innerHeight - 8);
-    if (overflow > 0) {
-      setAdjustedTop(Math.max(8, menuPosition.top - overflow));
-    } else {
-      setAdjustedTop(null);
-    }
-  }, [isMenuOpen, menuPosition]);
-
   return (
     <div
       ref={registerRef}
@@ -66,11 +56,7 @@ export function TaskItem({
     >
       <span
         className="task-number"
-        style={
-          task.category
-            ? { background: categories[task.category]?.color }
-            : undefined
-        }
+        style={task.category ? { background: categories[task.category]?.color } : undefined}
       >
         {index + 1}
       </span>
@@ -85,63 +71,21 @@ export function TaskItem({
         placeholder="Enter task..."
       />
       <div className="task-menu-container">
-        <button className="menu-btn" onClick={onToggleMenu}>
-          ⋯
-        </button>
+        <button className="menu-btn" onClick={onToggleMenu}>⋯</button>
         {isMenuOpen && menuPosition && (
-          <div
-            ref={menuRef}
-            className="task-menu"
-            style={{ top: adjustedTop ?? menuPosition.top, left: menuPosition.left }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="menu-section-label">Status</div>
-            {(
-              Object.entries(statuses) as [TaskStatus, StatusConfig][]
-            ).map(([key, { label, color }]) => (
-              <button
-                key={key}
-                className={`menu-item ${task.status === key ? "active" : ""}`}
-                onClick={() => onSetStatus(key)}
-              >
-                <span
-                  className="status-dot"
-                  style={{ background: color }}
-                />
-                {label}
-              </button>
-            ))}
-            <div className="menu-section-label">Category</div>
-            {Object.entries(categories).map(
-              ([key, { label, color }]) => (
-                <button
-                  key={key}
-                  className={`menu-item ${task.category === key ? "active" : ""}`}
-                  onClick={() => onSetCategory(key)}
-                >
-                  <span
-                    className="category-dot"
-                    style={{ background: color }}
-                  />
-                  {label}
-                </button>
-              ),
-            )}
-            {task.category && (
-              <button
-                className="menu-item clear-category"
-                onClick={() => onSetCategory(undefined)}
-              >
-                Clear category
-              </button>
-            )}
-            <button
-              className="menu-item delete-item"
-              onClick={onDelete}
-            >
-              Delete
-            </button>
-          </div>
+          <TaskContextMenu
+            task={task}
+            x={menuPosition.left}
+            y={menuPosition.top}
+            categories={categories}
+            statuses={statuses}
+            people={people}
+            onSetStatus={onSetStatus}
+            onSetCategory={onSetCategory}
+            onDelete={onDelete}
+            onAssignPeople={onAssignPeople}
+            onClose={onCloseMenu}
+          />
         )}
       </div>
     </div>

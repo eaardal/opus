@@ -229,6 +229,7 @@ function App() {
             activeProjectId={activeProjectId}
             onSwitchProject={handleSwitchProject}
             onOpenProjectAdmin={() => setShowProjectAdmin(true)}
+            people={people}
           />
         </div>
         <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>

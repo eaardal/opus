@@ -1,0 +1,56 @@
+.tcm-people-filter-row {
+  padding: 4px 8px;
+}
+
+.tcm-people-filter {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 4px 7px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.tcm-people-filter:focus {
+  border-color: var(--border-focus);
+}
+
+.tcm-people-filter::placeholder {
+  color: var(--text-faint);
+}
+
+.tcm-people-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.tcm-person-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tcm-person-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.tcm-check {
+  color: var(--text-secondary);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.tcm-people-empty {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+}

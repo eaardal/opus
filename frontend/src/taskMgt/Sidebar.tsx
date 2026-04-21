@@ -5,6 +5,7 @@ import { TaskList } from "./TaskList";
 import { CategoryConfig, StatusConfig } from "./theme";
 import { ProjectData } from "../workspace/types";
 import { ProjectSelector } from "../workspace/ProjectSelector";
+import { Person } from "../teamMgt/types";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
 
@@ -15,6 +16,7 @@ export interface Task {
   y: number;
   category?: string;
   status: TaskStatus;
+  assignedPersonIds?: string[];
 }
 
 export interface Group {
@@ -54,6 +56,8 @@ interface SidebarProps {
   onFocusTaskId: (id: string | null) => void;
   registerTaskItemRef: (id: string, el: HTMLDivElement | null) => void;
   onAddGroup: () => void;
+  people: Person[];
+  onAssignPeople: (taskId: string, personIds: string[]) => void;
 }
 
 export function Sidebar({
@@ -81,6 +85,8 @@ export function Sidebar({
   onFocusTaskId,
   registerTaskItemRef,
   onAddGroup,
+  people,
+  onAssignPeople,
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -141,6 +147,8 @@ export function Sidebar({
         onTaskKeyDown={onTaskKeyDown}
         onFocusTaskId={onFocusTaskId}
         registerTaskItemRef={registerTaskItemRef}
+        people={people}
+        onAssignPeople={onAssignPeople}
       />
     </div>
   );
