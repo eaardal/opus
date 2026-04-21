@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./PeoplePanel.css";
 import { Person } from "./types";
 import { PersonItem } from "./PersonItem";
@@ -10,11 +11,18 @@ interface PeoplePanelProps {
 }
 
 export function PeoplePanel({ people, onAddPerson, onUpdatePerson, onDeletePerson }: PeoplePanelProps) {
+  const [focusPersonId, setFocusPersonId] = useState<string | null>(null);
+
+  const addAndFocus = () => {
+    const id = onAddPerson();
+    setFocusPersonId(id);
+  };
+
   return (
     <div className="people-panel">
       <div className="people-panel-title-row">
         <span className="people-panel-title">People</span>
-        <button className="add-person-btn" onClick={onAddPerson}>+ Add person</button>
+        <button className="add-person-btn" onClick={addAndFocus}>+ Add person</button>
       </div>
       <div className="people-list">
         {people.length === 0 && (
@@ -24,6 +32,8 @@ export function PeoplePanel({ people, onAddPerson, onUpdatePerson, onDeletePerso
           <PersonItem
             key={person.id}
             person={person}
+            focusOnMount={person.id === focusPersonId}
+            onAddAfter={addAndFocus}
             onUpdate={(updates) => onUpdatePerson(person.id, updates)}
             onDelete={() => onDeletePerson(person.id)}
           />

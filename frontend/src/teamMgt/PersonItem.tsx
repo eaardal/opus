@@ -29,13 +29,19 @@ interface PersonItemProps {
   person: Person;
   onUpdate: (updates: Partial<Person>) => void;
   onDelete: () => void;
+  focusOnMount?: boolean;
+  onAddAfter?: () => void;
 }
 
-export function PersonItem({ person, onUpdate, onDelete }: PersonItemProps) {
+export function PersonItem({ person, onUpdate, onDelete, focusOnMount, onAddAfter }: PersonItemProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [editName, setEditName] = useState(person.name);
   const initials = person.name.trim() ? person.name.trim()[0].toUpperCase() : "?";
+
+  useEffect(() => {
+    if (focusOnMount) inputRef.current?.focus();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setEditName(person.name);
@@ -80,7 +86,10 @@ export function PersonItem({ person, onUpdate, onDelete }: PersonItemProps) {
         placeholder="Name..."
         onChange={(e) => setEditName(e.target.value)}
         onBlur={commitName}
-        onKeyDown={(e) => { if (e.key === "Enter") { commitName(); inputRef.current?.blur(); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && e.shiftKey) { e.preventDefault(); commitName(); onAddAfter?.(); }
+          else if (e.key === "Enter") { commitName(); inputRef.current?.blur(); }
+        }}
       />
       {person.picture && (
         <button className="person-clear-pic-btn" onClick={() => onUpdate({ picture: null })} title="Remove photo">
