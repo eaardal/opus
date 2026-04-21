@@ -2,6 +2,16 @@ import { Task, Group } from "../taskMgt/Sidebar";
 import { Connection, ViewBox } from "../taskMgt/Canvas";
 import { Person, Team } from "../teamMgt/types";
 
+export interface TaskQueueEntry {
+  taskId: string;
+}
+
+export interface PersonTaskQueue {
+  personId: string;
+  currentTasks: TaskQueueEntry[];
+  queuedTasks: TaskQueueEntry[];
+}
+
 export interface ProjectData {
   id: string;
   name: string;
@@ -10,6 +20,7 @@ export interface ProjectData {
   groups: Group[];
   viewBox: ViewBox;
   theme: "dark" | "light";
+  taskQueues: PersonTaskQueue[];
 }
 
 export interface WorkspaceFile {
@@ -19,10 +30,10 @@ export interface WorkspaceFile {
   teams: Team[];
 }
 
-export type ProjectState = Pick<ProjectData, "tasks" | "connections" | "groups" | "viewBox" | "theme">;
+export type ProjectState = Pick<ProjectData, "tasks" | "connections" | "groups" | "viewBox" | "theme" | "taskQueues">;
 
 export function extractProjectState(p: ProjectData): ProjectState {
-  return { tasks: p.tasks, connections: p.connections, groups: p.groups, viewBox: p.viewBox, theme: p.theme };
+  return { tasks: p.tasks, connections: p.connections, groups: p.groups, viewBox: p.viewBox, theme: p.theme, taskQueues: p.taskQueues ?? [] };
 }
 
 export function createDefaultProject(name = "My Project"): ProjectData {
@@ -34,6 +45,7 @@ export function createDefaultProject(name = "My Project"): ProjectData {
     groups: [],
     viewBox: { x: 0, y: 0, width: 0, height: 0 },
     theme: "light",
+    taskQueues: [],
   };
 }
 
@@ -58,6 +70,7 @@ export function parseWorkspaceFile(raw: unknown): WorkspaceFile {
         groups: (data.groups ?? []) as Group[],
         viewBox: (data.viewBox ?? { x: 0, y: 0, width: 0, height: 0 }) as ViewBox,
         theme: (data.theme === "dark" ? "dark" : "light"),
+        taskQueues: [],
       }],
       people: [],
       teams: [],

@@ -5,7 +5,7 @@ import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
 import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
 import { getCategories, getStatuses } from "./theme";
 import { useHistory } from "./useHistory";
-import { ProjectData, ProjectState, createDefaultProject } from "../workspace/types";
+import { ProjectData, ProjectState, createDefaultProject, PersonTaskQueue } from "../workspace/types";
 import { Person } from "../teamMgt/types";
 
 const _defaultProject = createDefaultProject();
@@ -40,6 +40,7 @@ function App({
 
   const [theme, setTheme] = useState<"dark" | "light">(initialProject.theme);
   const [viewBox, setViewBox] = useState<ViewBox>(initialProject.viewBox);
+  const [taskQueues, setTaskQueues] = useState<PersonTaskQueue[]>(initialProject.taskQueues ?? []);
 
   // Report live state to workspace owner (skip first render to avoid marking dirty on mount)
   const isFirstRender = useRef(true);
@@ -47,8 +48,8 @@ function App({
   onStateChangeRef.current = onStateChange;
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    onStateChangeRef.current({ tasks, connections, groups, viewBox, theme });
-  }, [tasks, connections, groups, viewBox, theme]);
+    onStateChangeRef.current({ tasks, connections, groups, viewBox, theme, taskQueues });
+  }, [tasks, connections, groups, viewBox, theme, taskQueues]);
   const categories = getCategories(theme);
   const statuses = getStatuses(theme);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
@@ -668,6 +669,8 @@ function App({
         canRedo={canRedo}
         onUndo={undo}
         onRedo={redo}
+        taskQueues={taskQueues}
+        onTaskQueuesChange={setTaskQueues}
       />
     </div>
   );

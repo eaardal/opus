@@ -1,6 +1,6 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
-import { Maximize, Focus, Undo2, Redo2 } from "lucide-react";
+import { Maximize, Focus, Undo2, Redo2, LayoutList } from "lucide-react";
 import { Task, Group, TaskStatus } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
@@ -10,6 +10,8 @@ import { GroupRect } from "./GroupRect";
 import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogout } from "../../wailsjs/go/main/App";
 import { Person } from "../teamMgt/types";
 import { TaskContextMenu } from "./TaskContextMenu";
+import { TaskQueuePanel } from "./TaskQueuePanel";
+import { PersonTaskQueue } from "../workspace/types";
 
 interface AtlassianStatus {
   loggedIn: boolean;
@@ -93,6 +95,8 @@ interface CanvasProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  taskQueues: PersonTaskQueue[];
+  onTaskQueuesChange: (queues: PersonTaskQueue[]) => void;
 }
 
 const ZOOM_SENSITIVITY = 0.001;
@@ -146,6 +150,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     canRedo,
     onUndo,
     onRedo,
+    taskQueues,
+    onTaskQueuesChange,
   },
   ref
 ) {
@@ -158,6 +164,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
   const [groupContextMenu, setGroupContextMenu] = useState<{ groupId: string; x: number; y: number; svgX: number; svgY: number } | null>(null);
   const [canvasContextMenu, setCanvasContextMenu] = useState<{ screenX: number; screenY: number; svgX: number; svgY: number } | null>(null);
@@ -580,6 +587,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       <div className="canvas-toolbar">
         <button
           type="button"
+          className={`canvas-toolbar-btn ${isTaskQueueOpen ? "active" : ""}`}
+          onClick={() => setIsTaskQueueOpen(prev => !prev)}
+          aria-label="Task Queue"
+          data-tooltip="Task Queue"
+        >
+          <LayoutList size={16} />
+        </button>
+        <button
+          type="button"
           className="canvas-toolbar-btn"
           onClick={onUndo}
           disabled={!canUndo}
@@ -688,6 +704,16 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           </div>
         )}
       </div>
+      {isTaskQueueOpen && (
+        <TaskQueuePanel
+          taskQueues={taskQueues}
+          tasks={tasks}
+          people={people}
+          onTaskQueuesChange={onTaskQueuesChange}
+          onAssignPersonToTask={onAssignPeople}
+          onClose={() => setIsTaskQueueOpen(false)}
+        />
+      )}
       <svg
         ref={svgRef}
         className={`canvas ${panMode || panning ? "panning" : ""}`}

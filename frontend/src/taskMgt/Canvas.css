@@ -54,6 +54,11 @@
   color: var(--text-primary);
 }
 
+.canvas-toolbar-btn.active {
+  background: var(--menu-trigger-hover);
+  color: var(--text-primary);
+}
+
 .canvas-toolbar-btn[data-tooltip] {
   position: relative;
 }
