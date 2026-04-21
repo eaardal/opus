@@ -210,6 +210,7 @@ interface TaskQueuePanelProps {
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   highlightedTaskId: string | null;
+  showBlockedBySection: boolean;
   onAssignPersonToTask: (taskId: string, personIds: string[]) => void;
   onAssignPersonAndSetInProgress: (taskId: string, personId: string) => void;
   onSetTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -225,6 +226,7 @@ export function TaskQueuePanel({
   categories,
   statuses,
   highlightedTaskId,
+  showBlockedBySection,
   onAssignPersonToTask,
   onAssignPersonAndSetInProgress,
   onSetTaskStatus,
@@ -415,7 +417,7 @@ export function TaskQueuePanel({
                 <span className="tq-person-name">{person.name || "(unnamed)"}</span>
               </div>
 
-              {blockingTasks.length > 0 && (
+              {showBlockedBySection && blockingTasks.length > 0 && (
                 <>
                   <div className="tq-blocked-section">
                     <div className="tq-section-label tq-section-label--blocked">Blocked by</div>

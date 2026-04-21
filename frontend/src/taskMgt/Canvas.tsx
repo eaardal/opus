@@ -11,6 +11,7 @@ import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogo
 import { Person } from "../teamMgt/types";
 import { TaskContextMenu } from "./TaskContextMenu";
 import { TaskQueuePanel } from "./TaskQueuePanel";
+import { SettingsDialog, AppSettings, loadSettings, saveSettings } from "./SettingsDialog";
 
 interface AtlassianStatus {
   loggedIn: boolean;
@@ -164,6 +165,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
   const [groupContextMenu, setGroupContextMenu] = useState<{ groupId: string; x: number; y: number; svgX: number; svgY: number } | null>(null);
@@ -676,31 +679,46 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             >
               How to Use
             </button>
-            <hr className="canvas-menu-divider" />
-            {atlassianStatus.loggedIn ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="canvas-menu-item"
+              onClick={() => {
+                setShowSettings(true);
+                setMenuOpen(false);
+              }}
+            >
+              Settings
+            </button>
+            {settings.showAtlassianLogin && (
               <>
-                <div className="canvas-menu-info" role="menuitem" aria-disabled="true">
-                  Logged in as {atlassianStatus.displayName}
-                </div>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="canvas-menu-item"
-                  onClick={handleAtlassianLogout}
-                >
-                  Logout from Atlassian
-                </button>
+                <hr className="canvas-menu-divider" />
+                {atlassianStatus.loggedIn ? (
+                  <>
+                    <div className="canvas-menu-info" role="menuitem" aria-disabled="true">
+                      Logged in as {atlassianStatus.displayName}
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="canvas-menu-item"
+                      onClick={handleAtlassianLogout}
+                    >
+                      Logout from Atlassian
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="canvas-menu-item"
+                    onClick={handleAtlassianLogin}
+                    disabled={atlassianLoginInProgress}
+                  >
+                    {atlassianLoginInProgress ? "Logging in…" : "Login to Atlassian"}
+                  </button>
+                )}
               </>
-            ) : (
-              <button
-                type="button"
-                role="menuitem"
-                className="canvas-menu-item"
-                onClick={handleAtlassianLogin}
-                disabled={atlassianLoginInProgress}
-              >
-                {atlassianLoginInProgress ? "Logging in…" : "Login to Atlassian"}
-              </button>
             )}
           </div>
         )}
@@ -714,11 +732,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           categories={categories}
           statuses={statuses}
           highlightedTaskId={highlightedTaskId}
+          showBlockedBySection={settings.showBlockedBySection}
           onAssignPersonToTask={onAssignPeople}
           onAssignPersonAndSetInProgress={onAssignPersonAndSetInProgress}
           onSetTaskStatus={onSetTaskStatus}
           onHighlightTask={onHighlightTask}
           onClose={() => setIsTaskQueueOpen(false)}
+        />
+      )}
+      {showSettings && (
+        <SettingsDialog
+          settings={settings}
+          onChange={setSettings}
+          onClose={() => setShowSettings(false)}
         />
       )}
       <svg
