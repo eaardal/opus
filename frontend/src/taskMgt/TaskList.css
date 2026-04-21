@@ -6,3 +6,18 @@
   gap: 4px;
   padding-bottom: 120px;
 }
+
+.task-list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-list-group-header {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  padding: 8px 10px 2px 10px;
+}

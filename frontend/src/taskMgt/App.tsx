@@ -600,6 +600,7 @@ function App({
       <Sidebar
         width={sidebarWidth}
         tasks={tasks}
+        groups={groups}
         categories={categories}
         statuses={statuses}
         projects={projects}

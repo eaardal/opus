@@ -1,12 +1,13 @@
 import { useRef, useEffect } from "react";
 import "./TaskList.css";
-import { Task, TaskStatus } from "./Sidebar";
+import { Task, Group, TaskStatus } from "./Sidebar";
 import { TaskItem } from "./TaskItem";
 import { CategoryConfig, StatusConfig } from "./theme";
 import { Person } from "../teamMgt/types";
 
 interface TaskListProps {
   tasks: Task[];
+  groups: Group[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   highlightedTaskId: string | null;
@@ -29,6 +30,7 @@ interface TaskListProps {
 
 export function TaskList({
   tasks,
+  groups,
   categories,
   statuses,
   highlightedTaskId,
@@ -77,37 +79,74 @@ export function TaskList({
     onSetMenuPosition(null);
   };
 
+  const findGroup = (task: Task): Group | null =>
+    groups.find(g =>
+      task.x >= g.x && task.x <= g.x + g.width &&
+      task.y >= g.y && task.y <= g.y + g.height
+    ) ?? null;
+
+  const grouped = new Map<string | null, Task[]>();
+  for (const task of tasks) {
+    const group = findGroup(task);
+    const key = group ? group.id : null;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(task);
+  }
+
+  const groupOrder: (string | null)[] = [
+    ...groups.filter(g => grouped.has(g.id)).map(g => g.id),
+    ...(grouped.has(null) ? [null] : []),
+  ];
+
+  const renderTask = (task: Task) => {
+    const index = tasks.indexOf(task);
+    return (
+      <TaskItem
+        key={task.id}
+        task={task}
+        index={index}
+        categories={categories}
+        statuses={statuses}
+        isHighlighted={highlightedTaskId === task.id}
+        isMenuOpen={openMenuId === task.id}
+        menuPosition={menuPosition}
+        onUpdateText={(text) => onUpdateTaskText(task.id, text)}
+        onSetCategory={(category) => onSetTaskCategory(task.id, category)}
+        onSetStatus={(status) => onSetTaskStatus(task.id, status)}
+        onDelete={() => onDeleteTask(task.id)}
+        onSetHighlighted={(highlighted) =>
+          onSetHighlightedTaskId(highlighted ? task.id : null)
+        }
+        onToggleMenu={(e) => handleOpenMenu(task.id, e)}
+        onCloseMenu={handleCloseMenu}
+        onKeyDown={onTaskKeyDown}
+        registerRef={(el) => registerTaskItemRef(task.id, el)}
+        registerInputRef={(el) => {
+          if (el) inputRefs.current.set(task.id, el);
+          else inputRefs.current.delete(task.id);
+        }}
+        people={people}
+        onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
+      />
+    );
+  };
+
   return (
     <div className="task-list">
-      {tasks.map((task, index) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          index={index}
-          categories={categories}
-          statuses={statuses}
-          isHighlighted={highlightedTaskId === task.id}
-          isMenuOpen={openMenuId === task.id}
-          menuPosition={menuPosition}
-          onUpdateText={(text) => onUpdateTaskText(task.id, text)}
-          onSetCategory={(category) => onSetTaskCategory(task.id, category)}
-          onSetStatus={(status) => onSetTaskStatus(task.id, status)}
-          onDelete={() => onDeleteTask(task.id)}
-          onSetHighlighted={(highlighted) =>
-            onSetHighlightedTaskId(highlighted ? task.id : null)
-          }
-          onToggleMenu={(e) => handleOpenMenu(task.id, e)}
-          onCloseMenu={handleCloseMenu}
-          onKeyDown={onTaskKeyDown}
-          registerRef={(el) => registerTaskItemRef(task.id, el)}
-          registerInputRef={(el) => {
-            if (el) inputRefs.current.set(task.id, el);
-            else inputRefs.current.delete(task.id);
-          }}
-          people={people}
-          onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
-        />
-      ))}
+      {groupOrder.map(groupId => {
+        const groupTasks = grouped.get(groupId) ?? [];
+        const group = groupId ? groups.find(g => g.id === groupId) : null;
+        return (
+          <div key={groupId ?? "__ungrouped__"} className="task-list-group">
+            {group && (
+              <div className="task-list-group-header">
+                {group.title || "(unnamed group)"}
+              </div>
+            )}
+            {groupTasks.map(renderTask)}
+          </div>
+        );
+      })}
     </div>
   );
 }

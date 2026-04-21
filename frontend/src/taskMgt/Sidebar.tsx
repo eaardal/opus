@@ -34,6 +34,7 @@ export type NodeShape = "circle" | "diamond";
 interface SidebarProps {
   width: number;
   tasks: Task[];
+  groups: Group[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   projects: ProjectData[];
@@ -63,6 +64,7 @@ interface SidebarProps {
 export function Sidebar({
   width,
   tasks,
+  groups,
   categories,
   statuses,
   projects,
@@ -131,6 +133,7 @@ export function Sidebar({
       </div>
       <TaskList
         tasks={tasks}
+        groups={groups}
         categories={categories}
         statuses={statuses}
         highlightedTaskId={highlightedTaskId}
