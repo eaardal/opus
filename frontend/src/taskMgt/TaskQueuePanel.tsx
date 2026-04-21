@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./TaskQueuePanel.css";
-import { Task } from "./Sidebar";
+import { Task, Group } from "./Sidebar";
 import { Person } from "../teamMgt/types";
 import { avatarColor } from "../shared/avatarUtils";
 import { CategoryConfig, StatusConfig } from "./theme";
@@ -109,6 +109,7 @@ function TaskPicker({ tasks, excludeIds, position, categories, statuses, onSelec
 interface TaskCardProps {
   task: Task;
   seqNum: number;
+  groupTitle: string | null;
   isHighlighted: boolean;
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
@@ -121,7 +122,7 @@ interface TaskCardProps {
   onClick: () => void;
 }
 
-function TaskCard({ task, seqNum, isHighlighted, categories, statuses, draggable, onDragStart, onDragEnd, onDragOver, onDrop, onRemove, onClick }: TaskCardProps) {
+function TaskCard({ task, seqNum, groupTitle, isHighlighted, categories, statuses, draggable, onDragStart, onDragEnd, onDragOver, onDrop, onRemove, onClick }: TaskCardProps) {
   const statusConfig = statuses[task.status] ?? statuses.pending;
   const categoryConfig = task.category ? categories[task.category] : null;
   const accentColor = categoryConfig?.color ?? statusConfig.color;
@@ -137,10 +138,13 @@ function TaskCard({ task, seqNum, isHighlighted, categories, statuses, draggable
       onClick={onClick}
       style={{ borderLeftColor: accentColor }}
     >
-      <span className="tq-card-seq">#{seqNum}</span>
-      <span className="tq-card-emoji" title={statusConfig.label}>{statusConfig.emoji}</span>
-      <span className="tq-task-text">{task.text || "(unnamed)"}</span>
-      <button className="tq-task-remove" onClick={e => { e.stopPropagation(); onRemove(); }} tabIndex={-1}>×</button>
+      {groupTitle && <span className="tq-card-group" title={groupTitle}>{groupTitle}</span>}
+      <div className="tq-card-main">
+        <span className="tq-card-seq">#{seqNum}</span>
+        <span className="tq-card-emoji" title={statusConfig.label}>{statusConfig.emoji}</span>
+        <span className="tq-task-text">{task.text || "(unnamed)"}</span>
+        <button className="tq-task-remove" onClick={e => { e.stopPropagation(); onRemove(); }} tabIndex={-1}>×</button>
+      </div>
     </div>
   );
 }
@@ -153,6 +157,7 @@ interface DragSource {
 
 interface TaskQueuePanelProps {
   tasks: Task[];
+  groups: Group[];
   people: Person[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
@@ -165,6 +170,7 @@ interface TaskQueuePanelProps {
 
 export function TaskQueuePanel({
   tasks,
+  groups,
   people,
   categories,
   statuses,
@@ -211,6 +217,14 @@ export function TaskQueuePanel({
       setIsExpanded(true);
     }
   }, [isExpanded]);
+
+  const getGroupTitle = (task: Task): string | null => {
+    const group = groups.find(g =>
+      task.x >= g.x && task.x <= g.x + g.width &&
+      task.y >= g.y && task.y <= g.y + g.height
+    );
+    return group?.title || null;
+  };
 
   const [taskPickerState, setTaskPickerState] = useState<{
     personId: string;
@@ -340,6 +354,7 @@ export function TaskQueuePanel({
                         key={task.id}
                         task={task}
                         seqNum={seqNum}
+                        groupTitle={getGroupTitle(task)}
                         isHighlighted={highlightedTaskId === task.id}
                         categories={categories}
                         statuses={statuses}
@@ -387,6 +402,7 @@ export function TaskQueuePanel({
                         key={task.id}
                         task={task}
                         seqNum={seqNum}
+                        groupTitle={getGroupTitle(task)}
                         isHighlighted={highlightedTaskId === task.id}
                         categories={categories}
                         statuses={statuses}

@@ -704,6 +704,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       {isTaskQueueOpen && (
         <TaskQueuePanel
           tasks={tasks}
+          groups={groups}
           people={people}
           categories={categories}
           statuses={statuses}
