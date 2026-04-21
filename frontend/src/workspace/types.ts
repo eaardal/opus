@@ -2,14 +2,8 @@ import { Task, Group } from "../taskMgt/Sidebar";
 import { Connection, ViewBox } from "../taskMgt/Canvas";
 import { Person, Team } from "../teamMgt/types";
 
-export interface TaskQueueEntry {
-  taskId: string;
-}
-
 export interface PersonTaskQueue {
   personId: string;
-  currentTasks: TaskQueueEntry[];
-  queuedTasks: TaskQueueEntry[];
 }
 
 export interface ProjectData {
@@ -33,7 +27,7 @@ export interface WorkspaceFile {
 export type ProjectState = Pick<ProjectData, "tasks" | "connections" | "groups" | "viewBox" | "theme" | "taskQueues">;
 
 export function extractProjectState(p: ProjectData): ProjectState {
-  return { tasks: p.tasks, connections: p.connections, groups: p.groups, viewBox: p.viewBox, theme: p.theme, taskQueues: p.taskQueues ?? [] };
+  return { tasks: p.tasks, connections: p.connections, groups: p.groups, viewBox: p.viewBox, theme: p.theme, taskQueues: (p.taskQueues ?? []).map(q => ({ personId: q.personId })) };
 }
 
 export function createDefaultProject(name = "My Project"): ProjectData {

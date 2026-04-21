@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import "./TaskQueuePanel.css";
 import { Task } from "./Sidebar";
 import { Person } from "../teamMgt/types";
-import { PersonTaskQueue, TaskQueueEntry } from "../workspace/types";
+import { PersonTaskQueue } from "../workspace/types";
 import { avatarColor } from "../shared/avatarUtils";
 import { CategoryConfig, StatusConfig } from "./theme";
 import { TaskStatus } from "./Sidebar";
@@ -90,17 +90,9 @@ function TaskPicker({ tasks, excludeIds, position, categories, statuses, onSelec
                   <span className="tq-picker-task-text">{task.text || "(unnamed task)"}</span>
                   <span className="tq-picker-badges">
                     {categoryConfig && (
-                      <span
-                        className="tq-picker-dot"
-                        style={{ background: categoryConfig.color }}
-                        title={categoryConfig.label}
-                      />
+                      <span className="tq-picker-dot" style={{ background: categoryConfig.color }} title={categoryConfig.label} />
                     )}
-                    <span
-                      className="tq-picker-dot"
-                      style={{ background: statusConfig.color, outline: "1px solid rgba(0,0,0,0.15)" }}
-                      title={statusConfig.label}
-                    />
+                    <span className="tq-picker-dot" style={{ background: statusConfig.color, outline: "1px solid rgba(0,0,0,0.15)" }} title={statusConfig.label} />
                   </span>
                 </button>
               );
@@ -177,7 +169,7 @@ function TaskCard({ task, seqNum, isHighlighted, categories, statuses, draggable
       <span className="tq-card-seq">#{seqNum}</span>
       <span className="tq-card-emoji" title={statusConfig.label}>{statusConfig.emoji}</span>
       <span className="tq-task-text">{task.text || "(unnamed)"}</span>
-      <button className="tq-task-remove" onClick={onRemove} tabIndex={-1}>×</button>
+      <button className="tq-task-remove" onClick={e => { e.stopPropagation(); onRemove(); }} tabIndex={-1}>×</button>
     </div>
   );
 }
@@ -186,7 +178,6 @@ interface DragSource {
   personId: string;
   source: "current" | "queue";
   taskId: string;
-  index: number;
 }
 
 interface TaskQueuePanelProps {
@@ -225,54 +216,72 @@ export function TaskQueuePanel({
   } | null>(null);
   const [personPickerPosition, setPersonPickerPosition] = useState<{ x: number; y: number } | null>(null);
 
-  const peopleInQueue = new Set(taskQueues.map(q => q.personId));
-  const availablePeople = people.filter(p => !peopleInQueue.has(p.id));
+  // Derive which people have swimlanes: explicitly added OR have assigned pending/in-progress tasks
+  const explicitPersonIds = new Set(taskQueues.map(q => q.personId));
+  const derivedPersonIds = new Set<string>();
+  for (const task of tasks) {
+    if (task.status === "completed" || task.status === "archived") continue;
+    for (const personId of task.assignedPersonIds ?? []) {
+      derivedPersonIds.add(personId);
+    }
+  }
+  const allPersonIds = new Set([...explicitPersonIds, ...derivedPersonIds]);
+  const swimlanePeople = [...allPersonIds]
+    .map(id => people.find(p => p.id === id))
+    .filter((p): p is Person => p !== undefined);
 
-  const updateQueue = (personId: string, update: Partial<PersonTaskQueue>) => {
-    onTaskQueuesChange(taskQueues.map(q => q.personId === personId ? { ...q, ...update } : q));
-  };
+  // Derive task lists for a person from task state
+  const getInProgressTasks = (personId: string) =>
+    tasks.filter(t => t.status === "in_progress" && (t.assignedPersonIds ?? []).includes(personId));
+
+  const getQueuedTasks = (personId: string) =>
+    tasks.filter(t => t.status === "pending" && (t.assignedPersonIds ?? []).includes(personId));
+
+  const availablePeople = people.filter(p => !allPersonIds.has(p.id));
 
   const addPerson = (personId: string) => {
-    onTaskQueuesChange([...taskQueues, { personId, currentTasks: [], queuedTasks: [] }]);
+    onTaskQueuesChange([...taskQueues, { personId }]);
   };
 
   const removePerson = (personId: string) => {
     onTaskQueuesChange(taskQueues.filter(q => q.personId !== personId));
+    // Un-assign this person from all their pending/in-progress tasks
+    const assignedTasks = tasks.filter(t =>
+      (t.status === "pending" || t.status === "in_progress") &&
+      (t.assignedPersonIds ?? []).includes(personId)
+    );
+    for (const task of assignedTasks) {
+      onAssignPersonToTask(task.id, (task.assignedPersonIds ?? []).filter(id => id !== personId));
+    }
+  };
+
+  const assignTaskToPerson = (taskId: string, personId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const existing = task.assignedPersonIds ?? [];
+    if (!existing.includes(personId)) {
+      onAssignPersonToTask(taskId, [...existing, personId]);
+    }
+  };
+
+  const unassignTaskFromPerson = (taskId: string, personId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    onAssignPersonToTask(taskId, (task.assignedPersonIds ?? []).filter(id => id !== personId));
   };
 
   const addTaskToSlot = (personId: string, taskId: string, target: "current" | "queue") => {
-    const queue = taskQueues.find(q => q.personId === personId);
-    if (!queue) return;
-
+    assignTaskToPerson(taskId, personId);
     if (target === "current") {
-      updateQueue(personId, { currentTasks: [...queue.currentTasks, { taskId }] });
       const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        const existing = task.assignedPersonIds ?? [];
-        if (!existing.includes(personId)) {
-          onAssignPersonToTask(taskId, [...existing, personId]);
-        }
-        if (task.status !== "in_progress") {
-          onSetTaskStatus(taskId, "in_progress");
-        }
+      if (task && task.status !== "in_progress") {
+        onSetTaskStatus(taskId, "in_progress");
       }
-    } else {
-      updateQueue(personId, { queuedTasks: [...queue.queuedTasks, { taskId }] });
     }
   };
 
-  const removeTaskFromSlot = (personId: string, taskId: string, source: "current" | "queue") => {
-    const queue = taskQueues.find(q => q.personId === personId);
-    if (!queue) return;
-    if (source === "current") {
-      updateQueue(personId, { currentTasks: queue.currentTasks.filter(e => e.taskId !== taskId) });
-    } else {
-      updateQueue(personId, { queuedTasks: queue.queuedTasks.filter(e => e.taskId !== taskId) });
-    }
-  };
-
-  const handleDragStart = (e: React.DragEvent, personId: string, source: "current" | "queue", taskId: string, index: number) => {
-    dragSourceRef.current = { personId, source, taskId, index };
+  const handleDragStart = (e: React.DragEvent, personId: string, source: "current" | "queue", taskId: string) => {
+    dragSourceRef.current = { personId, source, taskId };
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -282,46 +291,18 @@ export function TaskQueuePanel({
     setDropTarget({ personId, target });
   };
 
-  const handleDrop = (e: React.DragEvent, personId: string, target: "current" | "queue", insertIndex: number) => {
+  const handleDrop = (e: React.DragEvent, personId: string, target: "current" | "queue") => {
     e.preventDefault();
     setDropTarget(null);
     const drag = dragSourceRef.current;
-    if (!drag) return;
+    if (!drag || drag.personId !== personId) return;
+    if (drag.source === target) return;
 
-    const queue = taskQueues.find(q => q.personId === personId);
-    if (!queue) return;
-
-    let newCurrent = [...queue.currentTasks];
-    let newQueued = [...queue.queuedTasks];
-
-    if (drag.source === "current") {
-      newCurrent = newCurrent.filter(e => e.taskId !== drag.taskId);
-    } else {
-      newQueued = newQueued.filter(e => e.taskId !== drag.taskId);
-    }
-
-    const entry: TaskQueueEntry = { taskId: drag.taskId };
     if (target === "current") {
-      newCurrent.splice(insertIndex, 0, entry);
+      onSetTaskStatus(drag.taskId, "in_progress");
     } else {
-      newQueued.splice(insertIndex, 0, entry);
+      onSetTaskStatus(drag.taskId, "pending");
     }
-
-    onTaskQueuesChange(taskQueues.map(q => q.personId === personId ? { ...q, currentTasks: newCurrent, queuedTasks: newQueued } : q));
-
-    if (target === "current" && drag.source !== "current") {
-      const task = tasks.find(t => t.id === drag.taskId);
-      if (task) {
-        const existing = task.assignedPersonIds ?? [];
-        if (!existing.includes(personId)) {
-          onAssignPersonToTask(drag.taskId, [...existing, personId]);
-        }
-        if (task.status !== "in_progress") {
-          onSetTaskStatus(drag.taskId, "in_progress");
-        }
-      }
-    }
-
     dragSourceRef.current = null;
   };
 
@@ -344,61 +325,60 @@ export function TaskQueuePanel({
     setPersonPickerPosition({ x, y: rect.bottom + 4 });
   };
 
-  const getQueuedTaskIds = (personId: string): Set<string> => {
-    const queue = taskQueues.find(q => q.personId === personId);
-    if (!queue) return new Set();
-    return new Set([...queue.currentTasks.map(e => e.taskId), ...queue.queuedTasks.map(e => e.taskId)]);
+  const getExcludedTaskIds = (personId: string): Set<string> => {
+    return new Set(
+      tasks
+        .filter(t => (t.assignedPersonIds ?? []).includes(personId))
+        .map(t => t.id)
+    );
   };
 
   return (
     <div className="task-queue-overlay">
       <div className="tq-swimlanes">
-        {taskQueues.map(queue => {
-          const person = people.find(p => p.id === queue.personId);
-          if (!person) return null;
-          const queuedIds = getQueuedTaskIds(queue.personId);
-          const isCurrentDrop = dropTarget?.personId === queue.personId && dropTarget?.target === "current";
-          const isQueueDrop = dropTarget?.personId === queue.personId && dropTarget?.target === "queue";
+        {swimlanePeople.map(person => {
+          const currentTasks = getInProgressTasks(person.id);
+          const queuedTasks = getQueuedTasks(person.id);
+          const isCurrentDrop = dropTarget?.personId === person.id && dropTarget?.target === "current";
+          const isQueueDrop = dropTarget?.personId === person.id && dropTarget?.target === "queue";
 
           return (
-            <div key={queue.personId} className="tq-swimlane">
+            <div key={person.id} className="tq-swimlane">
               <div className="tq-person-col">
                 <PersonAvatar person={person} size={36} />
                 <span className="tq-person-name">{person.name || "(unnamed)"}</span>
               </div>
-              <button className="tq-remove-person" onClick={() => removePerson(queue.personId)} aria-label="Remove from queue">×</button>
+              <button className="tq-remove-person" onClick={() => removePerson(person.id)} aria-label="Remove from queue">×</button>
 
               <div className="tq-current-section">
                 <div className="tq-section-label">In progress</div>
                 <div
                   className={`tq-tasks-row ${isCurrentDrop ? "tq-drop-active" : ""}`}
-                  onDragOver={e => handleDragOver(e, queue.personId, "current")}
-                  onDrop={e => handleDrop(e, queue.personId, "current", queue.currentTasks.length)}
+                  onDragOver={e => handleDragOver(e, person.id, "current")}
+                  onDrop={e => handleDrop(e, person.id, "current")}
                 >
-                  {queue.currentTasks.map((entry, idx) => {
-                    const task = tasks.find(t => t.id === entry.taskId);
-                    if (!task) return null;
+                  {currentTasks.map(task => {
                     const seqNum = tasks.indexOf(task) + 1;
                     return (
                       <TaskCard
-                        key={entry.taskId}
+                        key={task.id}
                         task={task}
                         seqNum={seqNum}
-                        isHighlighted={highlightedTaskId === entry.taskId}
+                        isHighlighted={highlightedTaskId === task.id}
                         categories={categories}
                         statuses={statuses}
                         draggable
-                        onDragStart={e => handleDragStart(e, queue.personId, "current", entry.taskId, idx)}
+                        onDragStart={e => handleDragStart(e, person.id, "current", task.id)}
                         onDragEnd={handleDragEnd}
-                        onDragOver={e => { e.stopPropagation(); handleDragOver(e, queue.personId, "current"); }}
-                        onDrop={e => { e.stopPropagation(); handleDrop(e, queue.personId, "current", idx); }}
-                        onRemove={() => removeTaskFromSlot(queue.personId, entry.taskId, "current")}
-                        onClick={() => onHighlightTask(highlightedTaskId === entry.taskId ? null : entry.taskId)}
+                        onDragOver={e => { e.stopPropagation(); handleDragOver(e, person.id, "current"); }}
+                        onDrop={e => { e.stopPropagation(); handleDrop(e, person.id, "current"); }}
+                        onRemove={() => unassignTaskFromPerson(task.id, person.id)}
+                        onClick={() => onHighlightTask(highlightedTaskId === task.id ? null : task.id)}
                       />
                     );
                   })}
-                  {queue.currentTasks.length === 0 && (
-                    <button className="tq-add-task-btn" onClick={e => openTaskPicker(e, queue.personId, "current")}>
+                  {currentTasks.length === 0 && (
+                    <button className="tq-add-task-btn" onClick={e => openTaskPicker(e, person.id, "current")}>
                       <span className="tq-add-task-icon">+</span> Add task
                     </button>
                   )}
@@ -412,7 +392,7 @@ export function TaskQueuePanel({
                   <div className="tq-section-label">Queue</div>
                   <button
                     className="tq-add-more-btn"
-                    onClick={e => openTaskPicker(e, queue.personId, "queue")}
+                    onClick={e => openTaskPicker(e, person.id, "queue")}
                     aria-label="Add task to queue"
                     title="Add task to queue"
                   >
@@ -421,47 +401,45 @@ export function TaskQueuePanel({
                 </div>
                 <div
                   className={`tq-tasks-row ${isQueueDrop ? "tq-drop-active" : ""}`}
-                  onDragOver={e => handleDragOver(e, queue.personId, "queue")}
-                  onDrop={e => handleDrop(e, queue.personId, "queue", queue.queuedTasks.length)}
+                  onDragOver={e => handleDragOver(e, person.id, "queue")}
+                  onDrop={e => handleDrop(e, person.id, "queue")}
                 >
-                  {queue.queuedTasks.map((entry, idx) => {
-                    const task = tasks.find(t => t.id === entry.taskId);
-                    if (!task) return null;
+                  {queuedTasks.map(task => {
                     const seqNum = tasks.indexOf(task) + 1;
                     return (
                       <TaskCard
-                        key={entry.taskId}
+                        key={task.id}
                         task={task}
                         seqNum={seqNum}
-                        isHighlighted={highlightedTaskId === entry.taskId}
+                        isHighlighted={highlightedTaskId === task.id}
                         categories={categories}
                         statuses={statuses}
                         draggable
-                        onDragStart={e => handleDragStart(e, queue.personId, "queue", entry.taskId, idx)}
+                        onDragStart={e => handleDragStart(e, person.id, "queue", task.id)}
                         onDragEnd={handleDragEnd}
-                        onDragOver={e => { e.stopPropagation(); handleDragOver(e, queue.personId, "queue"); }}
-                        onDrop={e => { e.stopPropagation(); handleDrop(e, queue.personId, "queue", idx); }}
-                        onRemove={() => removeTaskFromSlot(queue.personId, entry.taskId, "queue")}
-                        onClick={() => onHighlightTask(highlightedTaskId === entry.taskId ? null : entry.taskId)}
+                        onDragOver={e => { e.stopPropagation(); handleDragOver(e, person.id, "queue"); }}
+                        onDrop={e => { e.stopPropagation(); handleDrop(e, person.id, "queue"); }}
+                        onRemove={() => unassignTaskFromPerson(task.id, person.id)}
+                        onClick={() => onHighlightTask(highlightedTaskId === task.id ? null : task.id)}
                       />
                     );
                   })}
-                  {queue.queuedTasks.length === 0 && (
-                    <button className="tq-add-task-btn" onClick={e => openTaskPicker(e, queue.personId, "queue")}>
+                  {queuedTasks.length === 0 && (
+                    <button className="tq-add-task-btn" onClick={e => openTaskPicker(e, person.id, "queue")}>
                       <span className="tq-add-task-icon">+</span> Add task
                     </button>
                   )}
                 </div>
               </div>
 
-              {taskPickerState?.personId === queue.personId && (
+              {taskPickerState?.personId === person.id && (
                 <TaskPicker
                   tasks={tasks}
-                  excludeIds={queuedIds}
+                  excludeIds={getExcludedTaskIds(person.id)}
                   position={taskPickerState.position}
                   categories={categories}
                   statuses={statuses}
-                  onSelect={taskId => addTaskToSlot(queue.personId, taskId, taskPickerState.target)}
+                  onSelect={taskId => addTaskToSlot(person.id, taskId, taskPickerState.target)}
                   onClose={() => setTaskPickerState(null)}
                 />
               )}
