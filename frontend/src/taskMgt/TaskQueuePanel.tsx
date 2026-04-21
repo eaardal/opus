@@ -243,18 +243,6 @@ export function TaskQueuePanel({
     onTaskQueuesChange([...taskQueues, { personId }]);
   };
 
-  const removePerson = (personId: string) => {
-    onTaskQueuesChange(taskQueues.filter(q => q.personId !== personId));
-    // Un-assign this person from all their pending/in-progress tasks
-    const assignedTasks = tasks.filter(t =>
-      (t.status === "pending" || t.status === "in_progress") &&
-      (t.assignedPersonIds ?? []).includes(personId)
-    );
-    for (const task of assignedTasks) {
-      onAssignPersonToTask(task.id, (task.assignedPersonIds ?? []).filter(id => id !== personId));
-    }
-  };
-
   const assignTaskToPerson = (taskId: string, personId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -335,6 +323,7 @@ export function TaskQueuePanel({
 
   return (
     <div className="task-queue-overlay">
+      <div className="tq-scroll-body">
       <div className="tq-swimlanes">
         {swimlanePeople.map(person => {
           const currentTasks = getInProgressTasks(person.id);
@@ -348,7 +337,6 @@ export function TaskQueuePanel({
                 <PersonAvatar person={person} size={36} />
                 <span className="tq-person-name">{person.name || "(unnamed)"}</span>
               </div>
-              <button className="tq-remove-person" onClick={() => removePerson(person.id)} aria-label="Remove from queue">×</button>
 
               <div className="tq-current-section">
                 <div className="tq-section-label">In progress</div>
@@ -454,10 +442,13 @@ export function TaskQueuePanel({
           </button>
         </div>
       </div>
+      </div>
 
-      <button className="tq-collapse-btn" onClick={onClose} aria-label="Collapse task queue">
-        ∧
-      </button>
+      <div className="tq-footer">
+        <button className="tq-collapse-btn" onClick={onClose} aria-label="Collapse task queue">
+          ∧
+        </button>
+      </div>
 
       {personPickerPosition && (
         <PersonPicker
