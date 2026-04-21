@@ -874,6 +874,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 <tr><td className="help-key">Drag on canvas</td><td>Select — node/group must be fully inside the selection area</td></tr>
                 <tr><td className="help-key">Escape</td><td>Clear selection</td></tr>
                 <tr><td className="help-key">Double-click group title</td><td>Edit group name</td></tr>
+                <tr><td className="help-key">Double-click node tooltip</td><td>Rename node</td></tr>
               </tbody>
             </table>
           </div>
