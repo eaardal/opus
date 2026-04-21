@@ -143,10 +143,10 @@ function TaskCard({ task, seqNum, groupTitle, isHighlighted, categories, statuse
         <span className="tq-card-seq">#{seqNum}</span>
         <span className="tq-card-emoji" title={statusConfig.label}>{statusConfig.emoji}</span>
       </div>
+      <button className="tq-task-remove" onClick={e => { e.stopPropagation(); onRemove(); }} tabIndex={-1}>×</button>
       {groupTitle && <span className="tq-card-group" title={groupTitle}>{groupTitle}</span>}
       <div className="tq-card-main">
         <span className="tq-task-text">{task.text || "(unnamed)"}</span>
-        <button className="tq-task-remove" onClick={e => { e.stopPropagation(); onRemove(); }} tabIndex={-1}>×</button>
       </div>
     </div>
   );
