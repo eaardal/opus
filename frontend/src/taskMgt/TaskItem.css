@@ -94,7 +94,7 @@
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
@@ -112,7 +112,6 @@
 .menu-item.clear-category {
   color: var(--text-dim);
   font-size: 12px;
-  border-top: 1px solid var(--border-secondary);
   margin-top: 4px;
   padding-top: 8px;
 }
