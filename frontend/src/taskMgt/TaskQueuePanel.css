@@ -99,6 +99,44 @@
   line-height: 1.2;
 }
 
+.tq-blocked-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+  flex-shrink: 0;
+}
+
+.tq-section-label--blocked {
+  color: var(--delete-color);
+}
+
+.tq-blocker-card {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.tq-blocker-card:active {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.tq-blocker-assignees {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.tq-blocker-assignee-names {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
 .tq-current-section {
   display: flex;
   flex-direction: column;

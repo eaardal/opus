@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./TaskQueuePanel.css";
 import { Task, Group } from "./Sidebar";
+import { Connection } from "./Canvas";
 import { Person } from "../teamMgt/types";
 import { avatarColor } from "../shared/avatarUtils";
 import { CategoryConfig, StatusConfig } from "./theme";
@@ -151,6 +152,50 @@ function TaskCard({ task, seqNum, groupTitle, isHighlighted, categories, statuse
   );
 }
 
+interface BlockerCardProps {
+  task: Task;
+  seqNum: number;
+  groupTitle: string | null;
+  assignedPeople: Person[];
+  isHighlighted: boolean;
+  categories: Record<string, CategoryConfig>;
+  statuses: Record<TaskStatus, StatusConfig>;
+  onClick: () => void;
+}
+
+function BlockerCard({ task, seqNum, groupTitle, assignedPeople, isHighlighted, categories, statuses, onClick }: BlockerCardProps) {
+  const statusConfig = statuses[task.status] ?? statuses.pending;
+  const categoryConfig = task.category ? categories[task.category] : null;
+  const accentColor = categoryConfig?.color ?? statusConfig.color;
+
+  return (
+    <div
+      className={`tq-task-card tq-blocker-card${isHighlighted ? " tq-task-card--highlighted" : ""}`}
+      onClick={onClick}
+      style={{ borderLeftColor: accentColor }}
+    >
+      <div className="tq-card-badge">
+        <span className="tq-card-seq">#{seqNum}</span>
+        <span className="tq-card-emoji" title={statusConfig.label}>{statusConfig.emoji}</span>
+      </div>
+      {groupTitle && <span className="tq-card-group" title={groupTitle}>{groupTitle}</span>}
+      <div className="tq-card-main">
+        <span className="tq-task-text">{task.text || "(unnamed)"}</span>
+      </div>
+      {assignedPeople.length > 0 && (
+        <div className="tq-blocker-assignees">
+          {assignedPeople.map(p => (
+            <PersonAvatar key={p.id} person={p} size={14} />
+          ))}
+          <span className="tq-blocker-assignee-names">
+            {assignedPeople.map(p => p.name || "?").join(", ")}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface DragSource {
   personId: string;
   source: "current" | "queue";
@@ -160,6 +205,7 @@ interface DragSource {
 interface TaskQueuePanelProps {
   tasks: Task[];
   groups: Group[];
+  connections: Connection[];
   people: Person[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
@@ -173,6 +219,7 @@ interface TaskQueuePanelProps {
 export function TaskQueuePanel({
   tasks,
   groups,
+  connections,
   people,
   categories,
   statuses,
@@ -226,6 +273,31 @@ export function TaskQueuePanel({
       task.y >= g.y && task.y <= g.y + g.height
     );
     return group?.title || null;
+  };
+
+  const getBlockingTasks = (personId: string): { task: Task; assignedPeople: Person[] }[] => {
+    const personTasks = tasks.filter(t =>
+      (t.status === "pending" || t.status === "in_progress") &&
+      (t.assignedPersonIds ?? []).includes(personId)
+    );
+    const blockerIds = new Set<string>();
+    for (const task of personTasks) {
+      for (const conn of connections) {
+        if (conn.to === task.id) {
+          const blocker = tasks.find(t => t.id === conn.from);
+          if (blocker && blocker.status !== "completed" && blocker.status !== "archived" && !(blocker.assignedPersonIds ?? []).includes(personId)) {
+            blockerIds.add(blocker.id);
+          }
+        }
+      }
+    }
+    return [...blockerIds].map(id => {
+      const task = tasks.find(t => t.id === id)!;
+      const assignedPeople = (task.assignedPersonIds ?? [])
+        .map(pid => people.find(p => p.id === pid))
+        .filter((p): p is Person => p !== undefined);
+      return { task, assignedPeople };
+    });
   };
 
   const [taskPickerState, setTaskPickerState] = useState<{
@@ -332,6 +404,7 @@ export function TaskQueuePanel({
         {swimlanePeople.map(person => {
           const currentTasks = getInProgressTasks(person.id);
           const queuedTasks = getQueuedTasks(person.id);
+          const blockingTasks = getBlockingTasks(person.id);
           const isCurrentDrop = dropTarget?.personId === person.id && dropTarget?.target === "current";
           const isQueueDrop = dropTarget?.personId === person.id && dropTarget?.target === "queue";
 
@@ -341,6 +414,33 @@ export function TaskQueuePanel({
                 <PersonAvatar person={person} size={36} />
                 <span className="tq-person-name">{person.name || "(unnamed)"}</span>
               </div>
+
+              {blockingTasks.length > 0 && (
+                <>
+                  <div className="tq-blocked-section">
+                    <div className="tq-section-label tq-section-label--blocked">Blocked by</div>
+                    <div className="tq-tasks-row">
+                      {blockingTasks.map(({ task, assignedPeople }) => {
+                        const seqNum = tasks.indexOf(task) + 1;
+                        return (
+                          <BlockerCard
+                            key={task.id}
+                            task={task}
+                            seqNum={seqNum}
+                            groupTitle={getGroupTitle(task)}
+                            assignedPeople={assignedPeople}
+                            isHighlighted={highlightedTaskId === task.id}
+                            categories={categories}
+                            statuses={statuses}
+                            onClick={() => onHighlightTask(highlightedTaskId === task.id ? null : task.id)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="tq-section-divider" />
+                </>
+              )}
 
               <div className="tq-current-section">
                 <div className="tq-section-label">In progress</div>
