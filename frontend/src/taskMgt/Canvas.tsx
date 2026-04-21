@@ -98,6 +98,7 @@ interface CanvasProps {
 }
 
 const ZOOM_SENSITIVITY = 0.001;
+const ZOOM_SENSITIVITY_TRACKPAD = 0.02;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 5;
 
@@ -343,7 +344,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     const mouseYFrac = (e.clientY - rect.top) / rect.height;
 
     const prev = viewBoxRef.current;
-    const zoomFactor = 1 + e.deltaY * ZOOM_SENSITIVITY;
+    const sensitivity = e.ctrlKey ? ZOOM_SENSITIVITY_TRACKPAD : ZOOM_SENSITIVITY;
+    const zoomFactor = 1 + e.deltaY * sensitivity;
     const baseWidth = rect.width;
     const currentZoom = baseWidth / prev.width;
     const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom / zoomFactor));
