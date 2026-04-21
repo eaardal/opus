@@ -1,33 +1,51 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
-import {
-  ConfirmDialog,
-  OpenFile,
-  SaveFile,
-  SaveFileAs,
-} from "../../wailsjs/go/main/App";
+import { ConfirmDialog } from "../../wailsjs/go/main/App";
 import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
 import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
 import { getCategories, getStatuses } from "./theme";
 import { useHistory } from "./useHistory";
+import { ProjectData, ProjectState, createDefaultProject } from "../workspace/types";
 
-function App() {
-  const { present, push, replace, undo, redo, reset, markSaved, canUndo, canRedo, hasUnsavedChanges } = useHistory({
-    tasks: [],
-    connections: [],
-    groups: [],
+const _defaultProject = createDefaultProject();
+
+interface AppProps {
+  initialProject?: ProjectData;
+  onStateChange?: (state: ProjectState) => void;
+  projects?: ProjectData[];
+  activeProjectId?: string;
+  onSwitchProject?: (id: string) => void;
+  onOpenProjectAdmin?: () => void;
+}
+
+function App({
+  initialProject = _defaultProject,
+  onStateChange = () => {},
+  projects = [_defaultProject],
+  activeProjectId = _defaultProject.id,
+  onSwitchProject = () => {},
+  onOpenProjectAdmin = () => {},
+}: AppProps) {
+  const { present, push, replace, undo, redo, canUndo, canRedo } = useHistory({
+    tasks: initialProject.tasks,
+    connections: initialProject.connections,
+    groups: initialProject.groups,
   });
   const { tasks, connections, groups } = present;
   const presentRef = useRef(present);
   presentRef.current = present;
 
-  const [theme, setTheme] = useState<"dark" | "light">("light");
-  const [viewBox, setViewBox] = useState<ViewBox>({
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  });
+  const [theme, setTheme] = useState<"dark" | "light">(initialProject.theme);
+  const [viewBox, setViewBox] = useState<ViewBox>(initialProject.viewBox);
+
+  // Report live state to workspace owner (skip first render to avoid marking dirty on mount)
+  const isFirstRender = useRef(true);
+  const onStateChangeRef = useRef(onStateChange);
+  onStateChangeRef.current = onStateChange;
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    onStateChangeRef.current({ tasks, connections, groups, viewBox, theme });
+  }, [tasks, connections, groups, viewBox, theme]);
   const categories = getCategories(theme);
   const statuses = getStatuses(theme);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
@@ -44,7 +62,6 @@ function App() {
     top: number;
     left: number;
   } | null>(null);
-  const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
     null,
   );
@@ -142,40 +159,6 @@ function App() {
     return () => window.removeEventListener("keydown", handleDeleteSelected);
   }, [selectedNodes, selectedGroups, tasks, groups, connections, push]);
 
-  const handleSave = useCallback(async () => {
-    const data = JSON.stringify(
-      { tasks, connections, groups, theme, viewBox },
-      null,
-      2,
-    );
-    try {
-      if (currentFilePath) {
-        await SaveFile(currentFilePath, data);
-        markSaved();
-      } else {
-        const filePath = await SaveFileAs(data);
-        if (filePath) {
-          setCurrentFilePath(filePath);
-          markSaved();
-        }
-      }
-    } catch (err) {
-      console.error("Save failed:", err);
-    }
-  }, [tasks, connections, groups, theme, viewBox, currentFilePath, markSaved]);
-
-  // Keyboard shortcut for save (Cmd+S / Ctrl+S)
-  useEffect(() => {
-    const handleSaveShortcut = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-    window.addEventListener("keydown", handleSaveShortcut);
-    return () => window.removeEventListener("keydown", handleSaveShortcut);
-  }, [handleSave]);
-
   // Sidebar resize handlers
   const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -270,43 +253,6 @@ function App() {
       groups,
     });
     setOpenMenuId(null);
-  };
-
-  const handleNew = async () => {
-    if (hasUnsavedChanges) {
-      const confirmed = await ConfirmDialog(
-        "New Project",
-        "You have unsaved changes. Discard them and start fresh?",
-      );
-      if (!confirmed) return;
-    }
-    reset({ tasks: [], connections: [], groups: [] });
-    setCurrentFilePath(null);
-    setViewBox({ x: 0, y: 0, width: 0, height: 0 });
-    setHighlightedTaskId(null);
-    setSelectedNodes(new Set());
-    setSelectedGroups(new Set());
-  };
-
-  const handleOpen = async () => {
-    try {
-      const result = await OpenFile();
-      if (result) {
-        const parsed = JSON.parse(result.content);
-        reset({
-          tasks: parsed.tasks ?? [],
-          connections: parsed.connections ?? [],
-          groups: parsed.groups ?? [],
-        });
-        const loadedTheme = parsed.theme === "light" ? "light" : "dark";
-        setTheme(loadedTheme);
-        document.documentElement.setAttribute("data-theme", loadedTheme);
-        if (parsed.viewBox) setViewBox(parsed.viewBox);
-        setCurrentFilePath(result.filePath);
-      }
-    } catch (err) {
-      console.error("Open failed:", err);
-    }
   };
 
   const deleteTask = async (id: string) => {
@@ -631,15 +577,14 @@ function App() {
         tasks={tasks}
         categories={categories}
         statuses={statuses}
-        currentFilePath={currentFilePath}
-        hasUnsavedChanges={hasUnsavedChanges}
+        projects={projects}
+        activeProjectId={activeProjectId}
+        onSwitchProject={onSwitchProject}
+        onOpenProjectAdmin={onOpenProjectAdmin}
         highlightedTaskId={highlightedTaskId}
         openMenuId={openMenuId}
         menuPosition={menuPosition}
         focusTaskId={focusTaskId}
-        onNew={handleNew}
-        onOpen={handleOpen}
-        onSave={handleSave}
         onAddTask={addTask}
         onUpdateTaskText={updateTaskText}
         onSetTaskCategory={setTaskCategory}

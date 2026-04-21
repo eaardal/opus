@@ -9,21 +9,54 @@
 .top-app-bar {
   height: 48px;
   flex-shrink: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 16px;
-  padding: 0 16px;
+  padding: 0 12px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-primary);
   z-index: 50;
 }
 
-.app-bar-brand {
-  font-size: 15px;
-  font-weight: 700;
+.app-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: start;
+}
+
+.app-bar-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.app-bar-icon-btn:hover {
+  background: var(--menu-item-hover);
   color: var(--text-primary);
-  letter-spacing: 0.4px;
-  user-select: none;
+}
+
+.app-bar-filename {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.app-bar-unsaved {
+  color: var(--unsaved-color);
+  font-size: 10px;
 }
 
 .app-bar-nav {
@@ -51,6 +84,10 @@
 .app-bar-tab.active {
   background: var(--menu-item-hover);
   color: var(--text-primary);
+}
+
+.app-bar-right {
+  justify-self: end;
 }
 
 .app-shell-content {

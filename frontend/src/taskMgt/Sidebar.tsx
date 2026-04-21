@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { PanelLeftOpen, PanelLeftClose } from "lucide-react";
 import "./Sidebar.css";
-import { ActionBar } from "./ActionBar";
 import { TaskList } from "./TaskList";
 import { CategoryConfig, StatusConfig } from "./theme";
+import { ProjectData } from "../workspace/types";
+import { ProjectSelector } from "../workspace/ProjectSelector";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
 
@@ -33,15 +34,14 @@ interface SidebarProps {
   tasks: Task[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
-  currentFilePath: string | null;
-  hasUnsavedChanges: boolean;
+  projects: ProjectData[];
+  activeProjectId: string;
+  onSwitchProject: (id: string) => void;
+  onOpenProjectAdmin: () => void;
   highlightedTaskId: string | null;
   openMenuId: string | null;
   menuPosition: { top: number; left: number } | null;
   focusTaskId: string | null;
-  onNew: () => void;
-  onOpen: () => void;
-  onSave: () => void;
   onAddTask: () => void;
   onUpdateTaskText: (id: string, text: string) => void;
   onSetTaskCategory: (id: string, category: string | undefined) => void;
@@ -61,15 +61,14 @@ export function Sidebar({
   tasks,
   categories,
   statuses,
-  currentFilePath,
-  hasUnsavedChanges,
+  projects,
+  activeProjectId,
+  onSwitchProject,
+  onOpenProjectAdmin,
   highlightedTaskId,
   openMenuId,
   menuPosition,
   focusTaskId,
-  onNew,
-  onOpen,
-  onSave,
   onAddTask,
   onUpdateTaskText,
   onSetTaskCategory,
@@ -102,12 +101,11 @@ export function Sidebar({
   return (
     <div className="sidebar" style={{ width, minWidth: width }}>
       <div className="sidebar-header">
-        <ActionBar
-          currentFilePath={currentFilePath}
-          hasUnsavedChanges={hasUnsavedChanges}
-          onNew={onNew}
-          onOpen={onOpen}
-          onSave={onSave}
+        <ProjectSelector
+          projects={projects}
+          activeProjectId={activeProjectId}
+          onSwitch={onSwitchProject}
+          onOpenAdmin={onOpenProjectAdmin}
         />
         <button
           className="sidebar-toggle"
