@@ -1,11 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import "./TaskQueuePanel.css";
 import { Task } from "./Sidebar";
 import { Person } from "../teamMgt/types";
-import { PersonTaskQueue } from "../workspace/types";
 import { avatarColor } from "../shared/avatarUtils";
 import { CategoryConfig, StatusConfig } from "./theme";
 import { TaskStatus } from "./Sidebar";
+
+const DEFAULT_HEIGHT = 340;
+const EXPANDED_HEIGHT_RATIO = 0.8;
 
 interface PersonAvatarProps {
   person: Person;
@@ -104,37 +106,6 @@ function TaskPicker({ tasks, excludeIds, position, categories, statuses, onSelec
   );
 }
 
-interface PersonPickerProps {
-  people: Person[];
-  position: { x: number; y: number };
-  onSelect: (personId: string) => void;
-  onClose: () => void;
-}
-
-function PersonPicker({ people, position, onSelect, onClose }: PersonPickerProps) {
-  return (
-    <>
-      <div className="tq-picker-backdrop" onClick={onClose} />
-      <div
-        className="tq-person-picker-popup"
-        style={{ position: "fixed", left: position.x, top: position.y }}
-        onClick={e => e.stopPropagation()}
-      >
-        {people.length === 0 ? (
-          <div className="tq-picker-empty">All people are in the queue</div>
-        ) : (
-          people.map(person => (
-            <button key={person.id} className="tq-picker-item tq-picker-person-item" onClick={() => { onSelect(person.id); onClose(); }}>
-              <PersonAvatar person={person} size={20} />
-              <span>{person.name || "(unnamed)"}</span>
-            </button>
-          ))
-        )}
-      </div>
-    </>
-  );
-}
-
 interface TaskCardProps {
   task: Task;
   seqNum: number;
@@ -181,13 +152,11 @@ interface DragSource {
 }
 
 interface TaskQueuePanelProps {
-  taskQueues: PersonTaskQueue[];
   tasks: Task[];
   people: Person[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   highlightedTaskId: string | null;
-  onTaskQueuesChange: (queues: PersonTaskQueue[]) => void;
   onAssignPersonToTask: (taskId: string, personIds: string[]) => void;
   onSetTaskStatus: (taskId: string, status: TaskStatus) => void;
   onHighlightTask: (taskId: string | null) => void;
@@ -195,13 +164,11 @@ interface TaskQueuePanelProps {
 }
 
 export function TaskQueuePanel({
-  taskQueues,
   tasks,
   people,
   categories,
   statuses,
   highlightedTaskId,
-  onTaskQueuesChange,
   onAssignPersonToTask,
   onSetTaskStatus,
   onHighlightTask,
@@ -209,24 +176,57 @@ export function TaskQueuePanel({
 }: TaskQueuePanelProps) {
   const dragSourceRef = useRef<DragSource | null>(null);
   const [dropTarget, setDropTarget] = useState<{ personId: string; target: "current" | "queue" } | null>(null);
+  const [height, setHeight] = useState(DEFAULT_HEIGHT);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const resizeDragRef = useRef<{ startY: number; startHeight: number } | null>(null);
+
+  const handleResizeDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    resizeDragRef.current = { startY: e.clientY, startHeight: height };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!resizeDragRef.current) return;
+      const delta = ev.clientY - resizeDragRef.current.startY;
+      const next = Math.max(120, Math.min(window.innerHeight * 0.9, resizeDragRef.current.startHeight + delta));
+      setHeight(next);
+      setIsExpanded(false);
+    };
+
+    const onMouseUp = () => {
+      resizeDragRef.current = null;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  }, [height]);
+
+  const toggleExpand = useCallback(() => {
+    if (isExpanded) {
+      setHeight(DEFAULT_HEIGHT);
+      setIsExpanded(false);
+    } else {
+      setHeight(Math.floor(window.innerHeight * EXPANDED_HEIGHT_RATIO));
+      setIsExpanded(true);
+    }
+  }, [isExpanded]);
+
   const [taskPickerState, setTaskPickerState] = useState<{
     personId: string;
     target: "current" | "queue";
     position: { x: number; y: number };
   } | null>(null);
-  const [personPickerPosition, setPersonPickerPosition] = useState<{ x: number; y: number } | null>(null);
 
-  // Derive which people have swimlanes: explicitly added OR have assigned pending/in-progress tasks
-  const explicitPersonIds = new Set(taskQueues.map(q => q.personId));
-  const derivedPersonIds = new Set<string>();
+  // Derive swimlane people from task assignments
+  const personIds = new Set<string>();
   for (const task of tasks) {
     if (task.status === "completed" || task.status === "archived") continue;
     for (const personId of task.assignedPersonIds ?? []) {
-      derivedPersonIds.add(personId);
+      personIds.add(personId);
     }
   }
-  const allPersonIds = new Set([...explicitPersonIds, ...derivedPersonIds]);
-  const swimlanePeople = [...allPersonIds]
+  const swimlanePeople = [...personIds]
     .map(id => people.find(p => p.id === id))
     .filter((p): p is Person => p !== undefined);
 
@@ -236,12 +236,6 @@ export function TaskQueuePanel({
 
   const getQueuedTasks = (personId: string) =>
     tasks.filter(t => t.status === "pending" && (t.assignedPersonIds ?? []).includes(personId));
-
-  const availablePeople = people.filter(p => !allPersonIds.has(p.id));
-
-  const addPerson = (personId: string) => {
-    onTaskQueuesChange([...taskQueues, { personId }]);
-  };
 
   const assignTaskToPerson = (taskId: string, personId: string) => {
     const task = tasks.find(t => t.id === taskId);
@@ -307,12 +301,6 @@ export function TaskQueuePanel({
     setTaskPickerState({ personId, target, position: { x, y: rect.bottom + 4 } });
   };
 
-  const openPersonPicker = (e: React.MouseEvent) => {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = Math.min(rect.left, window.innerWidth - PICKER_WIDTH - 8);
-    setPersonPickerPosition({ x, y: rect.bottom + 4 });
-  };
-
   const getExcludedTaskIds = (personId: string): Set<string> => {
     return new Set(
       tasks
@@ -322,7 +310,7 @@ export function TaskQueuePanel({
   };
 
   return (
-    <div className="task-queue-overlay">
+    <div className="task-queue-overlay" style={{ height }}>
       <div className="tq-scroll-body">
       <div className="tq-swimlanes">
         {swimlanePeople.map(person => {
@@ -435,29 +423,19 @@ export function TaskQueuePanel({
           );
         })}
 
-        <div className="tq-add-person-lane">
-          <button className="tq-add-person-btn" onClick={openPersonPicker}>
-            <span className="tq-add-person-icon">+</span>
-            Add person to Task Queue
-          </button>
-        </div>
       </div>
       </div>
 
+      <div className="tq-drag-handle" onMouseDown={handleResizeDragStart} />
+
       <div className="tq-footer">
+        <button className="tq-expand-btn" onClick={toggleExpand} aria-label={isExpanded ? "Reset task queue size" : "Expand task queue"} title={isExpanded ? "Reset size" : "Expand"}>
+          {isExpanded ? "⊡" : "⊞"}
+        </button>
         <button className="tq-collapse-btn" onClick={onClose} aria-label="Collapse task queue">
           ∧
         </button>
       </div>
-
-      {personPickerPosition && (
-        <PersonPicker
-          people={availablePeople}
-          position={personPickerPosition}
-          onSelect={addPerson}
-          onClose={() => setPersonPickerPosition(null)}
-        />
-      )}
     </div>
   );
 }

@@ -11,7 +11,6 @@ import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogo
 import { Person } from "../teamMgt/types";
 import { TaskContextMenu } from "./TaskContextMenu";
 import { TaskQueuePanel } from "./TaskQueuePanel";
-import { PersonTaskQueue } from "../workspace/types";
 
 interface AtlassianStatus {
   loggedIn: boolean;
@@ -95,8 +94,6 @@ interface CanvasProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  taskQueues: PersonTaskQueue[];
-  onTaskQueuesChange: (queues: PersonTaskQueue[]) => void;
   onHighlightTask: (taskId: string | null) => void;
 }
 
@@ -151,8 +148,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     canRedo,
     onUndo,
     onRedo,
-    taskQueues,
-    onTaskQueuesChange,
     onHighlightTask,
   },
   ref
@@ -708,13 +703,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       </div>
       {isTaskQueueOpen && (
         <TaskQueuePanel
-          taskQueues={taskQueues}
           tasks={tasks}
           people={people}
           categories={categories}
           statuses={statuses}
           highlightedTaskId={highlightedTaskId}
-          onTaskQueuesChange={onTaskQueuesChange}
           onAssignPersonToTask={onAssignPeople}
           onSetTaskStatus={onSetTaskStatus}
           onHighlightTask={onHighlightTask}

@@ -60,6 +60,11 @@ export function TaskItem({
       >
         {index + 1}
       </span>
+      <span
+        className="task-status-dot"
+        style={{ background: statuses[task.status]?.color }}
+        title={statuses[task.status]?.label}
+      />
       <input
         ref={registerInputRef}
         type="text"

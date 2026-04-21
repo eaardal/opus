@@ -669,8 +669,6 @@ function App({
         canRedo={canRedo}
         onUndo={undo}
         onRedo={redo}
-        taskQueues={taskQueues}
-        onTaskQueuesChange={setTaskQueues}
         onHighlightTask={setHighlightedTaskId}
       />
     </div>

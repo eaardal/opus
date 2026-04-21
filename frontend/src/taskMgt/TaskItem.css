@@ -13,6 +13,13 @@
   outline-offset: 3px;
 }
 
+.task-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .task-number {
   min-width: 18px;
   height: 18px;
