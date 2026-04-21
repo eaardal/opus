@@ -17,9 +17,10 @@
 
 .sidebar-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin: 0px 0px 4px;
 }
 
 .sidebar-toggle {

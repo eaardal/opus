@@ -1,44 +1,47 @@
 .project-selector-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px 6px;
+  gap: 8px;
+  padding: 10px 10px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  width: 100%;
 }
 
 .project-selector-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .project-selector-wrapper {
   position: relative;
   flex: 1;
-  min-width: 0;
+  min-width: 120px;
 }
 
 .project-selector-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   width: 100%;
-  background: var(--bg-tertiary);
+  background: var(--bg-primary);
   border: 1px solid var(--border-primary);
-  border-radius: 5px;
+  border-radius: 6px;
   padding: 4px 8px;
   cursor: pointer;
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 500;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
   min-width: 0;
 }
 
 .project-selector-btn:hover {
-  background: var(--bg-elevated);
   border-color: var(--border-secondary);
 }
 
@@ -60,7 +63,7 @@
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  right: 0;
+  min-width: 100%;
   background: var(--menu-bg);
   border: 1px solid var(--menu-border);
   border-radius: 6px;
@@ -97,21 +100,23 @@
 }
 
 .project-admin-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: none;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--text-dim);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 
 .project-admin-btn:hover {
-  background: var(--menu-item-hover);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
