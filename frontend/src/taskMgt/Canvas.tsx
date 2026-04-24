@@ -7,17 +7,11 @@ import { TaskNode } from "./TaskNode";
 import { ProgressBar } from "./ProgressBar";
 import { CategoryConfig, StatusConfig, getConnector, getGroupBox } from "./theme";
 import { GroupRect } from "./GroupRect";
-import { SaveImageAs, GetAtlassianAuthStatus, StartAtlassianLogin, AtlassianLogout } from "../../wailsjs/go/main/App";
+import { SaveImageAs } from "../../wailsjs/go/main/App";
 import { Person } from "../teamMgt/types";
 import { TaskContextMenu } from "./TaskContextMenu";
 import { TaskQueuePanel } from "./TaskQueuePanel";
 import { SettingsDialog, AppSettings, loadSettings, saveSettings } from "./SettingsDialog";
-
-interface AtlassianStatus {
-  loggedIn: boolean;
-  displayName: string;
-  email: string;
-}
 
 export interface Connection {
   from: string;
@@ -172,8 +166,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const [groupContextMenu, setGroupContextMenu] = useState<{ groupId: string; x: number; y: number; svgX: number; svgY: number } | null>(null);
   const [canvasContextMenu, setCanvasContextMenu] = useState<{ screenX: number; screenY: number; svgX: number; svgY: number } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
-  const [atlassianStatus, setAtlassianStatus] = useState<AtlassianStatus>({ loggedIn: false, displayName: "", email: "" });
-  const [atlassianLoginInProgress, setAtlassianLoginInProgress] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
   const panMode = spaceHeld || middleMouseHeld;
@@ -412,37 +404,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     };
   }, [onViewBoxChange]);
 
-  useEffect(() => {
-    GetAtlassianAuthStatus()
-      .then((s) => setAtlassianStatus(s))
-      .catch(console.error);
-  }, []);
-
-  const handleAtlassianLogin = useCallback(async () => {
-    setMenuOpen(false);
-    setAtlassianLoginInProgress(true);
-    try {
-      await StartAtlassianLogin();
-    } catch (err) {
-      console.error("Atlassian login failed:", err);
-    } finally {
-      setAtlassianLoginInProgress(false);
-      GetAtlassianAuthStatus()
-        .then((s) => setAtlassianStatus(s))
-        .catch(console.error);
-    }
-  }, []);
-
-  const handleAtlassianLogout = useCallback(async () => {
-    setMenuOpen(false);
-    try {
-      await AtlassianLogout();
-    } catch (err) {
-      console.error("Atlassian logout failed:", err);
-    }
-    setAtlassianStatus({ loggedIn: false, displayName: "", email: "" });
-  }, []);
-
   const exportCanvasAsPng = useCallback(async () => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -680,36 +641,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             >
               Settings
             </button>
-            {settings.showAtlassianLogin && (
-              <>
-                <hr className="canvas-menu-divider" />
-                {atlassianStatus.loggedIn ? (
-                  <>
-                    <div className="canvas-menu-info" role="menuitem" aria-disabled="true">
-                      Logged in as {atlassianStatus.displayName}
-                    </div>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="canvas-menu-item"
-                      onClick={handleAtlassianLogout}
-                    >
-                      Logout from Atlassian
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="canvas-menu-item"
-                    onClick={handleAtlassianLogin}
-                    disabled={atlassianLoginInProgress}
-                  >
-                    {atlassianLoginInProgress ? "Logging in…" : "Login to Atlassian"}
-                  </button>
-                )}
-              </>
-            )}
           </div>
         )}
       </div>

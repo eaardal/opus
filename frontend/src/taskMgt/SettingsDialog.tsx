@@ -2,12 +2,10 @@ import "./SettingsDialog.css";
 
 export interface AppSettings {
   showBlockedBySection: boolean;
-  showAtlassianLogin: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   showBlockedBySection: true,
-  showAtlassianLogin: false,
 };
 
 const STORAGE_KEY = "app-settings";
@@ -106,16 +104,6 @@ export function SettingsDialog({
             description="Displays tasks blocking a person's work in their swimlane"
             checked={settings.showBlockedBySection}
             onChange={(v) => set({ showBlockedBySection: v })}
-          />
-        </div>
-
-        <div className="settings-section">
-          <div className="settings-section-title">Integrations</div>
-          <ToggleRow
-            label="Show Atlassian login (UNDER DEVELOPMENT)"
-            description="Shows the Atlassian login option in the menu"
-            checked={settings.showAtlassianLogin}
-            onChange={(v) => set({ showAtlassianLogin: v })}
           />
         </div>
       </div>
