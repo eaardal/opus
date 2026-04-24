@@ -43,6 +43,11 @@ const CATEGORIES_DARK: Record<string, CategoryConfig> = {
     color: "#e8d97a",
     shape: "diamond",
   },
+  external_dependency: {
+    label: "External dependency",
+    color: "#b47fe0",
+    shape: "triangle",
+  },
 };
 
 const CATEGORIES_LIGHT: Record<string, CategoryConfig> = {
@@ -58,6 +63,11 @@ const CATEGORIES_LIGHT: Record<string, CategoryConfig> = {
     label: "QA",
     color: "#f5eeaa",
     shape: "diamond",
+  },
+  external_dependency: {
+    label: "External dependency",
+    color: "#9b5fc0",
+    shape: "triangle",
   },
 };
 

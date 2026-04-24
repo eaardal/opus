@@ -140,6 +140,15 @@ export function TaskNode({
           onClick={onClick}
           onContextMenu={onContextMenu}
         />
+      ) : shape === "triangle" ? (
+        <polygon
+          points="0,-30 26,20 -26,20"
+          className={nodeClass}
+          style={nodeStyle}
+          onMouseDown={onMouseDown}
+          onClick={onClick}
+          onContextMenu={onContextMenu}
+        />
       ) : (
         <circle
           r="25"
@@ -152,7 +161,7 @@ export function TaskNode({
       )}
       <circle
         cx="0"
-        cy={shape === "diamond" ? -30 : -25}
+        cy={shape === "diamond" || shape === "triangle" ? -30 : -25}
         r="10"
         className="node-number-badge"
         style={
@@ -161,7 +170,7 @@ export function TaskNode({
       />
       <text
         x="0"
-        y={shape === "diamond" ? -30 : -25}
+        y={shape === "diamond" || shape === "triangle" ? -30 : -25}
         textAnchor="middle"
         dy="0.35em"
         className="node-number"
