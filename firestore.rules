@@ -1,0 +1,24 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /workspaces/{workspaceId} {
+      // Create: must be authenticated and claim self as owner.
+      // Forces the client to set ownerId to its own uid — this is how
+      // listMine() can later trust the ownerId field.
+      allow create: if request.auth != null
+                    && request.resource.data.ownerId == request.auth.uid;
+
+      // Read/update/delete: only the owner.
+      // Future sharing will extend this with `memberIds`.
+      allow read, update, delete: if request.auth != null
+                                  && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Default deny for anything else.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
