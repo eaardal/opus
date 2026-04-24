@@ -1,45 +1,83 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
-import { FilePlus, FolderOpen, Save } from "lucide-react";
-import { OpenFile, SaveFile, SaveFileAs } from "../wailsjs/go/main/App";
+import { Save, ChevronsLeft, LogOut } from "lucide-react";
+import { authService, workspaceService } from "./services/container";
+import { useSelectedWorkspace } from "./workspace/SelectedWorkspaceProvider";
 import { confirm } from "./shared/ConfirmModal";
 import TaskMgtApp from "./taskMgt/App";
 import { TeamMgt } from "./teamMgt/TeamMgt";
-import { TeamMgtHandle } from "./teamMgt/types";
+import { TeamMgtHandle, Person, Team } from "./teamMgt/types";
 import {
   ProjectData,
-  WorkspaceFile,
   ProjectState,
   createDefaultProject,
   extractProjectState,
-  parseWorkspaceFile,
 } from "./workspace/types";
 import { ProjectAdminDialog } from "./workspace/ProjectAdminDialog";
 
 type ActiveModule = "tasks" | "teams";
+type LoadStatus = "loading" | "ready" | "missing";
 
 function App() {
-  const initialProject = createDefaultProject();
+  const { id: workspaceId, select } = useSelectedWorkspace();
 
-  const [projects, setProjects] = useState<ProjectData[]>([initialProject]);
-  const [activeProjectId, setActiveProjectId] = useState<string>(initialProject.id);
-  const [people, setPeople] = useState<ReturnType<TeamMgtHandle["getPeople"]>>([]);
-  const [teams, setTeams] = useState<ReturnType<TeamMgtHandle["getTeams"]>>([]);
-  const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
+  const [workspaceName, setWorkspaceName] = useState<string>("");
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string>("");
+  const [people, setPeople] = useState<Person[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [activeModule, setActiveModule] = useState<ActiveModule>("tasks");
   const [showProjectAdmin, setShowProjectAdmin] = useState(false);
   const [workspaceLoadCount, setWorkspaceLoadCount] = useState(0);
 
   const teamMgtRef = useRef<TeamMgtHandle>(null);
-  const currentProjectStateRef = useRef<ProjectState>(extractProjectState(initialProject));
+  const currentProjectStateRef = useRef<ProjectState | null>(null);
   const projectsRef = useRef(projects);
   projectsRef.current = projects;
   const activeProjectIdRef = useRef(activeProjectId);
   activeProjectIdRef.current = activeProjectId;
+  const hydratedForRef = useRef<string | null>(null);
 
-  const activeProject = projects.find(p => p.id === activeProjectId) ?? projects[0];
-  const fileName = currentFilePath ? currentFilePath.split(/[\\/]/).pop() : null;
+  // Subscribe to the selected workspace document. The first snapshot
+  // hydrates our in-memory state; later snapshots refresh only the
+  // workspace name so we do not clobber unsaved local edits. Real-time
+  // collaboration (reconciling remote edits) is a phase-2 concern.
+  useEffect(() => {
+    if (!workspaceId) return;
+    setLoadStatus("loading");
+    hydratedForRef.current = null;
+
+    const unsubscribe = workspaceService.subscribe(workspaceId, (doc) => {
+      if (!doc) {
+        setLoadStatus("missing");
+        return;
+      }
+      setWorkspaceName(doc.name);
+      if (hydratedForRef.current === workspaceId) return;
+      hydratedForRef.current = workspaceId;
+
+      const loaded = doc.projects.length > 0 ? doc.projects : [createDefaultProject()];
+      currentProjectStateRef.current = extractProjectState(loaded[0]);
+      setProjects(loaded);
+      setActiveProjectId(loaded[0].id);
+      setPeople(doc.people);
+      setTeams(doc.teams);
+      setHasUnsavedChanges(false);
+      setWorkspaceLoadCount((c) => c + 1);
+      setLoadStatus("ready");
+    });
+    return unsubscribe;
+  }, [workspaceId]);
+
+  // If the doc vanished (deleted elsewhere), drop to the picker.
+  useEffect(() => {
+    if (loadStatus === "missing") select(null);
+  }, [loadStatus, select]);
+
+  const activeProject = projects.find((p) => p.id === activeProjectId) ?? projects[0];
 
   const handleProjectStateChange = useCallback((state: ProjectState) => {
     currentProjectStateRef.current = state;
@@ -47,74 +85,52 @@ function App() {
   }, []);
 
   const getProjectsForSave = useCallback((): ProjectData[] => {
-    return projectsRef.current.map(p =>
-      p.id === activeProjectIdRef.current
+    return projectsRef.current.map((p) =>
+      p.id === activeProjectIdRef.current && currentProjectStateRef.current
         ? { ...p, ...currentProjectStateRef.current }
         : p,
     );
   }, []);
 
   const handleSave = useCallback(async () => {
-    const workspace: WorkspaceFile = {
-      version: 2,
-      projects: getProjectsForSave(),
-      people,
-      teams,
-    };
-    const data = JSON.stringify(workspace, null, 2);
+    if (!workspaceId || saving) return;
+    setSaving(true);
     try {
-      if (currentFilePath) {
-        await SaveFile(currentFilePath, data);
-        setHasUnsavedChanges(false);
-      } else {
-        const filePath = await SaveFileAs(data);
-        if (filePath) {
-          setCurrentFilePath(filePath);
-          setHasUnsavedChanges(false);
-        }
-      }
+      await workspaceService.saveContent(workspaceId, {
+        projects: getProjectsForSave(),
+        people,
+        teams,
+      });
+      setHasUnsavedChanges(false);
     } catch (err) {
       console.error("Save failed:", err);
+    } finally {
+      setSaving(false);
     }
-  }, [people, teams, currentFilePath, getProjectsForSave]);
+  }, [workspaceId, saving, people, teams, getProjectsForSave]);
 
-  const handleOpen = useCallback(async () => {
-    try {
-      const result = await OpenFile();
-      if (!result) return;
-      const workspace = parseWorkspaceFile(JSON.parse(result.content));
-      const first = workspace.projects[0];
-      currentProjectStateRef.current = extractProjectState(first);
-      setProjects(workspace.projects);
-      setActiveProjectId(first.id);
-      setPeople(workspace.people ?? []);
-      setTeams(workspace.teams ?? []);
-      setCurrentFilePath(result.filePath);
-      setHasUnsavedChanges(false);
-      setWorkspaceLoadCount(c => c + 1);
-    } catch (err) {
-      console.error("Open failed:", err);
-    }
-  }, []);
-
-  const handleNew = useCallback(async () => {
+  const handleBackToPicker = useCallback(async () => {
     if (hasUnsavedChanges) {
       const confirmed = await confirm({
-        title: "New Workspace",
-        message: "Discard unsaved changes and start fresh?",
-        confirmLabel: "Discard",
+        title: "Unsaved changes",
+        message: "Leave this workspace without saving? Your local edits will be lost.",
+        confirmLabel: "Leave",
       });
       if (!confirmed) return;
     }
-    const fresh = createDefaultProject();
-    currentProjectStateRef.current = extractProjectState(fresh);
-    setProjects([fresh]);
-    setActiveProjectId(fresh.id);
-    setPeople([]);
-    setTeams([]);
-    setCurrentFilePath(null);
-    setHasUnsavedChanges(false);
-    setWorkspaceLoadCount(c => c + 1);
+    select(null);
+  }, [hasUnsavedChanges, select]);
+
+  const handleSignOut = useCallback(async () => {
+    if (hasUnsavedChanges) {
+      const confirmed = await confirm({
+        title: "Unsaved changes",
+        message: "Sign out without saving? Your local edits will be lost.",
+        confirmLabel: "Sign out",
+      });
+      if (!confirmed) return;
+    }
+    await authService.signOut();
   }, [hasUnsavedChanges]);
 
   useEffect(() => {
@@ -128,22 +144,28 @@ function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleSave]);
 
-  // Project management
+  // Project management (intra-workspace projects, unchanged semantics).
   const handleSwitchProject = useCallback((newId: string) => {
     if (newId === activeProjectIdRef.current) return;
-    setProjects(prev => prev.map(p =>
-      p.id === activeProjectIdRef.current ? { ...p, ...currentProjectStateRef.current } : p,
-    ));
-    const newProject = projectsRef.current.find(p => p.id === newId);
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === activeProjectIdRef.current && currentProjectStateRef.current
+          ? { ...p, ...currentProjectStateRef.current }
+          : p,
+      ),
+    );
+    const newProject = projectsRef.current.find((p) => p.id === newId);
     if (newProject) currentProjectStateRef.current = extractProjectState(newProject);
     setActiveProjectId(newId);
   }, []);
 
   const handleAddProject = useCallback(() => {
     const fresh = createDefaultProject("New Project");
-    setProjects(prev => [
-      ...prev.map(p =>
-        p.id === activeProjectIdRef.current ? { ...p, ...currentProjectStateRef.current } : p,
+    setProjects((prev) => [
+      ...prev.map((p) =>
+        p.id === activeProjectIdRef.current && currentProjectStateRef.current
+          ? { ...p, ...currentProjectStateRef.current }
+          : p,
       ),
       fresh,
     ]);
@@ -153,21 +175,21 @@ function App() {
   }, []);
 
   const handleRenameProject = useCallback((id: string, name: string) => {
-    setProjects(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
     setHasUnsavedChanges(true);
   }, []);
 
   const handleDeleteProject = useCallback(async (id: string) => {
     const current = projectsRef.current;
     if (current.length <= 1) return;
-    const project = current.find(p => p.id === id);
+    const project = current.find((p) => p.id === id);
     const confirmed = await confirm({
       title: "Delete Project",
       message: `Delete "${project?.name || "this project"}"? This cannot be undone.`,
       confirmLabel: "Delete",
     });
     if (!confirmed) return;
-    const remaining = current.filter(p => p.id !== id);
+    const remaining = current.filter((p) => p.id !== id);
     setProjects(remaining);
     if (activeProjectIdRef.current === id) {
       const next = remaining[0];
@@ -177,25 +199,35 @@ function App() {
     setHasUnsavedChanges(true);
   }, []);
 
+  if (loadStatus !== "ready" || !activeProject) {
+    return <div className="app-loading">Loading workspace…</div>;
+  }
+
+  const saveTitle = saving ? "Saving…" : hasUnsavedChanges ? "Save workspace" : "Saved";
+
   return (
     <div className="app-shell">
       <div className="top-app-bar">
         <div className="app-bar-left">
-          <button className="app-bar-icon-btn" onClick={handleNew} title="New workspace">
-            <FilePlus size={16} />
+          <button
+            className="app-bar-icon-btn"
+            onClick={handleBackToPicker}
+            title="Switch workspace"
+          >
+            <ChevronsLeft size={16} />
           </button>
-          <button className="app-bar-icon-btn" onClick={handleOpen} title="Open workspace">
-            <FolderOpen size={16} />
-          </button>
-          <button className="app-bar-icon-btn" onClick={handleSave} title="Save workspace">
+          <button
+            className="app-bar-icon-btn"
+            onClick={handleSave}
+            title={saveTitle}
+            disabled={saving}
+          >
             <Save size={16} />
           </button>
-          {fileName && (
-            <span className="app-bar-filename">
-              {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
-              {fileName}
-            </span>
-          )}
+          <span className="app-bar-filename">
+            {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
+            {workspaceName}
+          </span>
         </div>
         <nav className="app-bar-nav">
           <button
@@ -211,7 +243,15 @@ function App() {
             Teams
           </button>
         </nav>
-        <div className="app-bar-right" />
+        <div className="app-bar-right">
+          <button
+            className="app-bar-icon-btn"
+            onClick={handleSignOut}
+            title="Sign out"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </div>
 
       {showProjectAdmin && (
@@ -226,7 +266,9 @@ function App() {
       )}
 
       <div className="app-shell-content">
-        <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
+        <div
+          className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}
+        >
           <TaskMgtApp
             key={`${workspaceLoadCount}-${activeProjectId}`}
             initialProject={activeProject}
@@ -238,7 +280,9 @@ function App() {
             people={people}
           />
         </div>
-        <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
+        <div
+          className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}
+        >
           <TeamMgt
             key={workspaceLoadCount}
             ref={teamMgtRef}

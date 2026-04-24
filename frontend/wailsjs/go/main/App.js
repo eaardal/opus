@@ -6,18 +6,6 @@ export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
 
-export function OpenFile() {
-  return window['go']['main']['App']['OpenFile']();
-}
-
-export function SaveFile(arg1, arg2) {
-  return window['go']['main']['App']['SaveFile'](arg1, arg2);
-}
-
-export function SaveFileAs(arg1) {
-  return window['go']['main']['App']['SaveFileAs'](arg1);
-}
-
 export function SignInWithGoogle() {
   return window['go']['main']['App']['SignInWithGoogle']();
 }
