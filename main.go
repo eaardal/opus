@@ -8,7 +8,12 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
-//go:embed all:frontend/dist
+// The Wails binary embeds only a thin bootstrap shell. The shell loads
+// the current React bundle from Firebase Hosting at launch, so shipping
+// a web deploy updates the desktop app without a binary rebuild.
+// See frontend/desktop-shell/index.html.
+//
+//go:embed all:frontend/desktop-shell
 var assets embed.FS
 
 func main() {
