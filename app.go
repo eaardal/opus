@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"domino/auth"
 )
 
 // App struct
@@ -27,6 +29,15 @@ func (a *App) startup(ctx context.Context) {
 // Greet returns a greeting for the given name
 func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
+}
+
+// SignInWithGoogle runs the desktop-side of a PKCE OAuth 2.0 flow and
+// returns a Google ID token. The frontend feeds the token to Firebase
+// Auth via signInWithCredential.
+func (a *App) SignInWithGoogle() (string, error) {
+	return auth.SignInWithGoogle(a.ctx, auth.GoogleDesktopOAuthClientID, func(url string) {
+		runtime.BrowserOpenURL(a.ctx, url)
+	})
 }
 
 // OpenFileResult contains the file content and path
