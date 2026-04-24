@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Domino</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #0f1115;
+        color: #e6e6e6;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      #root {
+        height: 100%;
+      }
+      #bootstrap-error {
+        display: none;
+        position: fixed;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      #bootstrap-error .card {
+        max-width: 420px;
+        text-align: center;
+        background: #1a1d24;
+        border: 1px solid #2a2f3a;
+        border-radius: 12px;
+        padding: 28px 32px;
+      }
+      #bootstrap-error h1 {
+        font-size: 18px;
+        margin: 0 0 8px;
+      }
+      #bootstrap-error p {
+        font-size: 13px;
+        color: #a0a0a0;
+        margin: 6px 0;
+      }
+      #bootstrap-error .detail {
+        color: #ff8080;
+        font-size: 11px;
+        word-break: break-word;
+      }
+      #bootstrap-error button {
+        margin-top: 12px;
+        padding: 8px 18px;
+        font-size: 13px;
+        background: #3b82f6;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="bootstrap-error">
+      <div class="card">
+        <h1>Cannot reach Domino</h1>
+        <p>Check your internet connection and try again.</p>
+        <p class="detail" id="bootstrap-error-detail"></p>
+        <button type="button" onclick="location.reload()">Retry</button>
+      </div>
+    </div>
+    <script type="module">
+      // Wails bootstrap shell.
+      //
+      // The top-level document stays on the wails:// origin so the
+      // Wails runtime bindings (window.go.main.App.*) are available.
+      // The actual app code is loaded cross-origin from Firebase
+      // Hosting — the browser allows cross-origin <script type="module">
+      // loads, and relative imports inside the loaded chunk resolve
+      // against its origin (so chunk-to-chunk imports stay on Hosting).
+      //
+      // Ship a new web build by running the deploy workflow; the next
+      // desktop launch picks up the new manifest and loads the new
+      // bundle without a binary rebuild.
+      const HOSTING_ORIGIN = "https://domino-34fce.web.app";
+
+      async function bootstrap() {
+        const manifestUrl = `${HOSTING_ORIGIN}/manifest.json?ts=${Date.now()}`;
+        const response = await fetch(manifestUrl, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`manifest ${response.status}`);
+        }
+        const manifest = await response.json();
+        const entry = Object.values(manifest).find((chunk) => chunk.isEntry);
+        if (!entry) {
+          throw new Error("no entry chunk in manifest");
+        }
+
+        for (const css of entry.css || []) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = `${HOSTING_ORIGIN}/${css}`;
+          document.head.appendChild(link);
+        }
+
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = `${HOSTING_ORIGIN}/${entry.file}`;
+        document.head.appendChild(script);
+      }
+
+      bootstrap().catch((err) => {
+        console.error("Bootstrap failed:", err);
+        const errorEl = document.getElementById("bootstrap-error");
+        const detailEl = document.getElementById("bootstrap-error-detail");
+        if (errorEl) errorEl.style.display = "flex";
+        if (detailEl) detailEl.textContent = String(err);
+      });
+    </script>
+  </body>
+</html>
