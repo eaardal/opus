@@ -9,5 +9,3 @@ export function OpenFile():Promise<main.OpenFileResult>;
 export function SaveFile(arg1:string,arg2:string):Promise<void>;
 
 export function SaveFileAs(arg1:string):Promise<string>;
-
-export function SaveImageAs(arg1:string):Promise<string>;

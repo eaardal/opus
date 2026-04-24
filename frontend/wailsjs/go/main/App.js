@@ -17,7 +17,3 @@ export function SaveFile(arg1, arg2) {
 export function SaveFileAs(arg1) {
   return window['go']['main']['App']['SaveFileAs'](arg1);
 }
-
-export function SaveImageAs(arg1) {
-  return window['go']['main']['App']['SaveImageAs'](arg1);
-}

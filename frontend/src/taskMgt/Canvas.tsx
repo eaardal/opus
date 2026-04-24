@@ -7,7 +7,6 @@ import { TaskNode } from "./TaskNode";
 import { ProgressBar } from "./ProgressBar";
 import { CategoryConfig, StatusConfig, getConnector, getGroupBox } from "./theme";
 import { GroupRect } from "./GroupRect";
-import { SaveImageAs } from "../../wailsjs/go/main/App";
 import { Person } from "../teamMgt/types";
 import { TaskContextMenu } from "./TaskContextMenu";
 import { TaskQueuePanel } from "./TaskQueuePanel";
@@ -489,9 +488,18 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       ctx.fillStyle = bgColor || "#0f0f1a";
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
-      const pngDataUrl = canvas.toDataURL("image/png");
-      const base64 = pngDataUrl.replace(/^data:image\/png;base64,/, "");
-      await SaveImageAs(base64);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png")
+      );
+      if (!blob) throw new Error("Failed to encode canvas as PNG");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "canvas.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
     }

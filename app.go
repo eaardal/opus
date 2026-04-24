@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -85,30 +84,4 @@ func (a *App) OpenFile() (*OpenFileResult, error) {
 		Content:  string(content),
 		FilePath: filepath,
 	}, nil
-}
-
-// SaveImageAs shows a save dialog for PNG and writes the base64-encoded image data to the selected file
-func (a *App) SaveImageAs(base64Data string) (string, error) {
-	filepath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Export Canvas as PNG",
-		DefaultFilename: "canvas.png",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "PNG Images", Pattern: "*.png"},
-		},
-	})
-	if err != nil {
-		return "", err
-	}
-	if filepath == "" {
-		return "", nil // User cancelled
-	}
-	data, err := base64.StdEncoding.DecodeString(base64Data)
-	if err != nil {
-		return "", err
-	}
-	err = os.WriteFile(filepath, data, 0644)
-	if err != nil {
-		return "", err
-	}
-	return filepath, nil
 }
