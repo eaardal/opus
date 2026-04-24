@@ -1,4 +1,4 @@
-module opus
+module domino
 
 go 1.23
 
