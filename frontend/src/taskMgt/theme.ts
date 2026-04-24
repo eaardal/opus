@@ -66,7 +66,7 @@ const CATEGORIES_LIGHT: Record<string, CategoryConfig> = {
   },
   external_dependency: {
     label: "External dependency",
-    color: "#9b5fc0",
+    color: "#bf8ede",
     shape: "triangle",
   },
 };
