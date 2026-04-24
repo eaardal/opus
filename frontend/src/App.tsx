@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
 import { FilePlus, FolderOpen, Save } from "lucide-react";
-import { ConfirmDialog, OpenFile, SaveFile, SaveFileAs } from "../wailsjs/go/main/App";
+import { OpenFile, SaveFile, SaveFileAs } from "../wailsjs/go/main/App";
+import { confirm } from "./shared/ConfirmModal";
 import TaskMgtApp from "./taskMgt/App";
 import { TeamMgt } from "./teamMgt/TeamMgt";
 import { TeamMgtHandle } from "./teamMgt/types";
@@ -98,7 +99,11 @@ function App() {
 
   const handleNew = useCallback(async () => {
     if (hasUnsavedChanges) {
-      const confirmed = await ConfirmDialog("New Workspace", "Discard unsaved changes and start fresh?");
+      const confirmed = await confirm({
+        title: "New Workspace",
+        message: "Discard unsaved changes and start fresh?",
+        confirmLabel: "Discard",
+      });
       if (!confirmed) return;
     }
     const fresh = createDefaultProject();
@@ -156,10 +161,11 @@ function App() {
     const current = projectsRef.current;
     if (current.length <= 1) return;
     const project = current.find(p => p.id === id);
-    const confirmed = await ConfirmDialog(
-      "Delete Project",
-      `Delete "${project?.name || "this project"}"? This cannot be undone.`,
-    );
+    const confirmed = await confirm({
+      title: "Delete Project",
+      message: `Delete "${project?.name || "this project"}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+    });
     if (!confirmed) return;
     const remaining = current.filter(p => p.id !== id);
     setProjects(remaining);

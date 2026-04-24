@@ -5,14 +5,19 @@ import App from "./App";
 
 // Mock Wails runtime functions
 vi.mock("../../wailsjs/go/main/App", () => ({
-  ConfirmDialog: vi.fn(),
   OpenFile: vi.fn(),
   SaveFile: vi.fn(),
   SaveFileAs: vi.fn(),
   SaveImageAs: vi.fn(),
 }));
 
-import { ConfirmDialog, OpenFile, SaveFile, SaveFileAs } from "../../wailsjs/go/main/App";
+vi.mock("../shared/ConfirmModal", () => ({
+  confirm: vi.fn(),
+  ConfirmHost: () => null,
+}));
+
+import { OpenFile, SaveFile, SaveFileAs } from "../../wailsjs/go/main/App";
+import { confirm } from "../shared/ConfirmModal";
 
 describe("App", () => {
   beforeEach(() => {
@@ -87,7 +92,7 @@ describe("App", () => {
   describe("Removing tasks", () => {
     it("should remove a task when delete is confirmed", async () => {
       const user = userEvent.setup();
-      vi.mocked(ConfirmDialog).mockResolvedValue(true);
+      vi.mocked(confirm).mockResolvedValue(true);
 
       render(<App />);
 
@@ -109,7 +114,7 @@ describe("App", () => {
 
     it("should not remove a task when delete is cancelled", async () => {
       const user = userEvent.setup();
-      vi.mocked(ConfirmDialog).mockResolvedValue(false);
+      vi.mocked(confirm).mockResolvedValue(false);
 
       render(<App />);
 
@@ -129,9 +134,9 @@ describe("App", () => {
       });
     });
 
-    it("should call ConfirmDialog with task name when deleting", async () => {
+    it("should call confirm with task name when deleting", async () => {
       const user = userEvent.setup();
-      vi.mocked(ConfirmDialog).mockResolvedValue(false);
+      vi.mocked(confirm).mockResolvedValue(false);
 
       render(<App />);
 
@@ -145,9 +150,11 @@ describe("App", () => {
       await user.click(deleteButton);
 
       await waitFor(() => {
-        expect(ConfirmDialog).toHaveBeenCalledWith(
-          "Delete Task",
-          'Delete "Important task"?'
+        expect(confirm).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: "Delete Task",
+            message: 'Delete "Important task"?',
+          })
         );
       });
     });

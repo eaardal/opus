@@ -3,7 +3,7 @@ import "./TeamMgt.css";
 import { Person, Team, TeamMgtHandle } from "./types";
 import { PeoplePanel } from "./PeoplePanel";
 import { TeamsPanel } from "./TeamsPanel";
-import { ConfirmDialog } from "../../wailsjs/go/main/App";
+import { confirm } from "../shared/ConfirmModal";
 
 interface TeamMgtProps {
   initialPeople?: Person[];
@@ -44,7 +44,11 @@ export const TeamMgt = forwardRef<TeamMgtHandle, TeamMgtProps>(function TeamMgt(
 
   const deletePerson = useCallback(async (id: string) => {
     const person = people.find(p => p.id === id);
-    const confirmed = await ConfirmDialog("Delete Person", `Delete "${person?.name || "this person"}"?`);
+    const confirmed = await confirm({
+      title: "Delete Person",
+      message: `Delete "${person?.name || "this person"}"?`,
+      confirmLabel: "Delete",
+    });
     if (!confirmed) return;
     setPeople(prev => prev.filter(p => p.id !== id));
     setTeams(prev => prev.map(t => ({ ...t, memberIds: t.memberIds.filter(mid => mid !== id) })));
@@ -60,7 +64,11 @@ export const TeamMgt = forwardRef<TeamMgtHandle, TeamMgtProps>(function TeamMgt(
 
   const deleteTeam = useCallback(async (id: string) => {
     const team = teams.find(t => t.id === id);
-    const confirmed = await ConfirmDialog("Delete Team", `Delete team "${team?.name || "this team"}"? People will not be deleted.`);
+    const confirmed = await confirm({
+      title: "Delete Team",
+      message: `Delete team "${team?.name || "this team"}"? People will not be deleted.`,
+      confirmLabel: "Delete",
+    });
     if (!confirmed) return;
     setTeams(prev => prev.filter(t => t.id !== id));
   }, [teams]);

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
-import { ConfirmDialog } from "../../wailsjs/go/main/App";
+import { confirm } from "../shared/ConfirmModal";
 import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
 import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
 import { getCategories, getStatuses } from "./theme";
@@ -141,10 +141,11 @@ function App({
         ...selectedGroupList.map((g) => `  • Group: "${g.title || "(unnamed)"}"`),
       ].join("\n");
 
-      const confirmed = await ConfirmDialog(
-        "Delete Selected",
-        `Delete the following?\n\n${lines}${selectedTaskList.length > 0 ? "\n\nConnections to deleted tasks will also be removed." : ""}`,
-      );
+      const confirmed = await confirm({
+        title: "Delete Selected",
+        message: `Delete the following?\n\n${lines}${selectedTaskList.length > 0 ? "\n\nConnections to deleted tasks will also be removed." : ""}`,
+        confirmLabel: "Delete",
+      });
 
       if (confirmed) {
         const deletedTaskIds = new Set(selectedTaskList.map((t) => t.id));
@@ -262,10 +263,11 @@ function App({
   const deleteTask = async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     const taskName = task?.text || "this task";
-    const confirmed = await ConfirmDialog(
-      "Delete Task",
-      `Delete "${taskName}"?`,
-    );
+    const confirmed = await confirm({
+      title: "Delete Task",
+      message: `Delete "${taskName}"?`,
+      confirmLabel: "Delete",
+    });
     if (confirmed) {
       push({
         tasks: tasks.filter((t) => t.id !== id),
@@ -316,10 +318,11 @@ function App({
   const deleteGroup = async (id: string) => {
     const group = groups.find((g) => g.id === id);
     const groupName = group?.title || "this group";
-    const confirmed = await ConfirmDialog(
-      "Delete Group",
-      `Delete "${groupName}"? The tasks inside will not be deleted.`,
-    );
+    const confirmed = await confirm({
+      title: "Delete Group",
+      message: `Delete "${groupName}"? The tasks inside will not be deleted.`,
+      confirmLabel: "Delete",
+    });
     if (confirmed) {
       push({
         tasks,
