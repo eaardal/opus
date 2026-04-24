@@ -1,6 +1,13 @@
 [tools]
 go = "1.23"
 
+# Loads GOOGLE_OAUTH_CLIENT_ID / _SECRET (and anything else) into the
+# mise-managed environment so build tasks can bake them into the binary
+# via -ldflags. The file is gitignored; missing is fine (the build just
+# produces a binary without baked-in credentials).
+[env]
+_.file = ".env.local"
+
 [tasks.generate]
 description = "Generate Wails JS bindings from Go types"
 run = "wails generate module"
@@ -8,22 +15,34 @@ run = "wails generate module"
 [tasks.build]
 description = "Build Domino with Wails for the current platform"
 depends = ["generate"]
-run = "wails build -clean"
+run = '''
+LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
+wails build -clean -ldflags "$LDFLAGS"
+'''
 
 [tasks."build:mac"]
 description = "Build Domino for macOS (universal binary: amd64 + arm64)"
 depends = ["generate"]
-run = "wails build -clean -platform darwin/universal"
+run = '''
+LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
+wails build -clean -platform darwin/universal -ldflags "$LDFLAGS"
+'''
 
 [tasks."build:windows"]
 description = "Build Domino for Windows (amd64)"
 depends = ["generate"]
-run = "wails build -clean -platform windows/amd64"
+run = '''
+LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
+wails build -clean -platform windows/amd64 -ldflags "$LDFLAGS"
+'''
 
 [tasks."build:linux"]
 description = "Build Domino for Linux (amd64)"
 depends = ["generate"]
-run = "wails build -clean -platform linux/amd64"
+run = '''
+LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
+wails build -clean -platform linux/amd64 -ldflags "$LDFLAGS"
+'''
 
 [tasks."package:mac"]
 description = "Package macOS build into a distributable .zip"

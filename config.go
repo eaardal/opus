@@ -21,16 +21,38 @@ const (
 	envGoogleOAuthClientSecret = "GOOGLE_OAUTH_CLIENT_SECRET"
 )
 
-// loadConfig reads the optional .env.local file (if present in the
-// current working directory), then pulls known values from the process
-// environment. Real environment variables override .env.local so CI and
-// production builds can inject values without editing files.
+// Compile-time overrides. Empty by default; set via linker flags when
+// producing a distributable binary so end users don't need to ship a
+// .env.local alongside the app:
+//
+//	wails build -ldflags "-X main.defaultGoogleOAuthClientID=... \
+//	                      -X main.defaultGoogleOAuthClientSecret=..."
+//
+// These must be `var` (not `const`) and strings for the -X flag to
+// work. Environment variables still win, so the dev loop with
+// .env.local stays unchanged.
+var (
+	defaultGoogleOAuthClientID     = ""
+	defaultGoogleOAuthClientSecret = ""
+)
+
+// loadConfig pulls known values from, in order:
+//  1. the process environment
+//  2. the optional .env.local file (for local development)
+//  3. compile-time defaults injected via -ldflags -X
 func loadConfig() Config {
 	loadEnvFile(".env.local")
 	return Config{
-		GoogleOAuthClientID:     os.Getenv(envGoogleOAuthClientID),
-		GoogleOAuthClientSecret: os.Getenv(envGoogleOAuthClientSecret),
+		GoogleOAuthClientID:     envOrDefault(envGoogleOAuthClientID, defaultGoogleOAuthClientID),
+		GoogleOAuthClientSecret: envOrDefault(envGoogleOAuthClientSecret, defaultGoogleOAuthClientSecret),
 	}
+}
+
+func envOrDefault(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
 
 // loadEnvFile reads KEY=value pairs from the given file into the process
