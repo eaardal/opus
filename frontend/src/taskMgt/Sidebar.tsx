@@ -29,7 +29,7 @@ export interface Group {
   locked?: boolean;
 }
 
-export type NodeShape = "circle" | "diamond";
+export type NodeShape = "circle" | "diamond" | "triangle";
 
 interface SidebarProps {
   width: number;
