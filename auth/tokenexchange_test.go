@@ -30,6 +30,7 @@ func TestParseIDToken_MissingFieldErrors(t *testing.T) {
 func TestExchangeCodeForIDToken_SendsPKCEFieldsAndReturnsToken(t *testing.T) {
 	var got struct {
 		ClientID     string
+		ClientSecret string
 		Code         string
 		CodeVerifier string
 		GrantType    string
@@ -42,6 +43,7 @@ func TestExchangeCodeForIDToken_SendsPKCEFieldsAndReturnsToken(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		form, _ := url.ParseQuery(string(body))
 		got.ClientID = form.Get("client_id")
+		got.ClientSecret = form.Get("client_secret")
 		got.Code = form.Get("code")
 		got.CodeVerifier = form.Get("code_verifier")
 		got.GrantType = form.Get("grant_type")
@@ -58,6 +60,7 @@ func TestExchangeCodeForIDToken_SendsPKCEFieldsAndReturnsToken(t *testing.T) {
 	token, err := exchangeCodeForIDToken(
 		context.Background(),
 		"client-abc",
+		"secret-shh",
 		"auth-code-xyz",
 		"verifier-123",
 		"http://127.0.0.1:9999/callback",
@@ -70,6 +73,9 @@ func TestExchangeCodeForIDToken_SendsPKCEFieldsAndReturnsToken(t *testing.T) {
 	}
 	if got.ClientID != "client-abc" {
 		t.Errorf("client_id = %q", got.ClientID)
+	}
+	if got.ClientSecret != "secret-shh" {
+		t.Errorf("client_secret = %q", got.ClientSecret)
 	}
 	if got.Code != "auth-code-xyz" {
 		t.Errorf("code = %q", got.Code)
@@ -88,6 +94,32 @@ func TestExchangeCodeForIDToken_SendsPKCEFieldsAndReturnsToken(t *testing.T) {
 	}
 }
 
+func TestExchangeCodeForIDToken_OmitsClientSecretWhenEmpty(t *testing.T) {
+	var got struct {
+		HasClientSecret bool
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		form, _ := url.ParseQuery(string(body))
+		_, got.HasClientSecret = form["client_secret"]
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id_token":"eyJ.good"}`))
+	}))
+	defer server.Close()
+
+	origEndpoint := tokenEndpoint
+	tokenEndpoint = server.URL
+	defer func() { tokenEndpoint = origEndpoint }()
+
+	_, err := exchangeCodeForIDToken(context.Background(), "c", "", "code", "v", "http://127.0.0.1/callback")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.HasClientSecret {
+		t.Error("client_secret should be omitted when empty")
+	}
+}
+
 func TestExchangeCodeForIDToken_NonOKReturnsError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -99,7 +131,7 @@ func TestExchangeCodeForIDToken_NonOKReturnsError(t *testing.T) {
 	tokenEndpoint = server.URL
 	defer func() { tokenEndpoint = origEndpoint }()
 
-	_, err := exchangeCodeForIDToken(context.Background(), "c", "code", "v", "http://127.0.0.1/callback")
+	_, err := exchangeCodeForIDToken(context.Background(), "c", "s", "code", "v", "http://127.0.0.1/callback")
 	if err == nil {
 		t.Error("expected error for non-200 response")
 	}

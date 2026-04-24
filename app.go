@@ -13,11 +13,12 @@ import (
 // App struct
 type App struct {
 	ctx context.Context
+	cfg Config
 }
 
 // NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+func NewApp(cfg Config) *App {
+	return &App{cfg: cfg}
 }
 
 // startup is called when the app starts. The context is saved
@@ -36,7 +37,7 @@ func (a *App) Greet(name string) string {
 // Auth via signInWithCredential.
 func (a *App) SignInWithGoogle() (string, error) {
 	runtime.LogInfo(a.ctx, "SignInWithGoogle: starting desktop OAuth flow")
-	token, err := auth.SignInWithGoogle(a.ctx, auth.GoogleDesktopOAuthClientID, func(url string) {
+	token, err := auth.SignInWithGoogle(a.ctx, a.cfg.GoogleOAuthClientID, a.cfg.GoogleOAuthClientSecret, func(url string) {
 		runtime.LogInfof(a.ctx, "SignInWithGoogle: opening browser to %s", url)
 		runtime.BrowserOpenURL(a.ctx, url)
 	})

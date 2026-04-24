@@ -17,9 +17,13 @@ const signInTimeout = 5 * time.Minute
 // intended to be passed to Firebase Auth on the frontend via
 // signInWithCredential(GoogleAuthProvider.credential(idToken)).
 //
+// clientSecret is sent in the token exchange because Google's token
+// endpoint requires it even for Desktop-app OAuth clients; it is not
+// considered secret for installed apps (see config.go).
+//
 // The openBrowser callback is expected to open the given URL in the
 // user's default browser (Wails' runtime.BrowserOpenURL).
-func SignInWithGoogle(ctx context.Context, clientID string, openBrowser func(string)) (string, error) {
+func SignInWithGoogle(ctx context.Context, clientID, clientSecret string, openBrowser func(string)) (string, error) {
 	if clientID == "" {
 		return "", fmt.Errorf("google OAuth client ID not configured")
 	}
@@ -35,5 +39,5 @@ func SignInWithGoogle(ctx context.Context, clientID string, openBrowser func(str
 	if err != nil {
 		return "", err
 	}
-	return exchangeCodeForIDToken(ctx, clientID, code, pair.Verifier, redirectURI)
+	return exchangeCodeForIDToken(ctx, clientID, clientSecret, code, pair.Verifier, redirectURI)
 }

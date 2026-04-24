@@ -16,11 +16,15 @@ const googleTokenEndpoint = "https://oauth2.googleapis.com/token"
 var tokenEndpoint = googleTokenEndpoint
 
 // exchangeCodeForIDToken redeems an authorization code for a Google ID
-// token using the PKCE verifier. No client secret is sent — desktop
-// OAuth clients are public and rely on PKCE instead.
-func exchangeCodeForIDToken(ctx context.Context, clientID, code, codeVerifier, redirectURI string) (string, error) {
+// token using the PKCE verifier. Google also requires client_secret for
+// Desktop-app OAuth clients even though they are considered public;
+// see auth/config.go.
+func exchangeCodeForIDToken(ctx context.Context, clientID, clientSecret, code, codeVerifier, redirectURI string) (string, error) {
 	form := url.Values{}
 	form.Set("client_id", clientID)
+	if clientSecret != "" {
+		form.Set("client_secret", clientSecret)
+	}
 	form.Set("code", code)
 	form.Set("code_verifier", codeVerifier)
 	form.Set("grant_type", "authorization_code")
