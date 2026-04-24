@@ -35,9 +35,17 @@ func (a *App) Greet(name string) string {
 // returns a Google ID token. The frontend feeds the token to Firebase
 // Auth via signInWithCredential.
 func (a *App) SignInWithGoogle() (string, error) {
-	return auth.SignInWithGoogle(a.ctx, auth.GoogleDesktopOAuthClientID, func(url string) {
+	runtime.LogInfo(a.ctx, "SignInWithGoogle: starting desktop OAuth flow")
+	token, err := auth.SignInWithGoogle(a.ctx, auth.GoogleDesktopOAuthClientID, func(url string) {
+		runtime.LogInfof(a.ctx, "SignInWithGoogle: opening browser to %s", url)
 		runtime.BrowserOpenURL(a.ctx, url)
 	})
+	if err != nil {
+		runtime.LogErrorf(a.ctx, "SignInWithGoogle: %v", err)
+		return "", err
+	}
+	runtime.LogInfo(a.ctx, "SignInWithGoogle: got ID token")
+	return token, nil
 }
 
 // OpenFileResult contains the file content and path

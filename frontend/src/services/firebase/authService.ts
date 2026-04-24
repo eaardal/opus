@@ -27,9 +27,22 @@ async function signInWeb(): Promise<void> {
 }
 
 async function signInDesktop(): Promise<void> {
-  const idToken = await SignInWithGoogle();
-  const credential = GoogleAuthProvider.credential(idToken);
-  await signInWithCredential(firebaseAuth, credential);
+  console.info("[auth] calling SignInWithGoogle() via Wails");
+  let idToken: string;
+  try {
+    idToken = await SignInWithGoogle();
+  } catch (err) {
+    console.error("[auth] Go SignInWithGoogle failed:", err);
+    throw new Error(`Desktop OAuth: ${typeof err === "string" ? err : String(err)}`);
+  }
+  console.info("[auth] got Google ID token; exchanging with Firebase");
+  try {
+    const credential = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(firebaseAuth, credential);
+  } catch (err) {
+    console.error("[auth] Firebase signInWithCredential failed:", err);
+    throw err;
+  }
 }
 
 export const firebaseAuthService: AuthService = {

@@ -12,7 +12,14 @@ export function SignInScreen() {
     try {
       await authService.signIn();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign-in failed");
+      console.error("Sign-in failed:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : JSON.stringify(err);
+      setError(message || "Sign-in failed");
       setSigningIn(false);
     }
   };
