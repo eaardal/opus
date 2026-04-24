@@ -57,13 +57,17 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
 
 interface SettingsDialogProps {
   settings: AppSettings;
+  theme: "dark" | "light";
   onChange: (settings: AppSettings) => void;
+  onToggleTheme: () => void;
   onClose: () => void;
 }
 
 export function SettingsDialog({
   settings,
+  theme,
   onChange,
+  onToggleTheme,
   onClose,
 }: SettingsDialogProps) {
   const set = (patch: Partial<AppSettings>) => {
@@ -84,6 +88,15 @@ export function SettingsDialog({
           >
             ×
           </button>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">Appearance</div>
+          <ToggleRow
+            label="Dark mode"
+            checked={theme === "dark"}
+            onChange={onToggleTheme}
+          />
         </div>
 
         <div className="settings-section">

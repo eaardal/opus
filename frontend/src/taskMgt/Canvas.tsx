@@ -657,17 +657,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             >
               Export as PNG
             </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="canvas-menu-item"
-              onClick={() => {
-                onToggleTheme();
-                setMenuOpen(false);
-              }}
-            >
-              {theme === "light" ? "Dark Mode" : "Light Mode"}
-            </button>
+
             <button
               type="button"
               role="menuitem"
@@ -743,7 +733,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       {showSettings && (
         <SettingsDialog
           settings={settings}
+          theme={theme}
           onChange={setSettings}
+          onToggleTheme={onToggleTheme}
           onClose={() => setShowSettings(false)}
         />
       )}
