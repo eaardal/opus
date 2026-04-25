@@ -11,6 +11,18 @@ import { isDesktop } from "../platform";
 import type { AuthService, AuthUser } from "../types";
 import { firebaseAuth } from "./client";
 
+const ALLOWED_EMAIL_DOMAINS = ["tv2.no", "apparat.no"];
+const ALLOWED_EMAILS = ["eirikaardal@gmail.com"];
+
+function isEmailAllowed(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const lower = email.toLowerCase();
+  if (ALLOWED_EMAILS.includes(lower)) return true;
+  const at = lower.lastIndexOf("@");
+  if (at < 0) return false;
+  return ALLOWED_EMAIL_DOMAINS.includes(lower.slice(at + 1));
+}
+
 function toAuthUser(u: User | null): AuthUser | null {
   if (!u) return null;
   return {
@@ -52,8 +64,14 @@ export const firebaseAuthService: AuthService = {
   onAuthChange(callback) {
     return onAuthStateChanged(firebaseAuth, (user) => callback(toAuthUser(user)));
   },
-  signIn() {
-    return isDesktop ? signInDesktop() : signInWeb();
+  async signIn() {
+    if (isDesktop) await signInDesktop();
+    else await signInWeb();
+    const email = firebaseAuth.currentUser?.email;
+    if (!isEmailAllowed(email)) {
+      await firebaseSignOut(firebaseAuth);
+      throw new Error("This email address is not allowed to access this app.");
+    }
   },
   async signOut() {
     await firebaseSignOut(firebaseAuth);

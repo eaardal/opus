@@ -3,16 +3,29 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Email allowlist — must stay in sync with the client-side check in
+    // services/firebase/authService.ts. Comparison is lowercased; matches()
+    // is a full-string match so .* at the start is required.
+    function isAllowedUser() {
+      return request.auth != null
+          && request.auth.token.email_verified == true
+          && (
+               request.auth.token.email.lower() == 'eirikaardal@gmail.com'
+               || request.auth.token.email.lower().matches('.*@tv2[.]no')
+               || request.auth.token.email.lower().matches('.*@apparat[.]no')
+             );
+    }
+
     match /workspaces/{workspaceId} {
-      // Create: must be authenticated and claim self as owner.
+      // Create: must be an allowed user and claim self as owner.
       // Forces the client to set ownerId to its own uid — this is how
       // listMine() can later trust the ownerId field.
-      allow create: if request.auth != null
+      allow create: if isAllowedUser()
                     && request.resource.data.ownerId == request.auth.uid;
 
-      // Read/update/delete: only the owner.
+      // Read/update/delete: only the owner (and an allowed user).
       // Future sharing will extend this with `memberIds`.
-      allow read, update, delete: if request.auth != null
+      allow read, update, delete: if isAllowedUser()
                                   && resource.data.ownerId == request.auth.uid;
     }
 
