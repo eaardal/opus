@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { authService } from "../services/container";
 import "./SignInScreen.css";
 
 export function SignInScreen() {
   const [error, setError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
+
+  useLayoutEffect(() => {
+    document.documentElement.setAttribute("data-theme", "light");
+  }, []);
 
   const handleSignIn = async () => {
     setSigningIn(true);
