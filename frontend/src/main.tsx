@@ -1,5 +1,6 @@
 import React from 'react'
 import {createRoot} from 'react-dom/client'
+import './styles/theme.css'
 import './style.css'
 import App from './App'
 import { ConfirmHost } from './shared/ConfirmModal'

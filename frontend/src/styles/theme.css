@@ -1,0 +1,11 @@
+:root {
+  --color-pink: #edafb8;
+  --color-champagne-pink: #f7e1d7;
+  --color-bone: #dedbd2;
+  --color-ash-gray: #b0c4b1;
+  --color-outer-space: #4a5759;
+
+  --accent-primary: var(--color-ash-gray);
+  --accent-primary-hover: color-mix(in srgb, var(--color-ash-gray) 80%, var(--color-outer-space));
+  --accent-primary-text: var(--color-outer-space);
+}

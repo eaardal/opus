@@ -62,17 +62,18 @@
 }
 
 .add-btn {
-  background: var(--bg-control);
-  color: var(--text-primary);
+  background: var(--accent-primary);
+  color: var(--accent-primary-text);
   border: none;
   padding: 6px 8px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
   flex: 1;
   transition: background 0.2s;
 }
 
 .add-btn:hover {
-  background: var(--bg-control-hover);
+  background: var(--accent-primary-hover);
 }

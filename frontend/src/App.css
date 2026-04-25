@@ -46,7 +46,9 @@
   border-radius: 5px;
   color: var(--text-dim);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .app-bar-icon-btn:hover {
@@ -83,7 +85,9 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .app-bar-tab:hover {
@@ -92,7 +96,7 @@
 }
 
 .app-bar-tab.active {
-  background: var(--menu-item-hover);
+  background: #cad2c5;
   color: var(--text-primary);
 }
 
