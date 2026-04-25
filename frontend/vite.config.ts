@@ -22,5 +22,20 @@ export default defineConfig({
         },
       },
     },
+    coverage: {
+      provider: "v8",
+      // text          → printed to stdout (visible in CI logs)
+      // text-summary  → compact one-block summary, also stdout
+      // json-summary  → machine-readable, parsed in CI to build the markdown table
+      reporter: ["text", "text-summary", "json-summary"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*.d.ts",
+        "src/main.tsx",
+        "src/test/**",
+        "src/wailsjs/**",
+      ],
+    },
   },
 });

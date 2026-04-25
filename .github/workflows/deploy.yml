@@ -1,4 +1,4 @@
-name: Deploy
+name: CI / Deploy
 
 on:
   push:
@@ -14,36 +14,116 @@ permissions:
   checks: write
 
 concurrency:
-  group: deploy-${{ github.event_name }}-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  format:
+    name: Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
-
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
-
       - name: Check formatting
         run: npm run format:check
         working-directory: frontend
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
       - name: Lint
         run: npm run lint
         working-directory: frontend
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        working-directory: frontend
+      - name: Coverage summary
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ ! -f frontend/coverage/coverage-summary.json ]; then
+            echo "No coverage data — tests may have failed before producing a report." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "## Test coverage"
+            echo
+            echo "| Metric | Covered / Total | % |"
+            echo "| --- | ---: | ---: |"
+            for metric in lines statements functions branches; do
+              covered=$(jq ".total.${metric}.covered" frontend/coverage/coverage-summary.json)
+              total=$(jq ".total.${metric}.total" frontend/coverage/coverage-summary.json)
+              pct=$(jq ".total.${metric}.pct" frontend/coverage/coverage-summary.json)
+              echo "| ${metric} | ${covered} / ${total} | ${pct}% |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
       - name: Build frontend
         run: npm run build
         working-directory: frontend
+      - name: Upload built dist as an artifact for the deploy job
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+
+  deploy:
+    name: Deploy
+    needs: [format, lint, test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download built dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
 
       # PR pushes land in an ephemeral per-PR preview channel and the
       # action comments the URL on the PR. Master pushes go to 'live'.
