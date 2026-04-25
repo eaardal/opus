@@ -13,7 +13,10 @@
       "Bash(sed -i '' 's|from \"../wailsjs/go/main/App\"|from \"../../wailsjs/go/main/App\"|g' /Users/eaardal/dev/git/eaardal/opus/frontend/src/taskMgt/Canvas.tsx)",
       "Bash(sed -i '' 's|\"../wailsjs/go/main/App\"|\"../../wailsjs/go/main/App\"|g' /Users/eaardal/dev/git/eaardal/opus/frontend/src/taskMgt/App.test.tsx)",
       "Bash(npm run *)",
-      "Bash(npx biome *)"
+      "Bash(npx biome *)",
+      "Read(//tmp/claude/**)",
+      "Bash(sed -i '' -e 's|from \"./Sidebar\"|from \"./Sidebar/Sidebar\"|g' -e 's|from \"./Canvas\"|from \"./Canvas/Canvas\"|g' src/features/tasks/TasksApp.tsx)",
+      "Bash(sed -i '' -e 's|from \"./PeoplePanel\"|from \"./PeoplePanel/PeoplePanel\"|g' -e 's|from \"./TeamsPanel\"|from \"./TeamsPanel/TeamsPanel\"|g' src/features/teams/TeamsApp.tsx)"
     ]
   }
 }

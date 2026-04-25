@@ -2,19 +2,16 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
 import { Save, FolderOpen, ChevronsLeft, Menu } from "lucide-react";
 import { authService, workspaceService } from "./services/container";
-import { useSelectedWorkspace } from "./workspace/SelectedWorkspaceProvider";
-import { confirm } from "./shared/ConfirmModal";
-import TaskMgtApp, { type TaskMgtAppHandle } from "./taskMgt/App";
-import { TeamMgt } from "./teamMgt/TeamMgt";
-import type { TeamMgtHandle, Person, Team } from "./teamMgt/types";
-import {
-  type ProjectData,
-  type ProjectState,
-  createDefaultProject,
-  extractProjectState,
-  parseWorkspaceFile,
-} from "./workspace/types";
-import { ProjectAdminDialog } from "./workspace/ProjectAdminDialog";
+import { useSelectedWorkspace } from "./features/workspace/SelectedWorkspaceProvider";
+import { confirm } from "./ui/ConfirmModal";
+import TaskMgtApp, { type TaskMgtAppHandle } from "./features/tasks/TasksApp";
+import { TeamMgt } from "./features/teams/TeamsApp";
+import type { Person, Team } from "./domain/teams/types";
+import type { TeamMgtHandle } from "./features/teams/types";
+import type { ProjectData, ProjectState } from "./domain/workspace/types";
+import { createDefaultProject, extractProjectState } from "./domain/workspace/projectState";
+import { parseWorkspaceFile } from "./domain/workspace/parseWorkspaceFile";
+import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 
 type ActiveModule = "tasks" | "teams";
 type LoadStatus = "loading" | "ready" | "missing";

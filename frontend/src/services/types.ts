@@ -1,5 +1,5 @@
-import type { ProjectData } from "../workspace/types";
-import type { Person, Team } from "../teamMgt/types";
+import type { ProjectData } from "../domain/workspace/types";
+import type { Person, Team } from "../domain/teams/types";
 
 export interface AuthUser {
   uid: string;
