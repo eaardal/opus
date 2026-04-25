@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { authService } from "../../services/container";
-import type { WorkspaceId } from "../../services/types";
+import type { WorkspaceId } from "../../services/workspace.types";
 
 const STORAGE_KEY = "domino.selectedWorkspaceId";
 

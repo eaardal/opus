@@ -9,12 +9,13 @@ import { type CategoryConfig, type StatusConfig, getConnector, getGroupBox } fro
 import { GroupRect } from "./GroupRect";
 import type { Person } from "../../../domain/teams/types";
 import { TaskContextMenu } from "../TaskContextMenu";
-import { TaskQueuePanel } from "../TaskQueuePanel";
+import { TaskQueuePanel } from "../TaskQueuePanel/TaskQueuePanel";
 import { SettingsDialog, type AppSettings, loadSettings } from "../SettingsDialog";
 import { toSvgCoords as toSvgCoordsPure } from "../../../lib/svgCoords";
-import { fitViewBoxToContent, zoomViewBoxAtPoint } from "../../../domain/tasks/viewport";
+import { fitViewBoxToContent } from "../../../domain/tasks/viewport";
 import { exportSvgElementAsPng } from "../../../domain/tasks/exportCanvasAsPng";
 import type { Connection, ViewBox } from "../../../domain/tasks/types";
+import { useCanvasPan } from "../../../hooks/useCanvasPan";
 
 interface SelectionRect {
   startX: number;
@@ -87,11 +88,6 @@ interface CanvasProps {
   onHighlightTask: (taskId: string | null) => void;
 }
 
-const ZOOM_SENSITIVITY = 0.001;
-const ZOOM_SENSITIVITY_TRACKPAD = 0.02;
-const MIN_ZOOM = 0.2;
-const MAX_ZOOM = 5;
-
 export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   {
     tasks,
@@ -150,12 +146,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const groupContextMenuRef = useRef<HTMLDivElement>(null);
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
-  const touchPanRef = useRef<{
-    startX: number;
-    startY: number;
-    origVx: number;
-    origVy: number;
-  } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
@@ -178,18 +168,13 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     svgY: number;
   } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
-  const [spaceHeld, setSpaceHeld] = useState(false);
-  const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
-  const panMode = spaceHeld || middleMouseHeld;
-  const [panning, setPanning] = useState<{
-    startX: number;
-    startY: number;
-    origVx: number;
-    origVy: number;
-  } | null>(null);
-  const viewBoxRef = useRef(viewBox);
-  viewBoxRef.current = viewBox;
   const viewBoxInitialized = useRef(false);
+
+  const { panMode, panning, tryStartPan, tryUpdatePan, tryEndPan } = useCanvasPan({
+    svgRef,
+    viewBox,
+    onViewBoxChange,
+  });
 
   // Initialize viewBox dimensions from container size if not yet set
   useEffect(() => {
@@ -203,25 +188,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       viewBoxInitialized.current = true;
     }
   });
-
-  // Spacebar tracking
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !(e.target instanceof HTMLInputElement)) {
-        e.preventDefault();
-        setSpaceHeld(true);
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") setSpaceHeld(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
 
   useEffect(() => {
     if (!groupContextMenu) return;
@@ -305,125 +271,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   );
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1) {
-      e.preventDefault();
-      setMiddleMouseHeld(true);
-      setPanning({ startX: e.clientX, startY: e.clientY, origVx: viewBox.x, origVy: viewBox.y });
-      return;
-    }
-    if (panMode) {
-      e.preventDefault();
-      setPanning({ startX: e.clientX, startY: e.clientY, origVx: viewBox.x, origVy: viewBox.y });
-      return;
-    }
+    if (tryStartPan(e)) return;
     onMouseDown(e, svgRef.current);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (panning) {
-      const svg = svgRef.current;
-      if (!svg) return;
-      const rect = svg.getBoundingClientRect();
-      const scale = viewBox.width / rect.width;
-      const dx = (e.clientX - panning.startX) * scale;
-      const dy = (e.clientY - panning.startY) * scale;
-      onViewBoxChange({ ...viewBox, x: panning.origVx - dx, y: panning.origVy - dy });
-      return;
-    }
+    if (tryUpdatePan(e)) return;
     onMouseMove(e, getSvgCoords(e));
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (e.button === 1) {
-      setMiddleMouseHeld(false);
-    }
-    if (panning) {
-      setPanning(null);
-      return;
-    }
+    if (tryEndPan(e)) return;
     onMouseUp(e, getSvgCoords(e));
   };
-
-  const handleWheel = useCallback(
-    (e: WheelEvent) => {
-      e.preventDefault();
-      const svg = svgRef.current;
-      if (!svg) return;
-
-      const rect = svg.getBoundingClientRect();
-      const sensitivity = e.ctrlKey ? ZOOM_SENSITIVITY_TRACKPAD : ZOOM_SENSITIVITY;
-      onViewBoxChange(
-        zoomViewBoxAtPoint({
-          viewBox: viewBoxRef.current,
-          screen: { width: rect.width, height: rect.height },
-          mouseFracX: (e.clientX - rect.left) / rect.width,
-          mouseFracY: (e.clientY - rect.top) / rect.height,
-          zoomFactor: 1 + e.deltaY * sensitivity,
-          minZoom: MIN_ZOOM,
-          maxZoom: MAX_ZOOM,
-        }),
-      );
-    },
-    [onViewBoxChange],
-  );
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    svg.addEventListener("wheel", handleWheel, { passive: false });
-    return () => svg.removeEventListener("wheel", handleWheel);
-  }, [handleWheel]);
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    const avgTouchPos = (touches: TouchList) => ({
-      x: Array.from(touches).reduce((s, t) => s + t.clientX, 0) / touches.length,
-      y: Array.from(touches).reduce((s, t) => s + t.clientY, 0) / touches.length,
-    });
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length >= 3) {
-        e.preventDefault();
-        const { x, y } = avgTouchPos(e.touches);
-        touchPanRef.current = {
-          startX: x,
-          startY: y,
-          origVx: viewBoxRef.current.x,
-          origVy: viewBoxRef.current.y,
-        };
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!touchPanRef.current || e.touches.length < 3) return;
-      e.preventDefault();
-      const rect = svg.getBoundingClientRect();
-      const { x, y } = avgTouchPos(e.touches);
-      const scale = viewBoxRef.current.width / rect.width;
-      const dx = (x - touchPanRef.current.startX) * scale;
-      const dy = (y - touchPanRef.current.startY) * scale;
-      onViewBoxChange({
-        ...viewBoxRef.current,
-        x: touchPanRef.current.origVx - dx,
-        y: touchPanRef.current.origVy - dy,
-      });
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 3) touchPanRef.current = null;
-    };
-
-    svg.addEventListener("touchstart", handleTouchStart, { passive: false });
-    svg.addEventListener("touchmove", handleTouchMove, { passive: false });
-    svg.addEventListener("touchend", handleTouchEnd);
-    return () => {
-      svg.removeEventListener("touchstart", handleTouchStart);
-      svg.removeEventListener("touchmove", handleTouchMove);
-      svg.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [onViewBoxChange]);
 
   const exportCanvasAsPng = useCallback(async () => {
     const svg = svgRef.current;

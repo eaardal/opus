@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { workspaceService } from "../../services/container";
 import { confirm } from "../../ui/ConfirmModal";
-import type { WorkspaceSummary } from "../../services/types";
+import type { WorkspaceSummary } from "../../services/workspace.types";
 import "./WorkspaceSettingsDialog.css";
 
 interface WorkspaceSettingsDialogProps {

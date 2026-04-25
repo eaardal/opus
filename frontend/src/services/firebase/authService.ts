@@ -8,7 +8,7 @@ import {
 } from "firebase/auth";
 import { SignInWithGoogle } from "../../../wailsjs/go/main/App";
 import { isDesktop } from "../platform";
-import type { AuthService, AuthUser } from "../types";
+import type { AuthService, AuthUser } from "../auth.types";
 import { firebaseAuth } from "./client";
 
 const ALLOWED_EMAIL_DOMAINS = ["tv2.no", "apparat.no"];

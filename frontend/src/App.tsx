@@ -12,15 +12,20 @@ import type { ProjectData, ProjectState } from "./domain/workspace/types";
 import { createDefaultProject, extractProjectState } from "./domain/workspace/projectState";
 import { parseWorkspaceFile } from "./domain/workspace/parseWorkspaceFile";
 import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
+import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
 
 type ActiveModule = "tasks" | "teams";
-type LoadStatus = "loading" | "ready" | "missing";
 
 function App() {
   const { id: workspaceId, select } = useSelectedWorkspace();
 
-  const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
-  const [workspaceName, setWorkspaceName] = useState<string>("");
+  const {
+    status: loadStatus,
+    name: workspaceName,
+    loadCount: workspaceLoadCount,
+    hydration,
+  } = useWorkspaceLoader({ workspaceId, subscribe: workspaceService.subscribe });
+
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>("");
   const [people, setPeople] = useState<Person[]>([]);
@@ -29,7 +34,11 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [activeModule, setActiveModule] = useState<ActiveModule>("tasks");
   const [showProjectAdmin, setShowProjectAdmin] = useState(false);
-  const [workspaceLoadCount, setWorkspaceLoadCount] = useState(0);
+
+  // Bumped when in-memory state is replaced from a non-workspace source
+  // (currently: opening a legacy save file). Used in the child key so the
+  // task/team views remount with fresh internal state.
+  const [localReloadKey, setLocalReloadKey] = useState(0);
 
   const teamMgtRef = useRef<TeamMgtHandle>(null);
   const taskMgtRef = useRef<TaskMgtAppHandle>(null);
@@ -38,7 +47,6 @@ function App() {
   projectsRef.current = projects;
   const activeProjectIdRef = useRef(activeProjectId);
   activeProjectIdRef.current = activeProjectId;
-  const hydratedForRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
@@ -54,36 +62,16 @@ function App() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [appMenuOpen]);
 
-  // Subscribe to the selected workspace document. The first snapshot
-  // hydrates our in-memory state; later snapshots refresh only the
-  // workspace name so we do not clobber unsaved local edits. Real-time
-  // collaboration (reconciling remote edits) is a phase-2 concern.
+  // Apply the hook's hydration data to local editing state when a workspace loads.
   useEffect(() => {
-    if (!workspaceId) return;
-    setLoadStatus("loading");
-    hydratedForRef.current = null;
-
-    const unsubscribe = workspaceService.subscribe(workspaceId, (doc) => {
-      if (!doc) {
-        setLoadStatus("missing");
-        return;
-      }
-      setWorkspaceName(doc.name);
-      if (hydratedForRef.current === workspaceId) return;
-      hydratedForRef.current = workspaceId;
-
-      const loaded = doc.projects.length > 0 ? doc.projects : [createDefaultProject()];
-      currentProjectStateRef.current = extractProjectState(loaded[0]);
-      setProjects(loaded);
-      setActiveProjectId(loaded[0].id);
-      setPeople(doc.people);
-      setTeams(doc.teams);
-      setHasUnsavedChanges(false);
-      setWorkspaceLoadCount((c) => c + 1);
-      setLoadStatus("ready");
-    });
-    return unsubscribe;
-  }, [workspaceId]);
+    if (!hydration) return;
+    currentProjectStateRef.current = extractProjectState(hydration.projects[0]);
+    setProjects(hydration.projects);
+    setActiveProjectId(hydration.activeProjectId);
+    setPeople(hydration.people);
+    setTeams(hydration.teams);
+    setHasUnsavedChanges(false);
+  }, [hydration]);
 
   // If the doc vanished (deleted elsewhere), drop to the picker.
   useEffect(() => {
@@ -148,7 +136,7 @@ function App() {
       setPeople(parsed.people);
       setTeams(parsed.teams);
       setHasUnsavedChanges(true);
-      setWorkspaceLoadCount((c) => c + 1);
+      setLocalReloadKey((c) => c + 1);
     } catch (err) {
       console.error("Failed to open savefile:", err);
       window.alert("Could not open file: the selected file is not a valid Opus savefile.");
@@ -383,7 +371,7 @@ function App() {
         <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
           <TaskMgtApp
             ref={taskMgtRef}
-            key={`${workspaceLoadCount}-${activeProjectId}`}
+            key={`${workspaceLoadCount}-${localReloadKey}-${activeProjectId}`}
             initialProject={activeProject}
             onStateChange={handleProjectStateChange}
             projects={projects}
@@ -395,7 +383,7 @@ function App() {
         </div>
         <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
           <TeamMgt
-            key={workspaceLoadCount}
+            key={`${workspaceLoadCount}-${localReloadKey}`}
             ref={teamMgtRef}
             initialPeople={people}
             initialTeams={teams}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Settings } from "lucide-react";
 import { authService, workspaceService } from "../../services/container";
-import type { WorkspaceSummary } from "../../services/types";
+import type { WorkspaceSummary } from "../../services/workspace.types";
 import { useSelectedWorkspace } from "./SelectedWorkspaceProvider";
 import { WorkspaceSettingsDialog } from "./WorkspaceSettingsDialog";
 import "./WorkspacePicker.css";

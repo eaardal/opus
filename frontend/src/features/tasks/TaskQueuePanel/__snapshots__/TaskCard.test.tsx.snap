@@ -1,0 +1,46 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TaskCard > matches snapshot for the highlighted in-progress card 1`] = `
+<div
+  class="tq-task-card tq-task-card--highlighted"
+  style="border-left-color: rgb(142, 142, 187);"
+>
+  <div
+    class="tq-card-badge"
+  >
+    <span
+      class="tq-card-seq"
+    >
+      #
+      7
+    </span>
+    <span
+      class="tq-card-emoji"
+      title="In Progress"
+    >
+      👀
+    </span>
+  </div>
+  <button
+    class="tq-task-remove"
+    tabindex="-1"
+  >
+    ×
+  </button>
+  <span
+    class="tq-card-group"
+    title="Sprint 3"
+  >
+    Sprint 3
+  </span>
+  <div
+    class="tq-card-main"
+  >
+    <span
+      class="tq-task-text"
+    >
+      Wire up the auth flow
+    </span>
+  </div>
+</div>
+`;

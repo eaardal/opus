@@ -1,20 +1,6 @@
 import type { ProjectData } from "../domain/workspace/types";
 import type { Person, Team } from "../domain/teams/types";
 
-export interface AuthUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-}
-
-export interface AuthService {
-  currentUser(): AuthUser | null;
-  onAuthChange(callback: (user: AuthUser | null) => void): () => void;
-  signIn(): Promise<void>;
-  signOut(): Promise<void>;
-}
-
 export type WorkspaceId = string;
 
 export interface WorkspaceSummary {

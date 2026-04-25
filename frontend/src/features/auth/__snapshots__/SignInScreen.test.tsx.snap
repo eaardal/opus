@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SignInScreen > matches snapshot in the idle state 1`] = `
+<div
+  class="signin-screen"
+>
+  <div
+    class="signin-card"
+  >
+    <h1
+      class="signin-title"
+    >
+      Domino
+    </h1>
+    <p
+      class="signin-subtitle"
+    >
+      Sign in to continue
+    </p>
+    <button
+      class="signin-button"
+      type="button"
+    >
+      Sign in with Google
+    </button>
+  </div>
+</div>
+`;

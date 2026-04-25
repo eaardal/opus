@@ -1,4 +1,5 @@
-import type { AuthService, WorkspaceService } from "./types";
+import type { AuthService } from "./auth.types";
+import type { WorkspaceService } from "./workspace.types";
 import { firebaseAuthService } from "./firebase/authService";
 import { firebaseWorkspaceService } from "./firebase/workspaceService";
 

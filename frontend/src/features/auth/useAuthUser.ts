@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { authService } from "../../services/container";
-import type { AuthUser } from "../../services/types";
+import type { AuthUser } from "../../services/auth.types";
 
 type AuthState =
   | { status: "loading" }

@@ -13,7 +13,7 @@ import {
   where,
   type DocumentData,
 } from "firebase/firestore";
-import type { WorkspaceDocument, WorkspaceService, WorkspaceSummary } from "../types";
+import type { WorkspaceDocument, WorkspaceService, WorkspaceSummary } from "../workspace.types";
 import { firebaseAuth, firestore } from "./client";
 
 const WORKSPACES_COLLECTION = "workspaces";

@@ -1,0 +1,44 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ConfirmHost + confirm() > matches snapshot for a typical destructive confirm 1`] = `
+<div
+  class="confirm-overlay"
+>
+  <div
+    aria-describedby="confirm-message"
+    aria-labelledby="confirm-title"
+    aria-modal="true"
+    class="confirm-dialog"
+    role="alertdialog"
+  >
+    <h2
+      class="confirm-title"
+      id="confirm-title"
+    >
+      Delete workspace
+    </h2>
+    <p
+      class="confirm-message"
+      id="confirm-message"
+    >
+      This permanently removes everything in it.
+    </p>
+    <div
+      class="confirm-actions"
+    >
+      <button
+        class="confirm-btn confirm-btn-cancel"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="confirm-btn confirm-btn-ok"
+        type="button"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+`;
