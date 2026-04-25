@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { Settings } from "lucide-react";
 import { authService, workspaceService } from "../services/container";
 import type { WorkspaceSummary } from "../services/types";
 import { useSelectedWorkspace } from "./SelectedWorkspaceProvider";
+import { WorkspaceSettingsDialog } from "./WorkspaceSettingsDialog";
 import "./WorkspacePicker.css";
 
 type State =
@@ -12,6 +14,7 @@ type State =
 export function WorkspacePicker() {
   const { select } = useSelectedWorkspace();
   const [state, setState] = useState<State>({ status: "loading" });
+  const [settingsFor, setSettingsFor] = useState<WorkspaceSummary | null>(null);
 
   const reload = useCallback(async () => {
     setState({ status: "loading" });
@@ -30,6 +33,24 @@ export function WorkspacePicker() {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  const handleRenamed = useCallback((id: string, name: string) => {
+    setState((prev) =>
+      prev.status === "ready"
+        ? { ...prev, workspaces: prev.workspaces.map((w) => (w.id === id ? { ...w, name } : w)) }
+        : prev,
+    );
+    setSettingsFor((prev) => (prev && prev.id === id ? { ...prev, name } : prev));
+  }, []);
+
+  const handleDeleted = useCallback((id: string) => {
+    setState((prev) =>
+      prev.status === "ready"
+        ? { ...prev, workspaces: prev.workspaces.filter((w) => w.id !== id) }
+        : prev,
+    );
+    setSettingsFor(null);
+  }, []);
 
   return (
     <div className="workspace-picker">
@@ -51,7 +72,11 @@ export function WorkspacePicker() {
         )}
         {state.status === "ready" && (
           <>
-            <WorkspaceList workspaces={state.workspaces} onOpen={select} />
+            <WorkspaceList
+              workspaces={state.workspaces}
+              onOpen={select}
+              onOpenSettings={setSettingsFor}
+            />
             <CreateWorkspaceRow
               onCreated={(id) => {
                 select(id);
@@ -60,6 +85,15 @@ export function WorkspacePicker() {
           </>
         )}
       </div>
+
+      {settingsFor && (
+        <WorkspaceSettingsDialog
+          workspace={settingsFor}
+          onClose={() => setSettingsFor(null)}
+          onRenamed={handleRenamed}
+          onDeleted={handleDeleted}
+        />
+      )}
     </div>
   );
 }
@@ -67,9 +101,11 @@ export function WorkspacePicker() {
 function WorkspaceList({
   workspaces,
   onOpen,
+  onOpenSettings,
 }: {
   workspaces: WorkspaceSummary[];
   onOpen: (id: string) => void;
+  onOpenSettings: (workspace: WorkspaceSummary) => void;
 }) {
   if (workspaces.length === 0) {
     return <p className="workspace-picker-empty">No workspaces yet. Create one below.</p>;
@@ -77,7 +113,7 @@ function WorkspaceList({
   return (
     <ul className="workspace-picker-list">
       {workspaces.map((w) => (
-        <li key={w.id}>
+        <li key={w.id} className="workspace-picker-row">
           <button
             type="button"
             className="workspace-picker-item"
@@ -87,6 +123,15 @@ function WorkspaceList({
             <span className="workspace-picker-item-meta">
               Updated {formatRelative(w.updatedAt)}
             </span>
+          </button>
+          <button
+            type="button"
+            className="workspace-picker-settings-btn"
+            onClick={() => onOpenSettings(w)}
+            title="Workspace settings"
+            aria-label={`Settings for ${w.name}`}
+          >
+            <Settings size={16} />
           </button>
         </li>
       ))}
