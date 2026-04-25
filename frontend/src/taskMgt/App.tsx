@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import "./App.css";
 import { confirm } from "../shared/ConfirmModal";
 import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
@@ -20,7 +20,13 @@ interface AppProps {
   people?: Person[];
 }
 
-function App({
+export interface TaskMgtAppHandle {
+  exportAsPng: () => void;
+  openSettings: () => void;
+  openHelp: () => void;
+}
+
+const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
   initialProject = _defaultProject,
   onStateChange = () => {},
   projects = [_defaultProject],
@@ -28,7 +34,7 @@ function App({
   onSwitchProject = () => {},
   onOpenProjectAdmin = () => {},
   people = [],
-}: AppProps) {
+}, ref) {
   const { present, push, replace, undo, redo, canUndo, canRedo } = useHistory({
     tasks: initialProject.tasks,
     connections: initialProject.connections,
@@ -88,6 +94,12 @@ function App({
 
   const canvasRef = useRef<CanvasHandle>(null);
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  useImperativeHandle(ref, () => ({
+    exportAsPng: () => canvasRef.current?.exportAsPng(),
+    openSettings: () => canvasRef.current?.openSettings(),
+    openHelp: () => canvasRef.current?.openHelp(),
+  }));
 
   // Apply initial theme to DOM
   useEffect(() => {
@@ -691,6 +703,6 @@ function App({
       />
     </div>
   );
-}
+});
 
 export default App;

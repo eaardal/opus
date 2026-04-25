@@ -40,6 +40,9 @@ export interface ViewBox {
 export interface CanvasHandle {
   getSvgCoords: (e: React.MouseEvent) => { x: number; y: number };
   getSvgElement: () => SVGSVGElement | null;
+  exportAsPng: () => void;
+  openSettings: () => void;
+  openHelp: () => void;
 }
 
 interface CanvasProps {
@@ -153,11 +156,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const connector = getConnector(theme);
 
   const svgRef = useRef<SVGSVGElement>(null);
-  const menuWrapperRef = useRef<HTMLDivElement>(null);
   const groupContextMenuRef = useRef<HTMLDivElement>(null);
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
@@ -204,17 +205,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuWrapperRef.current && !menuWrapperRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
 
   useEffect(() => {
     if (!groupContextMenu) return;
@@ -281,6 +271,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   useImperativeHandle(ref, () => ({
     getSvgCoords,
     getSvgElement: () => svgRef.current,
+    exportAsPng: () => { void exportCanvasAsPng(); },
+    openSettings: () => setShowSettings(true),
+    openHelp: () => setShowHelp(true),
   }));
 
   const handleCanvasContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
@@ -406,7 +399,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const exportCanvasAsPng = useCallback(async () => {
     const svg = svgRef.current;
     if (!svg) return;
-    setMenuOpen(false);
     try {
       const rect = svg.getBoundingClientRect();
       const w = Math.round(rect.width);
@@ -605,52 +597,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         >
           <Focus size={16} />
         </button>
-      </div>
-      <div className="canvas-menu-wrapper" ref={menuWrapperRef}>
-        <button
-          type="button"
-          className="canvas-menu-trigger"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label="Canvas menu"
-          aria-expanded={menuOpen}
-        >
-          <span className="canvas-menu-icon" aria-hidden>☰</span>
-        </button>
-        {menuOpen && (
-          <div className="canvas-menu-dropdown" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              className="canvas-menu-item"
-              onClick={exportCanvasAsPng}
-            >
-              Export as PNG
-            </button>
-
-            <button
-              type="button"
-              role="menuitem"
-              className="canvas-menu-item"
-              onClick={() => {
-                setShowHelp(true);
-                setMenuOpen(false);
-              }}
-            >
-              How to Use
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="canvas-menu-item"
-              onClick={() => {
-                setShowSettings(true);
-                setMenuOpen(false);
-              }}
-            >
-              Settings
-            </button>
-          </div>
-        )}
       </div>
       {isTaskQueueOpen && (
         <TaskQueuePanel

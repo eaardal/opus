@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
-import { Save, FolderOpen, ChevronsLeft, LogOut } from "lucide-react";
+import { Save, FolderOpen, ChevronsLeft, Menu } from "lucide-react";
 import { authService, workspaceService } from "./services/container";
 import { useSelectedWorkspace } from "./workspace/SelectedWorkspaceProvider";
 import { confirm } from "./shared/ConfirmModal";
-import TaskMgtApp from "./taskMgt/App";
+import TaskMgtApp, { TaskMgtAppHandle } from "./taskMgt/App";
 import { TeamMgt } from "./teamMgt/TeamMgt";
 import { TeamMgtHandle, Person, Team } from "./teamMgt/types";
 import {
@@ -35,6 +35,7 @@ function App() {
   const [workspaceLoadCount, setWorkspaceLoadCount] = useState(0);
 
   const teamMgtRef = useRef<TeamMgtHandle>(null);
+  const taskMgtRef = useRef<TaskMgtAppHandle>(null);
   const currentProjectStateRef = useRef<ProjectState | null>(null);
   const projectsRef = useRef(projects);
   projectsRef.current = projects;
@@ -42,6 +43,19 @@ function App() {
   activeProjectIdRef.current = activeProjectId;
   const hydratedForRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuWrapperRef = useRef<HTMLDivElement>(null);
+  const [appMenuOpen, setAppMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!appMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuWrapperRef.current && !menuWrapperRef.current.contains(e.target as Node)) {
+        setAppMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [appMenuOpen]);
 
   // Subscribe to the selected workspace document. The first snapshot
   // hydrates our in-memory state; later snapshots refresh only the
@@ -293,13 +307,67 @@ function App() {
           </button>
         </nav>
         <div className="app-bar-right">
-          <button
-            className="app-bar-icon-btn"
-            onClick={handleSignOut}
-            title="Sign out"
-          >
-            <LogOut size={16} />
-          </button>
+          <div className="app-bar-menu-wrapper" ref={menuWrapperRef}>
+            <button
+              type="button"
+              className="app-bar-icon-btn"
+              onClick={() => setAppMenuOpen((open) => !open)}
+              title="Menu"
+              aria-label="Menu"
+              aria-expanded={appMenuOpen}
+            >
+              <Menu size={16} />
+            </button>
+            {appMenuOpen && (
+              <div className="app-bar-menu-dropdown" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="app-bar-menu-item"
+                  onClick={() => {
+                    setAppMenuOpen(false);
+                    taskMgtRef.current?.exportAsPng();
+                  }}
+                >
+                  Export as PNG
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="app-bar-menu-item"
+                  onClick={() => {
+                    setAppMenuOpen(false);
+                    taskMgtRef.current?.openHelp();
+                  }}
+                >
+                  How to Use
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="app-bar-menu-item"
+                  onClick={() => {
+                    setAppMenuOpen(false);
+                    taskMgtRef.current?.openSettings();
+                  }}
+                >
+                  Settings
+                </button>
+                <hr className="app-bar-menu-divider" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="app-bar-menu-item"
+                  onClick={() => {
+                    setAppMenuOpen(false);
+                    handleSignOut();
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -319,6 +387,7 @@ function App() {
           className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}
         >
           <TaskMgtApp
+            ref={taskMgtRef}
             key={`${workspaceLoadCount}-${activeProjectId}`}
             initialProject={activeProject}
             onStateChange={handleProjectStateChange}
