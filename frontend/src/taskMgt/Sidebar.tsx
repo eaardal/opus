@@ -2,10 +2,10 @@ import { useState } from "react";
 import { PanelLeftOpen, PanelLeftClose } from "lucide-react";
 import "./Sidebar.css";
 import { TaskList } from "./TaskList";
-import { CategoryConfig, StatusConfig } from "./theme";
-import { ProjectData } from "../workspace/types";
+import type { CategoryConfig, StatusConfig } from "./theme";
+import type { ProjectData } from "../workspace/types";
 import { ProjectSelector } from "../workspace/ProjectSelector";
-import { Person } from "../teamMgt/types";
+import type { Person } from "../teamMgt/types";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
 

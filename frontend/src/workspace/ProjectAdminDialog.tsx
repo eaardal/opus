@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import "./ProjectAdminDialog.css";
-import { ProjectData } from "./types";
+import type { ProjectData } from "./types";
 
 interface ProjectAdminDialogProps {
   projects: ProjectData[];
@@ -12,7 +12,14 @@ interface ProjectAdminDialogProps {
   onClose: () => void;
 }
 
-export function ProjectAdminDialog({ projects, activeProjectId, onAdd, onRename, onDelete, onClose }: ProjectAdminDialogProps) {
+export function ProjectAdminDialog({
+  projects,
+  activeProjectId,
+  onAdd,
+  onRename,
+  onDelete,
+  onClose,
+}: ProjectAdminDialogProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -44,22 +51,27 @@ export function ProjectAdminDialog({ projects, activeProjectId, onAdd, onRename,
 
   return (
     <div className="project-admin-overlay" onClick={onClose}>
-      <div className="project-admin-dialog" onClick={e => e.stopPropagation()}>
+      <div className="project-admin-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="project-admin-header">
           <h3>Projects</h3>
-          <button className="project-admin-close" onClick={onClose}>×</button>
+          <button className="project-admin-close" onClick={onClose}>
+            ×
+          </button>
         </div>
         <div className="project-admin-list">
-          {projects.map(project => (
-            <div key={project.id} className={`project-admin-item ${project.id === activeProjectId ? "active" : ""}`}>
+          {projects.map((project) => (
+            <div
+              key={project.id}
+              className={`project-admin-item ${project.id === activeProjectId ? "active" : ""}`}
+            >
               {editingId === project.id ? (
                 <input
                   ref={editInputRef}
                   className="project-admin-edit-input"
                   value={editValue}
-                  onChange={e => setEditValue(e.target.value)}
+                  onChange={(e) => setEditValue(e.target.value)}
                   onBlur={() => commitEdit(project.id)}
-                  onKeyDown={e => {
+                  onKeyDown={(e) => {
                     if (e.key === "Enter") commitEdit(project.id);
                     if (e.key === "Escape") setEditingId(null);
                   }}

@@ -67,9 +67,7 @@ export function WorkspacePicker() {
         </header>
         <h2 className="workspace-picker-subtitle">Your workspaces</h2>
         {state.status === "loading" && <p className="workspace-picker-status">Loading…</p>}
-        {state.status === "error" && (
-          <p className="workspace-picker-error">{state.message}</p>
-        )}
+        {state.status === "error" && <p className="workspace-picker-error">{state.message}</p>}
         {state.status === "ready" && (
           <>
             <WorkspaceList
@@ -114,11 +112,7 @@ function WorkspaceList({
     <ul className="workspace-picker-list">
       {workspaces.map((w) => (
         <li key={w.id} className="workspace-picker-row">
-          <button
-            type="button"
-            className="workspace-picker-item"
-            onClick={() => onOpen(w.id)}
-          >
+          <button type="button" className="workspace-picker-item" onClick={() => onOpen(w.id)}>
             <span className="workspace-picker-item-name">{w.name}</span>
             <span className="workspace-picker-item-meta">
               Updated {formatRelative(w.updatedAt)}
@@ -162,11 +156,7 @@ function CreateWorkspaceRow({ onCreated }: { onCreated: (id: string) => void }) 
 
   if (mode === "idle") {
     return (
-      <button
-        type="button"
-        className="workspace-picker-create"
-        onClick={() => setMode("editing")}
-      >
+      <button type="button" className="workspace-picker-create" onClick={() => setMode("editing")}>
         + New workspace
       </button>
     );

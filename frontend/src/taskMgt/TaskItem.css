@@ -134,19 +134,19 @@
   flex-shrink: 0;
 }
 
-.delete-item {
-  color: var(--delete-color) !important;
+.menu-item.delete-item {
+  color: var(--delete-color);
   border-top: 1px solid var(--border-secondary);
   margin-top: 4px;
   padding-top: 8px;
 }
 
-.delete-item.delete-item-only {
+.menu-item.delete-item.delete-item-only {
   border-top: none;
   margin-top: 0;
   padding-top: 6px;
 }
 
-.delete-item:hover {
-  background: var(--delete-bg) !important;
+.menu-item.delete-item:hover {
+  background: var(--delete-bg);
 }

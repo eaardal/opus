@@ -36,9 +36,7 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
     <label className="settings-toggle-row">
       <div className="settings-toggle-text">
         <span className="settings-toggle-label">{label}</span>
-        {description && (
-          <span className="settings-toggle-desc">{description}</span>
-        )}
+        {description && <span className="settings-toggle-desc">{description}</span>}
       </div>
       <button
         type="button"
@@ -79,22 +77,14 @@ export function SettingsDialog({
       <div className="settings-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
           <h2 className="settings-title">Settings</h2>
-          <button
-            className="settings-close"
-            onClick={onClose}
-            aria-label="Close settings"
-          >
+          <button className="settings-close" onClick={onClose} aria-label="Close settings">
             ×
           </button>
         </div>
 
         <div className="settings-section">
           <div className="settings-section-title">Appearance</div>
-          <ToggleRow
-            label="Dark mode"
-            checked={theme === "dark"}
-            onChange={onToggleTheme}
-          />
+          <ToggleRow label="Dark mode" checked={theme === "dark"} onChange={onToggleTheme} />
         </div>
 
         <div className="settings-section">

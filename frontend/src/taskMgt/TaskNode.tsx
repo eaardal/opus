@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import "./TaskNode.css";
-import { Task } from "./Sidebar";
-import { CategoryConfig, StatusConfig } from "./theme";
-import { TaskStatus } from "./Sidebar";
-import { Person } from "../teamMgt/types";
+import type { Task } from "./Sidebar";
+import type { CategoryConfig, StatusConfig } from "./theme";
+import type { TaskStatus } from "./Sidebar";
+import type { Person } from "../teamMgt/types";
 import { avatarColor } from "../shared/avatarUtils";
 
 interface TaskNodeProps {
@@ -14,7 +14,6 @@ interface TaskNodeProps {
   isDragging: boolean;
   isHighlighted: boolean;
   isSelected: boolean;
-  isHovered: boolean;
   assignedPersons?: Person[];
   onMouseDown: (e: React.MouseEvent) => void;
   onClick: () => void;
@@ -32,7 +31,6 @@ export function TaskNode({
   isDragging,
   isHighlighted,
   isSelected,
-  isHovered,
   assignedPersons = [],
   onMouseDown,
   onClick,
@@ -58,8 +56,7 @@ export function TaskNode({
   };
 
   const statusColor = statuses[task.status]?.color || statuses.pending.color;
-  const statusFontColor =
-    statuses[task.status]?.fontColor || statuses.pending.fontColor;
+  const statusFontColor = statuses[task.status]?.fontColor || statuses.pending.fontColor;
   const category = task.category ? categories[task.category] : undefined;
   const categoryColor = category?.color;
   const shape = category?.shape || "circle";
@@ -67,11 +64,7 @@ export function TaskNode({
   const nodeClass = `node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`;
   const nodeStyle = {
     fill: baseFill,
-    stroke: isHighlighted
-      ? "var(--highlight-border)"
-      : isSelected
-        ? undefined
-        : statusColor,
+    stroke: isHighlighted ? "var(--highlight-border)" : isSelected ? undefined : statusColor,
     strokeWidth: isHighlighted ? 4 : 3,
   };
 
@@ -114,14 +107,8 @@ export function TaskNode({
   };
 
   const tooltipLines = wrapLines(tooltipText);
-  const longestLine = tooltipLines.reduce(
-    (a, b) => (a.length > b.length ? a : b),
-    "",
-  );
-  const tooltipWidth = Math.min(
-    Math.max(longestLine.length * CHAR_WIDTH, 80),
-    MAX_TOOLTIP_WIDTH,
-  );
+  const longestLine = tooltipLines.reduce((a, b) => (a.length > b.length ? a : b), "");
+  const tooltipWidth = Math.min(Math.max(longestLine.length * CHAR_WIDTH, 80), MAX_TOOLTIP_WIDTH);
   const tooltipX = -tooltipWidth / 2;
   const tooltipHeight = tooltipLines.length * LINE_HEIGHT + TOOLTIP_V_PADDING;
 
@@ -164,9 +151,7 @@ export function TaskNode({
         cy={shape === "diamond" || shape === "triangle" ? -30 : -25}
         r="10"
         className="node-number-badge"
-        style={
-          task.category ? { fill: categories[task.category]?.color } : undefined
-        }
+        style={task.category ? { fill: categories[task.category]?.color } : undefined}
       />
       <text
         x="0"
@@ -177,23 +162,13 @@ export function TaskNode({
       >
         {index + 1}
       </text>
-      <text
-        textAnchor="middle"
-        dy="0.35em"
-        className="node-emoji"
-        onMouseDown={onMouseDown}
-      >
+      <text textAnchor="middle" dy="0.35em" className="node-emoji" onMouseDown={onMouseDown}>
         {statuses[task.status]?.emoji || "💤"}
       </text>
       {(task.text || editing) && (
         <g transform="translate(0, 40)">
           {editing ? (
-            <foreignObject
-              x={-MAX_TOOLTIP_WIDTH / 2}
-              y="-12"
-              width={MAX_TOOLTIP_WIDTH}
-              height="24"
-            >
+            <foreignObject x={-MAX_TOOLTIP_WIDTH / 2} y="-12" width={MAX_TOOLTIP_WIDTH} height="24">
               <input
                 ref={inputRef}
                 className="group-title-input"
@@ -246,11 +221,8 @@ export function TaskNode({
               )}
               <text textAnchor="middle" style={{ fill: statusFontColor }}>
                 {tooltipLines.map((line, i) => (
-                  <tspan
-                    key={i}
-                    x="0"
-                    dy={i === 0 ? "0.35em" : `${LINE_HEIGHT}px`}
-                  >
+                  // biome-ignore lint/suspicious/noArrayIndexKey: tooltipLines is the deterministic line-split of task.text; index is the natural identity
+                  <tspan key={i} x="0" dy={i === 0 ? "0.35em" : `${LINE_HEIGHT}px`}>
                     {line}
                   </tspan>
                 ))}
@@ -265,12 +237,8 @@ export function TaskNode({
                     <>
                       <defs>
                         {assignedPersons.map((person, i) => (
-                          <clipPath key={i} id={`clip-ta-${task.id}-${i}`}>
-                            <circle
-                              cx={cx}
-                              cy={firstAvatarY + i * AVATAR_STEP}
-                              r={AVATAR_R}
-                            />
+                          <clipPath key={person.id} id={`clip-ta-${task.id}-${i}`}>
+                            <circle cx={cx} cy={firstAvatarY + i * AVATAR_STEP} r={AVATAR_R} />
                           </clipPath>
                         ))}
                       </defs>
@@ -281,7 +249,7 @@ export function TaskNode({
                           ? person.name.trim()[0].toUpperCase()
                           : "?";
                         return (
-                          <g key={i}>
+                          <g key={person.id}>
                             {person.picture ? (
                               <image
                                 href={person.picture}

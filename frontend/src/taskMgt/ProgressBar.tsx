@@ -1,6 +1,6 @@
 import "./ProgressBar.css";
-import { Task, TaskStatus } from "./Sidebar";
-import { GroupBoxConfig, StatusConfig } from "./theme";
+import type { Task, TaskStatus } from "./Sidebar";
+import type { GroupBoxConfig, StatusConfig } from "./theme";
 
 interface ProgressBarProps {
   tasks: Task[];
@@ -11,9 +11,7 @@ interface ProgressBarProps {
 export function ProgressBar({ tasks, statuses, groupBox }: ProgressBarProps) {
   if (tasks.length === 0) return null;
 
-  const done = tasks.filter(
-    (t) => t.status === "completed" || t.status === "archived",
-  ).length;
+  const done = tasks.filter((t) => t.status === "completed" || t.status === "archived").length;
   const inProgress = tasks.filter((t) => t.status === "in_progress").length;
   const donePct = Math.round((done / tasks.length) * 100);
   const inProgressPct = Math.round((inProgress / tasks.length) * 100);

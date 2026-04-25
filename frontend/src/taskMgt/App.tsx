@@ -1,12 +1,17 @@
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import "./App.css";
 import { confirm } from "../shared/ConfirmModal";
-import { Sidebar, Task, TaskStatus, Group } from "./Sidebar";
-import { Canvas, CanvasHandle, Connection, ViewBox } from "./Canvas";
+import { Sidebar, type Task, type TaskStatus, type Group } from "./Sidebar";
+import { Canvas, type CanvasHandle, type ViewBox } from "./Canvas";
 import { getCategories, getStatuses } from "./theme";
 import { useHistory } from "./useHistory";
-import { ProjectData, ProjectState, createDefaultProject, PersonTaskQueue } from "../workspace/types";
-import { Person } from "../teamMgt/types";
+import {
+  type ProjectData,
+  type ProjectState,
+  createDefaultProject,
+  type PersonTaskQueue,
+} from "../workspace/types";
+import type { Person } from "../teamMgt/types";
 
 const _defaultProject = createDefaultProject();
 
@@ -26,15 +31,18 @@ export interface TaskMgtAppHandle {
   openHelp: () => void;
 }
 
-const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
-  initialProject = _defaultProject,
-  onStateChange = () => {},
-  projects = [_defaultProject],
-  activeProjectId = _defaultProject.id,
-  onSwitchProject = () => {},
-  onOpenProjectAdmin = () => {},
-  people = [],
-}, ref) {
+const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
+  {
+    initialProject = _defaultProject,
+    onStateChange = () => {},
+    projects = [_defaultProject],
+    activeProjectId = _defaultProject.id,
+    onSwitchProject = () => {},
+    onOpenProjectAdmin = () => {},
+    people = [],
+  },
+  ref,
+) {
   const { present, push, replace, undo, redo, canUndo, canRedo } = useHistory({
     tasks: initialProject.tasks,
     connections: initialProject.connections,
@@ -46,14 +54,17 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
 
   const [theme, setTheme] = useState<"dark" | "light">(initialProject.theme);
   const [viewBox, setViewBox] = useState<ViewBox>(initialProject.viewBox);
-  const [taskQueues, setTaskQueues] = useState<PersonTaskQueue[]>(initialProject.taskQueues ?? []);
+  const [taskQueues] = useState<PersonTaskQueue[]>(initialProject.taskQueues ?? []);
 
   // Report live state to workspace owner (skip first render to avoid marking dirty on mount)
   const isFirstRender = useRef(true);
   const onStateChangeRef = useRef(onStateChange);
   onStateChangeRef.current = onStateChange;
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     onStateChangeRef.current({ tasks, connections, groups, viewBox, theme, taskQueues });
   }, [tasks, connections, groups, viewBox, theme, taskQueues]);
   const categories = getCategories(theme);
@@ -72,9 +83,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
     top: number;
     left: number;
   } | null>(null);
-  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
-    null,
-  );
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const [isResizing, setIsResizing] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
@@ -101,10 +110,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
     openHelp: () => canvasRef.current?.openHelp(),
   }));
 
-  // Apply initial theme to DOM
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -120,10 +128,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
         e.preventDefault();
         undo();
       }
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        (e.shiftKey ? e.key === "z" : e.key === "y")
-      ) {
+      if ((e.metaKey || e.ctrlKey) && (e.shiftKey ? e.key === "z" : e.key === "y")) {
         e.preventDefault();
         redo();
       }
@@ -164,7 +169,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
         const deletedGroupIds = new Set(selectedGroupList.map((g) => g.id));
         push({
           tasks: tasks.filter((t) => !deletedTaskIds.has(t.id)),
-          connections: connections.filter((c) => !deletedTaskIds.has(c.from) && !deletedTaskIds.has(c.to)),
+          connections: connections.filter(
+            (c) => !deletedTaskIds.has(c.from) && !deletedTaskIds.has(c.to),
+          ),
           groups: groups.filter((g) => !deletedGroupIds.has(g.id)),
         });
         setSelectedNodes(new Set());
@@ -309,23 +316,29 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
     push(presentRef.current);
   }, [push]);
 
-  const moveGroup = useCallback((id: string, x: number, y: number) => {
-    const { tasks: t, connections: c, groups: g } = presentRef.current;
-    replace({
-      tasks: t,
-      connections: c,
-      groups: g.map((gr) => (gr.id === id ? { ...gr, x, y } : gr)),
-    });
-  }, [replace]);
+  const moveGroup = useCallback(
+    (id: string, x: number, y: number) => {
+      const { tasks: t, connections: c, groups: g } = presentRef.current;
+      replace({
+        tasks: t,
+        connections: c,
+        groups: g.map((gr) => (gr.id === id ? { ...gr, x, y } : gr)),
+      });
+    },
+    [replace],
+  );
 
-  const resizeGroup = useCallback((id: string, x: number, y: number, width: number, height: number) => {
-    const { tasks: t, connections: c, groups: g } = presentRef.current;
-    replace({
-      tasks: t,
-      connections: c,
-      groups: g.map((gr) => (gr.id === id ? { ...gr, x, y, width, height } : gr)),
-    });
-  }, [replace]);
+  const resizeGroup = useCallback(
+    (id: string, x: number, y: number, width: number, height: number) => {
+      const { tasks: t, connections: c, groups: g } = presentRef.current;
+      replace({
+        tasks: t,
+        connections: c,
+        groups: g.map((gr) => (gr.id === id ? { ...gr, x, y, width, height } : gr)),
+      });
+    },
+    [replace],
+  );
 
   const deleteGroup = async (id: string) => {
     const group = groups.find((g) => g.id === id);
@@ -354,7 +367,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
 
   const assignPeople = (taskId: string, personIds: string[]) => {
     push({
-      tasks: tasks.map(t => t.id === taskId ? { ...t, assignedPersonIds: personIds } : t),
+      tasks: tasks.map((t) => (t.id === taskId ? { ...t, assignedPersonIds: personIds } : t)),
       connections,
       groups,
     });
@@ -362,7 +375,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
 
   const assignPersonAndSetInProgress = (taskId: string, personId: string) => {
     push({
-      tasks: tasks.map(t => {
+      tasks: tasks.map((t) => {
         if (t.id !== taskId) return t;
         const existing = t.assignedPersonIds ?? [];
         const assignedPersonIds = existing.includes(personId) ? existing : [...existing, personId];
@@ -405,10 +418,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
     });
   };
 
-  const handleCanvasMouseDown = (
-    e: React.MouseEvent,
-    svgElement: SVGSVGElement | null,
-  ) => {
+  const handleCanvasMouseDown = (e: React.MouseEvent, svgElement: SVGSVGElement | null) => {
     if (e.target === svgElement) {
       const coords = canvasRef.current?.getSvgCoords(e) || { x: 0, y: 0 };
       setHighlightedTaskId(null);
@@ -490,7 +500,11 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
 
   const handleCanvasMouseMove = useCallback(
     (_e: React.MouseEvent, coords: { x: number; y: number }) => {
-      const { tasks: currentTasks, connections: currentConnections, groups: currentGroups } = presentRef.current;
+      const {
+        tasks: currentTasks,
+        connections: currentConnections,
+        groups: currentGroups,
+      } = presentRef.current;
       if (draggingNode) {
         replace({
           tasks: currentTasks.map((t) =>
@@ -522,10 +536,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
     [draggingNode, connecting, selection, draggingSelection, replace],
   );
 
-  const handleCanvasMouseUp = (
-    _e: React.MouseEvent,
-    coords: { x: number; y: number },
-  ) => {
+  const handleCanvasMouseUp = (_e: React.MouseEvent, coords: { x: number; y: number }) => {
     if (connecting) {
       const targetTask = tasks.find((t) => {
         const dx = t.x - coords.x;
@@ -588,11 +599,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
     setDraggingSelection(null);
   };
 
-  const handleRemoveConnection = (
-    e: React.MouseEvent,
-    from: string,
-    to: string,
-  ) => {
+  const handleRemoveConnection = (e: React.MouseEvent, from: string, to: string) => {
     if (e.shiftKey) {
       push({
         tasks,
@@ -602,13 +609,10 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
     }
   };
 
-  const registerTaskItemRef = useCallback(
-    (id: string, el: HTMLDivElement | null) => {
-      if (el) taskItemRefs.current.set(id, el);
-      else taskItemRefs.current.delete(id);
-    },
-    [],
-  );
+  const registerTaskItemRef = useCallback((id: string, el: HTMLDivElement | null) => {
+    if (el) taskItemRefs.current.set(id, el);
+    else taskItemRefs.current.delete(id);
+  }, []);
 
   return (
     <div id="App" className={isResizing ? "resizing" : ""}>
@@ -684,11 +688,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App({
         viewBox={viewBox}
         onViewBoxChange={setViewBox}
         theme={theme}
-        onToggleTheme={() => {
-          const next = theme === "dark" ? "light" : "dark";
-          setTheme(next);
-          document.documentElement.setAttribute("data-theme", next);
-        }}
+        onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         onSetTaskStatus={setTaskStatus}
         onSetTaskCategory={setTaskCategory}
         onDeleteTask={deleteTask}

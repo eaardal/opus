@@ -9,8 +9,8 @@
 }
 
 .sidebar-collapsed {
-  width: 40px !important;
-  min-width: 40px !important;
+  width: 40px;
+  min-width: 40px;
   padding: 8px;
   align-items: center;
 }

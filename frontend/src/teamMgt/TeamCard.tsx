@@ -1,15 +1,25 @@
 import { useState, useRef, useEffect } from "react";
 import "./TeamCard.css";
-import { Person, Team } from "./types";
+import type { Person, Team } from "./types";
 import { avatarColor } from "../shared/avatarUtils";
 
 function MemberAvatar({ person, size = 32 }: { person: Person; size?: number }) {
   const initials = person.name.trim() ? person.name.trim()[0].toUpperCase() : "?";
   const style = { width: size, height: size, minWidth: size };
   return person.picture ? (
-    <img className="member-avatar" src={person.picture} alt={person.name} title={person.name} style={style} />
+    <img
+      className="member-avatar"
+      src={person.picture}
+      alt={person.name}
+      title={person.name}
+      style={style}
+    />
   ) : (
-    <span className="member-avatar member-avatar-initials" style={{ ...style, background: avatarColor(person.id), fontSize: size * 0.45 }} title={person.name}>
+    <span
+      className="member-avatar member-avatar-initials"
+      style={{ ...style, background: avatarColor(person.id), fontSize: size * 0.45 }}
+      title={person.name}
+    >
       {initials}
     </span>
   );
@@ -29,10 +39,15 @@ export function TeamCard({ team, people, onUpdate, onDelete }: TeamCardProps) {
   const pickerRef = useRef<HTMLDivElement>(null);
   const pickerFilterRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setEditName(team.name); }, [team.name]);
+  useEffect(() => {
+    setEditName(team.name);
+  }, [team.name]);
 
   useEffect(() => {
-    if (!showPicker) { setPickerFilter(""); return; }
+    if (!showPicker) {
+      setPickerFilter("");
+      return;
+    }
     const handleClick = (e: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setShowPicker(false);
     };
@@ -41,12 +56,17 @@ export function TeamCard({ team, people, onUpdate, onDelete }: TeamCardProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showPicker]);
 
-const members = team.memberIds.map(id => people.find(p => p.id === id)).filter(Boolean) as Person[];
-  const nonMembers = people.filter(p => !team.memberIds.includes(p.id));
+  const members = team.memberIds
+    .map((id) => people.find((p) => p.id === id))
+    .filter(Boolean) as Person[];
+  const nonMembers = people.filter((p) => !team.memberIds.includes(p.id));
 
-  const commitName = () => { if (editName !== team.name) onUpdate({ name: editName }); };
+  const commitName = () => {
+    if (editName !== team.name) onUpdate({ name: editName });
+  };
   const addMember = (id: string) => onUpdate({ memberIds: [...team.memberIds, id] });
-  const removeMember = (id: string) => onUpdate({ memberIds: team.memberIds.filter(mid => mid !== id) });
+  const removeMember = (id: string) =>
+    onUpdate({ memberIds: team.memberIds.filter((mid) => mid !== id) });
 
   return (
     <div className="team-card">
@@ -56,23 +76,36 @@ const members = team.memberIds.map(id => people.find(p => p.id === id)).filter(B
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
           onBlur={commitName}
-          onKeyDown={(e) => { if (e.key === "Enter") { commitName(); (e.target as HTMLInputElement).blur(); } }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              commitName();
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
         />
-        <button className="team-delete-btn" onClick={onDelete} title="Delete team">×</button>
+        <button className="team-delete-btn" onClick={onDelete} title="Delete team">
+          ×
+        </button>
       </div>
 
       <div className="team-members">
-        {members.map(person => (
+        {members.map((person) => (
           <div key={person.id} className="team-member-slot">
             <MemberAvatar person={person} />
-            <button className="remove-member-btn" onClick={() => removeMember(person.id)} title={`Remove ${person.name}`}>×</button>
+            <button
+              className="remove-member-btn"
+              onClick={() => removeMember(person.id)}
+              title={`Remove ${person.name}`}
+            >
+              ×
+            </button>
           </div>
         ))}
 
         <div className="add-member-wrapper" ref={pickerRef}>
           <button
             className="add-member-btn"
-            onClick={() => setShowPicker(v => !v)}
+            onClick={() => setShowPicker((v) => !v)}
             title="Add member"
             disabled={nonMembers.length === 0}
           >
@@ -86,26 +119,34 @@ const members = team.memberIds.map(id => people.find(p => p.id === id)).filter(B
                   className="member-picker-filter"
                   placeholder="Filter people..."
                   value={pickerFilter}
-                  onChange={e => setPickerFilter(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Escape") setShowPicker(false); }}
+                  onChange={(e) => setPickerFilter(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setShowPicker(false);
+                  }}
                 />
               </div>
               <div className="member-picker-list">
                 {nonMembers
-                  .filter(p => !pickerFilter || p.name.toLowerCase().includes(pickerFilter.toLowerCase()))
-                  .map(person => (
+                  .filter(
+                    (p) =>
+                      !pickerFilter || p.name.toLowerCase().includes(pickerFilter.toLowerCase()),
+                  )
+                  .map((person) => (
                     <button
                       key={person.id}
                       className="member-picker-item"
-                      onClick={() => { addMember(person.id); setShowPicker(false); }}
+                      onClick={() => {
+                        addMember(person.id);
+                        setShowPicker(false);
+                      }}
                     >
                       <MemberAvatar person={person} size={24} />
                       <span>{person.name || "(unnamed)"}</span>
                     </button>
                   ))}
-                {nonMembers.filter(p => !pickerFilter || p.name.toLowerCase().includes(pickerFilter.toLowerCase())).length === 0 && (
-                  <div className="member-picker-empty">No matches</div>
-                )}
+                {nonMembers.filter(
+                  (p) => !pickerFilter || p.name.toLowerCase().includes(pickerFilter.toLowerCase()),
+                ).length === 0 && <div className="member-picker-empty">No matches</div>}
               </div>
             </div>
           )}

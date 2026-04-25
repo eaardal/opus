@@ -1,7 +1,7 @@
 import "./TaskItem.css";
-import { Task, TaskStatus } from "./Sidebar";
-import { CategoryConfig, StatusConfig } from "./theme";
-import { Person } from "../teamMgt/types";
+import type { Task, TaskStatus } from "./Sidebar";
+import type { CategoryConfig, StatusConfig } from "./theme";
+import type { Person } from "../teamMgt/types";
 import { TaskContextMenu } from "./TaskContextMenu";
 
 interface TaskItemProps {
@@ -76,7 +76,9 @@ export function TaskItem({
         placeholder="Enter task..."
       />
       <div className="task-menu-container">
-        <button className="menu-btn" onClick={onToggleMenu}>⋯</button>
+        <button className="menu-btn" onClick={onToggleMenu}>
+          ⋯
+        </button>
         {isMenuOpen && menuPosition && (
           <TaskContextMenu
             task={task}

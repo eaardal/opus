@@ -31,7 +31,9 @@
   cursor: pointer;
   padding: 4px 10px;
   border-radius: 5px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .add-team-btn:hover {

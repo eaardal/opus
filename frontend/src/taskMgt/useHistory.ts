@@ -1,6 +1,6 @@
 import { useCallback, useReducer, useRef } from "react";
-import { Task, Group } from "./Sidebar";
-import { Connection } from "./Canvas";
+import type { Task, Group } from "./Sidebar";
+import type { Connection } from "./Canvas";
 
 export interface CanvasState {
   tasks: Task[];
@@ -75,5 +75,16 @@ export function useHistory(initial: CanvasState): UseHistoryResult {
   const canRedo = indexRef.current < historyRef.current.length - 1;
   const hasUnsavedChanges = indexRef.current !== savedIndexRef.current;
 
-  return { present, push, replace, undo, redo, reset, markSaved, canUndo, canRedo, hasUnsavedChanges };
+  return {
+    present,
+    push,
+    replace,
+    undo,
+    redo,
+    reset,
+    markSaved,
+    canUndo,
+    canRedo,
+    hasUnsavedChanges,
+  };
 }

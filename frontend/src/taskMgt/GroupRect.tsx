@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./GroupRect.css";
-import { Group, Task, TaskStatus } from "./Sidebar";
-import { GroupBoxConfig, StatusConfig } from "./theme";
+import type { Group, Task, TaskStatus } from "./Sidebar";
+import type { GroupBoxConfig, StatusConfig } from "./theme";
 
 const HANDLE_SIZE = 12;
 const EDGE_THICKNESS = 8;
@@ -76,9 +76,7 @@ export function GroupRect({
   const doneTasks = containedTasks.filter(
     (t) => t.status === "completed" || t.status === "archived",
   );
-  const inProgressTasks = containedTasks.filter(
-    (t) => t.status === "in_progress",
-  );
+  const inProgressTasks = containedTasks.filter((t) => t.status === "in_progress");
   const allDone = containedTasks.length > 0 && doneTasks.length === containedTasks.length;
 
   const [editing, setEditing] = useState(false);
@@ -237,45 +235,46 @@ export function GroupRect({
           {group.title || "Untitled Group"}
         </text>
       )}
-      {containedTasks.length > 0 && (() => {
-        const donePct = doneTasks.length / containedTasks.length;
-        const inProgressPct = inProgressTasks.length / containedTasks.length;
-        const barWidth = group.width - PROGRESS_BAR_MARGIN * 2;
-        return (
-          <g>
-            <rect
-              className="group-progress-track"
-              x={PROGRESS_BAR_MARGIN}
-              y={PROGRESS_BAR_Y}
-              width={barWidth}
-              height={PROGRESS_BAR_HEIGHT}
-              rx="2"
-            />
-            {inProgressPct > 0 && (
+      {containedTasks.length > 0 &&
+        (() => {
+          const donePct = doneTasks.length / containedTasks.length;
+          const inProgressPct = inProgressTasks.length / containedTasks.length;
+          const barWidth = group.width - PROGRESS_BAR_MARGIN * 2;
+          return (
+            <g>
               <rect
-                className="group-progress-in-progress"
+                className="group-progress-track"
                 x={PROGRESS_BAR_MARGIN}
                 y={PROGRESS_BAR_Y}
-                width={barWidth * (donePct + inProgressPct)}
+                width={barWidth}
                 height={PROGRESS_BAR_HEIGHT}
                 rx="2"
-                style={{ fill: statuses.in_progress.color }}
               />
-            )}
-            {donePct > 0 && (
-              <rect
-                className="group-progress-fill"
-                x={PROGRESS_BAR_MARGIN}
-                y={PROGRESS_BAR_Y}
-                width={barWidth * donePct}
-                height={PROGRESS_BAR_HEIGHT}
-                rx="2"
-                style={{ fill: groupBox.progressCompletedFill }}
-              />
-            )}
-          </g>
-        );
-      })()}
+              {inProgressPct > 0 && (
+                <rect
+                  className="group-progress-in-progress"
+                  x={PROGRESS_BAR_MARGIN}
+                  y={PROGRESS_BAR_Y}
+                  width={barWidth * (donePct + inProgressPct)}
+                  height={PROGRESS_BAR_HEIGHT}
+                  rx="2"
+                  style={{ fill: statuses.in_progress.color }}
+                />
+              )}
+              {donePct > 0 && (
+                <rect
+                  className="group-progress-fill"
+                  x={PROGRESS_BAR_MARGIN}
+                  y={PROGRESS_BAR_Y}
+                  width={barWidth * donePct}
+                  height={PROGRESS_BAR_HEIGHT}
+                  rx="2"
+                  style={{ fill: groupBox.progressCompletedFill }}
+                />
+              )}
+            </g>
+          );
+        })()}
       <g
         className="group-lock-btn"
         transform={`translate(${group.width - ZOOM_BTN_SIZE - ZOOM_BTN_MARGIN}, ${ZOOM_BTN_MARGIN})`}
@@ -284,12 +283,7 @@ export function GroupRect({
           onToggleLock(group.id);
         }}
       >
-        <rect
-          width={ZOOM_BTN_SIZE}
-          height={ZOOM_BTN_SIZE}
-          rx="4"
-          className="group-zoom-btn-bg"
-        />
+        <rect width={ZOOM_BTN_SIZE} height={ZOOM_BTN_SIZE} rx="4" className="group-zoom-btn-bg" />
         {group.locked ? (
           /* Closed padlock */
           <g>
@@ -306,7 +300,7 @@ export function GroupRect({
           </g>
         )}
       </g>
-<g
+      <g
         className="group-zoom-btn"
         transform={`translate(${group.width - ZOOM_BTN_SIZE * 2 - ZOOM_BTN_MARGIN - LOCK_BTN_GAP}, ${ZOOM_BTN_MARGIN})`}
         onClick={(e) => {
@@ -314,12 +308,7 @@ export function GroupRect({
           onZoomTo(group.id);
         }}
       >
-        <rect
-          width={ZOOM_BTN_SIZE}
-          height={ZOOM_BTN_SIZE}
-          rx="4"
-          className="group-zoom-btn-bg"
-        />
+        <rect width={ZOOM_BTN_SIZE} height={ZOOM_BTN_SIZE} rx="4" className="group-zoom-btn-bg" />
         <circle cx="9" cy="9" r="4" className="group-zoom-btn-icon" />
         <line x1="12" y1="12" x2="16" y2="16" className="group-zoom-btn-icon" />
       </g>

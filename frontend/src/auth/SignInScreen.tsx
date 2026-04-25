@@ -18,11 +18,7 @@ export function SignInScreen() {
     } catch (err) {
       console.error("Sign-in failed:", err);
       const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "string"
-            ? err
-            : JSON.stringify(err);
+        err instanceof Error ? err.message : typeof err === "string" ? err : JSON.stringify(err);
       setError(message || "Sign-in failed");
       setSigningIn(false);
     }
@@ -33,12 +29,7 @@ export function SignInScreen() {
       <div className="signin-card">
         <h1 className="signin-title">Domino</h1>
         <p className="signin-subtitle">Sign in to continue</p>
-        <button
-          type="button"
-          className="signin-button"
-          onClick={handleSignIn}
-          disabled={signingIn}
-        >
+        <button type="button" className="signin-button" onClick={handleSignIn} disabled={signingIn}>
           {signingIn ? "Signing in…" : "Sign in with Google"}
         </button>
         {error && <p className="signin-error">{error}</p>}

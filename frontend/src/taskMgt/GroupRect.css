@@ -58,7 +58,9 @@ g:hover > .group-lock-btn {
   fill: var(--group-fill);
   stroke: var(--group-stroke);
   stroke-width: 1;
-  transition: fill 0.15s, stroke 0.15s;
+  transition:
+    fill 0.15s,
+    stroke 0.15s;
 }
 
 .group-zoom-btn:hover .group-zoom-btn-bg,
@@ -66,7 +68,6 @@ g:hover > .group-lock-btn {
   fill: var(--group-stroke-hover);
   stroke: var(--group-title-color);
 }
-
 
 .group-lock-icon-fill {
   fill: var(--group-title-color);

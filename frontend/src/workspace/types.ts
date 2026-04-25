@@ -1,6 +1,6 @@
-import { Task, Group } from "../taskMgt/Sidebar";
-import { Connection, ViewBox } from "../taskMgt/Canvas";
-import { Person, Team } from "../teamMgt/types";
+import type { Task, Group } from "../taskMgt/Sidebar";
+import type { Connection, ViewBox } from "../taskMgt/Canvas";
+import type { Person, Team } from "../teamMgt/types";
 
 export interface PersonTaskQueue {
   personId: string;
@@ -24,10 +24,20 @@ export interface WorkspaceFile {
   teams: Team[];
 }
 
-export type ProjectState = Pick<ProjectData, "tasks" | "connections" | "groups" | "viewBox" | "theme" | "taskQueues">;
+export type ProjectState = Pick<
+  ProjectData,
+  "tasks" | "connections" | "groups" | "viewBox" | "theme" | "taskQueues"
+>;
 
 export function extractProjectState(p: ProjectData): ProjectState {
-  return { tasks: p.tasks, connections: p.connections, groups: p.groups, viewBox: p.viewBox, theme: p.theme, taskQueues: (p.taskQueues ?? []).map(q => ({ personId: q.personId })) };
+  return {
+    tasks: p.tasks,
+    connections: p.connections,
+    groups: p.groups,
+    viewBox: p.viewBox,
+    theme: p.theme,
+    taskQueues: (p.taskQueues ?? []).map((q) => ({ personId: q.personId })),
+  };
 }
 
 export function createDefaultProject(name = "My Project"): ProjectData {
@@ -56,16 +66,18 @@ export function parseWorkspaceFile(raw: unknown): WorkspaceFile {
   if (Array.isArray(data.tasks)) {
     return {
       version: 2,
-      projects: [{
-        id: crypto.randomUUID(),
-        name: "Imported Project",
-        tasks: (data.tasks ?? []) as Task[],
-        connections: (data.connections ?? []) as Connection[],
-        groups: (data.groups ?? []) as Group[],
-        viewBox: (data.viewBox ?? { x: 0, y: 0, width: 0, height: 0 }) as ViewBox,
-        theme: (data.theme === "dark" ? "dark" : "light"),
-        taskQueues: [],
-      }],
+      projects: [
+        {
+          id: crypto.randomUUID(),
+          name: "Imported Project",
+          tasks: (data.tasks ?? []) as Task[],
+          connections: (data.connections ?? []) as Connection[],
+          groups: (data.groups ?? []) as Group[],
+          viewBox: (data.viewBox ?? { x: 0, y: 0, width: 0, height: 0 }) as ViewBox,
+          theme: data.theme === "dark" ? "dark" : "light",
+          taskQueues: [],
+        },
+      ],
       people: [],
       teams: [],
     };

@@ -11,7 +11,9 @@
       "Bash(go build:*)",
       "Bash(sed -i '' 's|from \"../wailsjs/go/main/App\"|from \"../../wailsjs/go/main/App\"|g' /Users/eaardal/dev/git/eaardal/opus/frontend/src/taskMgt/App.tsx)",
       "Bash(sed -i '' 's|from \"../wailsjs/go/main/App\"|from \"../../wailsjs/go/main/App\"|g' /Users/eaardal/dev/git/eaardal/opus/frontend/src/taskMgt/Canvas.tsx)",
-      "Bash(sed -i '' 's|\"../wailsjs/go/main/App\"|\"../../wailsjs/go/main/App\"|g' /Users/eaardal/dev/git/eaardal/opus/frontend/src/taskMgt/App.test.tsx)"
+      "Bash(sed -i '' 's|\"../wailsjs/go/main/App\"|\"../../wailsjs/go/main/App\"|g' /Users/eaardal/dev/git/eaardal/opus/frontend/src/taskMgt/App.test.tsx)",
+      "Bash(npm run *)",
+      "Bash(npx biome *)"
     ]
   }
 }

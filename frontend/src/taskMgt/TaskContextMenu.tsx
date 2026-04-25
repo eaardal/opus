@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import "./TaskContextMenu.css";
-import { Task, TaskStatus } from "./Sidebar";
-import { CategoryConfig, StatusConfig } from "./theme";
-import { Person } from "../teamMgt/types";
+import type { Task, TaskStatus } from "./Sidebar";
+import type { CategoryConfig, StatusConfig } from "./theme";
+import type { Person } from "../teamMgt/types";
 import { avatarColor as personAvatarColor } from "../shared/avatarUtils";
 
 function PersonAvatar({ person, size }: { person: Person; size: number }) {
-  const initials = person.name.trim()
-    ? person.name.trim()[0].toUpperCase()
-    : "?";
+  const initials = person.name.trim() ? person.name.trim()[0].toUpperCase() : "?";
   const style: React.CSSProperties = {
     width: size,
     height: size,
@@ -70,8 +68,7 @@ export function TaskContextMenu({
 
   useEffect(() => {
     const handleClose = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node))
-        onClose();
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -100,9 +97,7 @@ export function TaskContextMenu({
   };
 
   const filteredPeople = people.filter(
-    (p) =>
-      !peopleFilter ||
-      p.name.toLowerCase().includes(peopleFilter.toLowerCase()),
+    (p) => !peopleFilter || p.name.toLowerCase().includes(peopleFilter.toLowerCase()),
   );
 
   return (
@@ -118,21 +113,19 @@ export function TaskContextMenu({
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="menu-section-label">Status</div>
-      {(Object.entries(statuses) as [TaskStatus, StatusConfig][]).map(
-        ([key, { label, color }]) => (
-          <button
-            key={key}
-            className={`menu-item ${task.status === key ? "active" : ""}`}
-            onClick={() => {
-              onSetStatus(key);
-              onClose();
-            }}
-          >
-            <span className="status-dot" style={{ background: color }} />
-            {label}
-          </button>
-        ),
-      )}
+      {(Object.entries(statuses) as [TaskStatus, StatusConfig][]).map(([key, { label, color }]) => (
+        <button
+          key={key}
+          className={`menu-item ${task.status === key ? "active" : ""}`}
+          onClick={() => {
+            onSetStatus(key);
+            onClose();
+          }}
+        >
+          <span className="status-dot" style={{ background: color }} />
+          {label}
+        </button>
+      ))}
 
       <hr className="menu-divider" />
       <div className="menu-section-label">Category</div>
@@ -172,17 +165,11 @@ export function TaskContextMenu({
                 onClick={() => togglePerson(person.id)}
               >
                 <PersonAvatar person={person} size={20} />
-                <span className="tcm-person-name">
-                  {person.name || "(unnamed)"}
-                </span>
-                {assignedIds.has(person.id) && (
-                  <span className="tcm-check">✓</span>
-                )}
+                <span className="tcm-person-name">{person.name || "(unnamed)"}</span>
+                {assignedIds.has(person.id) && <span className="tcm-check">✓</span>}
               </button>
             ))}
-            {filteredPeople.length === 0 && (
-              <div className="tcm-people-empty">No matches</div>
-            )}
+            {filteredPeople.length === 0 && <div className="tcm-people-empty">No matches</div>}
           </div>
         </>
       )}

@@ -1,6 +1,6 @@
 import "./Connector.css";
-import { Task } from "./Sidebar";
-import { ConnectorConfig } from "./theme";
+import type { Task } from "./Sidebar";
+import type { ConnectorConfig } from "./theme";
 
 interface ConnectorProps {
   fromTask: Task;
@@ -25,13 +25,20 @@ function tooltipBounds(task: Task): { cx: number; cy: number; hw: number; hh: nu
   let lineLen = 0;
   for (const word of words) {
     if (word.length > maxChars) {
-      if (lineLen > 0) { lines++; lineLen = 0; }
+      if (lineLen > 0) {
+        lines++;
+        lineLen = 0;
+      }
       lines += Math.floor(word.length / maxChars);
       lineLen = word.length % maxChars;
     } else {
       const test = lineLen > 0 ? lineLen + 1 + word.length : word.length;
-      if (test > maxChars && lineLen > 0) { lines++; lineLen = word.length; }
-      else { lineLen = test; }
+      if (test > maxChars && lineLen > 0) {
+        lines++;
+        lineLen = word.length;
+      } else {
+        lineLen = test;
+      }
     }
   }
 
@@ -41,10 +48,7 @@ function tooltipBounds(task: Task): { cx: number; cy: number; hw: number; hh: nu
   return { cx: task.x, cy: task.y + 28 + height / 2, hw: width / 2, hh: height / 2 };
 }
 
-function getArrowPath(
-  fromTask: Task,
-  toTask: Task
-): { path: string; endX: number; endY: number } {
+function getArrowPath(fromTask: Task, toTask: Task): { path: string; endX: number; endY: number } {
   const target = tooltipBounds(toTask);
   const targetX = target ? target.cx : toTask.x;
   const targetY = target ? target.cy : toTask.y;
@@ -80,13 +84,7 @@ function getArrowPath(
   return { path: `M ${startX} ${startY} L ${endX} ${endY}`, endX, endY };
 }
 
-export function Connector({
-  fromTask,
-  toTask,
-  shiftPressed,
-  connector,
-  onRemove,
-}: ConnectorProps) {
+export function Connector({ fromTask, toTask, shiftPressed, connector, onRemove }: ConnectorProps) {
   const { path, endX, endY } = getArrowPath(fromTask, toTask);
 
   return (
@@ -120,13 +118,7 @@ interface PendingConnectorProps {
   connector: ConnectorConfig;
 }
 
-export function PendingConnector({
-  fromX,
-  fromY,
-  toX,
-  toY,
-  connector,
-}: PendingConnectorProps) {
+export function PendingConnector({ fromX, fromY, toX, toY, connector }: PendingConnectorProps) {
   return (
     <line
       x1={fromX}

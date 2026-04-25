@@ -1,16 +1,16 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
 import { Maximize, Focus, Undo2, Redo2, LayoutList } from "lucide-react";
-import { Task, Group, TaskStatus } from "./Sidebar";
+import type { Task, Group, TaskStatus } from "./Sidebar";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
 import { ProgressBar } from "./ProgressBar";
-import { CategoryConfig, StatusConfig, getConnector, getGroupBox } from "./theme";
+import { type CategoryConfig, type StatusConfig, getConnector, getGroupBox } from "./theme";
 import { GroupRect } from "./GroupRect";
-import { Person } from "../teamMgt/types";
+import type { Person } from "../teamMgt/types";
 import { TaskContextMenu } from "./TaskContextMenu";
 import { TaskQueuePanel } from "./TaskQueuePanel";
-import { SettingsDialog, AppSettings, loadSettings, saveSettings } from "./SettingsDialog";
+import { SettingsDialog, type AppSettings, loadSettings } from "./SettingsDialog";
 
 export interface Connection {
   from: string;
@@ -150,7 +150,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onRedo,
     onHighlightTask,
   },
-  ref
+  ref,
 ) {
   const groupBox = getGroupBox(theme);
   const connector = getConnector(theme);
@@ -158,18 +158,43 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const groupContextMenuRef = useRef<HTMLDivElement>(null);
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
-  const touchPanRef = useRef<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
+  const touchPanRef = useRef<{
+    startX: number;
+    startY: number;
+    origVx: number;
+    origVy: number;
+  } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
-  const [nodeContextMenu, setNodeContextMenu] = useState<{ taskId: string; x: number; y: number } | null>(null);
-  const [groupContextMenu, setGroupContextMenu] = useState<{ groupId: string; x: number; y: number; svgX: number; svgY: number } | null>(null);
-  const [canvasContextMenu, setCanvasContextMenu] = useState<{ screenX: number; screenY: number; svgX: number; svgY: number } | null>(null);
+  const [nodeContextMenu, setNodeContextMenu] = useState<{
+    taskId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [groupContextMenu, setGroupContextMenu] = useState<{
+    groupId: string;
+    x: number;
+    y: number;
+    svgX: number;
+    svgY: number;
+  } | null>(null);
+  const [canvasContextMenu, setCanvasContextMenu] = useState<{
+    screenX: number;
+    screenY: number;
+    svgX: number;
+    svgY: number;
+  } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
   const panMode = spaceHeld || middleMouseHeld;
-  const [panning, setPanning] = useState<{ startX: number; startY: number; origVx: number; origVy: number } | null>(null);
+  const [panning, setPanning] = useState<{
+    startX: number;
+    startY: number;
+    origVx: number;
+    origVy: number;
+  } | null>(null);
   const viewBoxRef = useRef(viewBox);
   viewBoxRef.current = viewBox;
   const viewBoxInitialized = useRef(false);
@@ -227,7 +252,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   useEffect(() => {
     if (!canvasContextMenu) return;
     const handleClose = (e: MouseEvent) => {
-      if (canvasContextMenuRef.current && !canvasContextMenuRef.current.contains(e.target as Node)) {
+      if (
+        canvasContextMenuRef.current &&
+        !canvasContextMenuRef.current.contains(e.target as Node)
+      ) {
         setCanvasContextMenu(null);
       }
     };
@@ -248,40 +276,47 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     setNodeContextMenu({ taskId, x: e.clientX, y: e.clientY });
   }, []);
 
-  const toSvgCoords = useCallback(
-    (clientX: number, clientY: number): { x: number; y: number } => {
-      const svg = svgRef.current;
-      if (!svg) return { x: 0, y: 0 };
-      const pt = svg.createSVGPoint();
-      pt.x = clientX;
-      pt.y = clientY;
-      const ctm = svg.getScreenCTM();
-      if (!ctm) return { x: 0, y: 0 };
-      const svgPt = pt.matrixTransform(ctm.inverse());
-      return { x: svgPt.x, y: svgPt.y };
-    },
-    []
-  );
+  const toSvgCoords = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const svgPt = pt.matrixTransform(ctm.inverse());
+    return { x: svgPt.x, y: svgPt.y };
+  }, []);
 
   const getSvgCoords = useCallback(
     (e: React.MouseEvent): { x: number; y: number } => toSvgCoords(e.clientX, e.clientY),
-    [toSvgCoords]
+    [toSvgCoords],
   );
 
   useImperativeHandle(ref, () => ({
     getSvgCoords,
     getSvgElement: () => svgRef.current,
-    exportAsPng: () => { void exportCanvasAsPng(); },
+    exportAsPng: () => {
+      void exportCanvasAsPng();
+    },
     openSettings: () => setShowSettings(true),
     openHelp: () => setShowHelp(true),
   }));
 
-  const handleCanvasContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
-    if (e.target !== svgRef.current) return;
-    e.preventDefault();
-    const coords = getSvgCoords(e);
-    setCanvasContextMenu({ screenX: e.clientX, screenY: e.clientY, svgX: coords.x, svgY: coords.y });
-  }, [getSvgCoords]);
+  const handleCanvasContextMenu = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (e.target !== svgRef.current) return;
+      e.preventDefault();
+      const coords = getSvgCoords(e);
+      setCanvasContextMenu({
+        screenX: e.clientX,
+        screenY: e.clientY,
+        svgX: coords.x,
+        svgY: coords.y,
+      });
+    },
+    [getSvgCoords],
+  );
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 1) {
@@ -323,29 +358,32 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onMouseUp(e, getSvgCoords(e));
   };
 
-  const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault();
-    const svg = svgRef.current;
-    if (!svg) return;
+  const handleWheel = useCallback(
+    (e: WheelEvent) => {
+      e.preventDefault();
+      const svg = svgRef.current;
+      if (!svg) return;
 
-    const rect = svg.getBoundingClientRect();
-    const mouseXFrac = (e.clientX - rect.left) / rect.width;
-    const mouseYFrac = (e.clientY - rect.top) / rect.height;
+      const rect = svg.getBoundingClientRect();
+      const mouseXFrac = (e.clientX - rect.left) / rect.width;
+      const mouseYFrac = (e.clientY - rect.top) / rect.height;
 
-    const prev = viewBoxRef.current;
-    const sensitivity = e.ctrlKey ? ZOOM_SENSITIVITY_TRACKPAD : ZOOM_SENSITIVITY;
-    const zoomFactor = 1 + e.deltaY * sensitivity;
-    const baseWidth = rect.width;
-    const currentZoom = baseWidth / prev.width;
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom / zoomFactor));
-    const newWidth = baseWidth / newZoom;
-    const newHeight = rect.height / newZoom;
+      const prev = viewBoxRef.current;
+      const sensitivity = e.ctrlKey ? ZOOM_SENSITIVITY_TRACKPAD : ZOOM_SENSITIVITY;
+      const zoomFactor = 1 + e.deltaY * sensitivity;
+      const baseWidth = rect.width;
+      const currentZoom = baseWidth / prev.width;
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom / zoomFactor));
+      const newWidth = baseWidth / newZoom;
+      const newHeight = rect.height / newZoom;
 
-    const newX = prev.x + (prev.width - newWidth) * mouseXFrac;
-    const newY = prev.y + (prev.height - newHeight) * mouseYFrac;
+      const newX = prev.x + (prev.width - newWidth) * mouseXFrac;
+      const newY = prev.y + (prev.height - newHeight) * mouseYFrac;
 
-    onViewBoxChange({ x: newX, y: newY, width: newWidth, height: newHeight });
-  }, [onViewBoxChange]);
+      onViewBoxChange({ x: newX, y: newY, width: newWidth, height: newHeight });
+    },
+    [onViewBoxChange],
+  );
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -367,7 +405,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       if (e.touches.length >= 3) {
         e.preventDefault();
         const { x, y } = avgTouchPos(e.touches);
-        touchPanRef.current = { startX: x, startY: y, origVx: viewBoxRef.current.x, origVy: viewBoxRef.current.y };
+        touchPanRef.current = {
+          startX: x,
+          startY: y,
+          origVx: viewBoxRef.current.x,
+          origVy: viewBoxRef.current.y,
+        };
       }
     };
 
@@ -379,7 +422,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       const scale = viewBoxRef.current.width / rect.width;
       const dx = (x - touchPanRef.current.startX) * scale;
       const dy = (y - touchPanRef.current.startY) * scale;
-      onViewBoxChange({ ...viewBoxRef.current, x: touchPanRef.current.origVx - dx, y: touchPanRef.current.origVy - dy });
+      onViewBoxChange({
+        ...viewBoxRef.current,
+        x: touchPanRef.current.origVx - dx,
+        y: touchPanRef.current.origVy - dy,
+      });
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -411,16 +458,28 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       // loaded as an <img> (external stylesheets and CSS vars are unavailable there).
       const computedRoot = getComputedStyle(document.documentElement);
       const cssVarNames = [
-        "--bg-primary", "--bg-secondary", "--bg-tertiary",
-        "--text-primary", "--text-secondary",
-        "--node-fill", "--node-stroke", "--node-badge-fill", "--node-badge-stroke",
-        "--tooltip-fill", "--tooltip-stroke",
-        "--connector-color", "--connector-pending",
-        "--selection-fill", "--selection-stroke",
-        "--group-fill", "--group-stroke", "--group-stroke-hover", "--group-title-color",
+        "--bg-primary",
+        "--bg-secondary",
+        "--bg-tertiary",
+        "--text-primary",
+        "--text-secondary",
+        "--node-fill",
+        "--node-stroke",
+        "--node-badge-fill",
+        "--node-badge-stroke",
+        "--tooltip-fill",
+        "--tooltip-stroke",
+        "--connector-color",
+        "--connector-pending",
+        "--selection-fill",
+        "--selection-stroke",
+        "--group-fill",
+        "--group-stroke",
+        "--group-stroke-hover",
+        "--group-title-color",
       ];
       const cssVarBlock = cssVarNames
-        .map(v => `${v}: ${computedRoot.getPropertyValue(v).trim()};`)
+        .map((v) => `${v}: ${computedRoot.getPropertyValue(v).trim()};`)
         .join(" ");
 
       const appFont = getComputedStyle(document.body).fontFamily;
@@ -455,7 +514,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         for (const attr of Array.from(el.attributes)) {
           if (attr.value.includes("var(")) {
             attr.value = attr.value.replace(/var\(([^)]+)\)/g, (_, name) =>
-              computedRoot.getPropertyValue(name.trim()).trim()
+              computedRoot.getPropertyValue(name.trim()).trim(),
             );
           }
         }
@@ -464,7 +523,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       resolveVarAttrs(clone);
 
       const xml = new XMLSerializer().serializeToString(clone);
-      const svgDataUrl = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+      const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
       const img = new Image();
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
@@ -476,13 +535,13 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       canvas.height = h;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Could not get canvas context");
-      const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim();
+      const bgColor = getComputedStyle(document.documentElement)
+        .getPropertyValue("--bg-primary")
+        .trim();
       ctx.fillStyle = bgColor || "#0f0f1a";
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png")
-      );
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("Failed to encode canvas as PNG");
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -503,7 +562,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     const rect = svg.getBoundingClientRect();
     const padding = 60;
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     tasks.forEach((t) => {
       minX = Math.min(minX, t.x - 30);
       minY = Math.min(minY, t.y - 30);
@@ -517,7 +579,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       maxY = Math.max(maxY, g.y + g.height);
     });
 
-    if (!isFinite(minX)) {
+    if (!Number.isFinite(minX)) {
       onViewBoxChange({ x: 0, y: 0, width: rect.width, height: rect.height });
       return;
     }
@@ -553,7 +615,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         <button
           type="button"
           className={`canvas-toolbar-btn ${isTaskQueueOpen ? "active" : ""}`}
-          onClick={() => setIsTaskQueueOpen(prev => !prev)}
+          onClick={() => setIsTaskQueueOpen((prev) => !prev)}
           aria-label="Task Queue"
           data-tooltip="Task Queue"
         >
@@ -627,7 +689,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       <svg
         ref={svgRef}
         className={`canvas ${panMode || panning ? "panning" : ""}`}
-        viewBox={viewBox.width > 0 ? `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}` : undefined}
+        viewBox={
+          viewBox.width > 0
+            ? `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+            : undefined
+        }
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -666,32 +732,43 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onToggleLock={onGroupToggleLock}
             onContextMenu={(e, id) => {
               const svgPos = toSvgCoords(e.clientX, e.clientY);
-              setGroupContextMenu({ groupId: id, x: e.clientX, y: e.clientY, svgX: svgPos.x, svgY: svgPos.y });
+              setGroupContextMenu({
+                groupId: id,
+                x: e.clientX,
+                y: e.clientY,
+                svgX: svgPos.x,
+                svgY: svgPos.y,
+              });
             }}
             toSvgCoords={toSvgCoords}
           />
         ))}
 
-        {tasks.filter((task) => task.id !== hoveredNode).map((task, index) => (
-          <TaskNode
-            key={task.id}
-            task={task}
-            index={tasks.indexOf(task)}
-            categories={categories}
-            statuses={statuses}
-            isDragging={draggingNode === task.id}
-            isHighlighted={highlightedTaskId === task.id}
-            isSelected={selectedNodes.has(task.id)}
-            isHovered={false}
-            assignedPersons={task.assignedPersonIds?.map(id => people.find(p => p.id === id)).filter(Boolean) as Person[]}
-            onMouseDown={(e) => onNodeMouseDown(e, task.id)}
-            onClick={() => onNodeClick(task.id)}
-            onMouseEnter={() => onNodeHover(task.id)}
-            onMouseLeave={() => onNodeHover(null)}
-            onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
-            onUpdateText={(text) => onUpdateTaskText(task.id, text)}
-          />
-        ))}
+        {tasks
+          .filter((task) => task.id !== hoveredNode)
+          .map((task) => (
+            <TaskNode
+              key={task.id}
+              task={task}
+              index={tasks.indexOf(task)}
+              categories={categories}
+              statuses={statuses}
+              isDragging={draggingNode === task.id}
+              isHighlighted={highlightedTaskId === task.id}
+              isSelected={selectedNodes.has(task.id)}
+              assignedPersons={
+                task.assignedPersonIds
+                  ?.map((id) => people.find((p) => p.id === id))
+                  .filter(Boolean) as Person[]
+              }
+              onMouseDown={(e) => onNodeMouseDown(e, task.id)}
+              onClick={() => onNodeClick(task.id)}
+              onMouseEnter={() => onNodeHover(task.id)}
+              onMouseLeave={() => onNodeHover(null)}
+              onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
+              onUpdateText={(text) => onUpdateTaskText(task.id, text)}
+            />
+          ))}
 
         {connections.map((conn) => {
           const fromTask = tasks.find((t) => t.id === conn.from);
@@ -710,30 +787,34 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           );
         })}
 
-        {hoveredNode && (() => {
-          const task = tasks.find((t) => t.id === hoveredNode);
-          if (!task) return null;
-          return (
-            <TaskNode
-              key={task.id}
-              task={task}
-              index={tasks.indexOf(task)}
-              categories={categories}
-              statuses={statuses}
-              isDragging={draggingNode === task.id}
-              isHighlighted={highlightedTaskId === task.id}
-              isSelected={selectedNodes.has(task.id)}
-              isHovered={true}
-              assignedPersons={task.assignedPersonIds?.map(id => people.find(p => p.id === id)).filter(Boolean) as Person[]}
-              onMouseDown={(e) => onNodeMouseDown(e, task.id)}
-              onClick={() => onNodeClick(task.id)}
-              onMouseEnter={() => onNodeHover(task.id)}
-              onMouseLeave={() => onNodeHover(null)}
-              onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
-              onUpdateText={(text) => onUpdateTaskText(task.id, text)}
-            />
-          );
-        })()}
+        {hoveredNode &&
+          (() => {
+            const task = tasks.find((t) => t.id === hoveredNode);
+            if (!task) return null;
+            return (
+              <TaskNode
+                key={task.id}
+                task={task}
+                index={tasks.indexOf(task)}
+                categories={categories}
+                statuses={statuses}
+                isDragging={draggingNode === task.id}
+                isHighlighted={highlightedTaskId === task.id}
+                isSelected={selectedNodes.has(task.id)}
+                assignedPersons={
+                  task.assignedPersonIds
+                    ?.map((id) => people.find((p) => p.id === id))
+                    .filter(Boolean) as Person[]
+                }
+                onMouseDown={(e) => onNodeMouseDown(e, task.id)}
+                onClick={() => onNodeClick(task.id)}
+                onMouseEnter={() => onNodeHover(task.id)}
+                onMouseLeave={() => onNodeHover(null)}
+                onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
+                onUpdateText={(text) => onUpdateTaskText(task.id, text)}
+              />
+            );
+          })()}
 
         {connecting && (
           <PendingConnector
@@ -761,23 +842,64 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <div className="help-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="help-dialog-header">
               <h3>Keyboard Shortcuts</h3>
-              <button className="help-close-btn" onClick={() => setShowHelp(false)}>×</button>
+              <button className="help-close-btn" onClick={() => setShowHelp(false)}>
+                ×
+              </button>
             </div>
             <table className="help-table">
               <tbody>
-                <tr><td className="help-key">Cmd/Ctrl + S</td><td>Save</td></tr>
-                <tr><td className="help-key">Cmd/Ctrl + Z</td><td>Undo</td></tr>
-                <tr><td className="help-key">Cmd/Ctrl + Shift + Z</td><td>Redo</td></tr>
-                <tr><td className="help-key">Cmd/Ctrl + Enter</td><td>Add new task</td></tr>
-                <tr><td className="help-key">Shift + drag</td><td>Connect nodes</td></tr>
-                <tr><td className="help-key">Shift + click connection</td><td>Remove connection</td></tr>
-                <tr><td className="help-key">Space + drag</td><td>Pan canvas</td></tr>
-                <tr><td className="help-key">Middle mouse + drag</td><td>Pan canvas</td></tr>
-                <tr><td className="help-key">Scroll wheel</td><td>Zoom in/out</td></tr>
-                <tr><td className="help-key">Drag on canvas</td><td>Select — node/group must be fully inside the selection area</td></tr>
-                <tr><td className="help-key">Escape</td><td>Clear selection</td></tr>
-                <tr><td className="help-key">Double-click group title</td><td>Edit group name</td></tr>
-                <tr><td className="help-key">Double-click node tooltip</td><td>Rename node</td></tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + S</td>
+                  <td>Save</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + Z</td>
+                  <td>Undo</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + Shift + Z</td>
+                  <td>Redo</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + Enter</td>
+                  <td>Add new task</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Shift + drag</td>
+                  <td>Connect nodes</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Shift + click connection</td>
+                  <td>Remove connection</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Space + drag</td>
+                  <td>Pan canvas</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Middle mouse + drag</td>
+                  <td>Pan canvas</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Scroll wheel</td>
+                  <td>Zoom in/out</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Drag on canvas</td>
+                  <td>Select — node/group must be fully inside the selection area</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Escape</td>
+                  <td>Clear selection</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Double-click group title</td>
+                  <td>Edit group name</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Double-click node tooltip</td>
+                  <td>Rename node</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -787,7 +909,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         <div
           ref={canvasContextMenuRef}
           className="task-menu"
-          style={{ position: "fixed", top: canvasContextMenu.screenY, left: canvasContextMenu.screenX, transform: "none" }}
+          style={{
+            position: "fixed",
+            top: canvasContextMenu.screenY,
+            left: canvasContextMenu.screenX,
+            transform: "none",
+          }}
           onContextMenu={(e) => e.preventDefault()}
         >
           <button
@@ -810,73 +937,89 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           </button>
         </div>
       )}
-      {groupContextMenu && (() => {
-        const ctxGroup = groups.find((g) => g.id === groupContextMenu.groupId);
-        return (
-          <div
-            ref={groupContextMenuRef}
-            className="task-menu"
-            style={{ position: "fixed", top: groupContextMenu.y, left: groupContextMenu.x, transform: "none" }}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <button
-              className="menu-item"
-              onClick={() => {
-                onCreateTaskAt(groupContextMenu.svgX, groupContextMenu.svgY);
-                setGroupContextMenu(null);
+      {groupContextMenu &&
+        (() => {
+          const ctxGroup = groups.find((g) => g.id === groupContextMenu.groupId);
+          return (
+            <div
+              ref={groupContextMenuRef}
+              className="task-menu"
+              style={{
+                position: "fixed",
+                top: groupContextMenu.y,
+                left: groupContextMenu.x,
+                transform: "none",
               }}
+              onContextMenu={(e) => e.preventDefault()}
             >
-              New task here
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                onGroupZoomTo(groupContextMenu.groupId);
-                setGroupContextMenu(null);
+              <button
+                className="menu-item"
+                onClick={() => {
+                  onCreateTaskAt(groupContextMenu.svgX, groupContextMenu.svgY);
+                  setGroupContextMenu(null);
+                }}
+              >
+                New task here
+              </button>
+              <button
+                className="menu-item"
+                onClick={() => {
+                  onGroupZoomTo(groupContextMenu.groupId);
+                  setGroupContextMenu(null);
+                }}
+              >
+                Zoom to group
+              </button>
+              <button
+                className="menu-item"
+                onClick={() => {
+                  onGroupToggleLock(groupContextMenu.groupId);
+                  setGroupContextMenu(null);
+                }}
+              >
+                {ctxGroup?.locked ? "Unlock group" : "Lock group"}
+              </button>
+              <button
+                className="menu-item delete-item"
+                onClick={() => {
+                  onGroupDelete(groupContextMenu.groupId);
+                  setGroupContextMenu(null);
+                }}
+              >
+                Delete group
+              </button>
+            </div>
+          );
+        })()}
+      {nodeContextMenu &&
+        (() => {
+          const task = tasks.find((t) => t.id === nodeContextMenu.taskId);
+          if (!task) return null;
+          return (
+            <TaskContextMenu
+              task={task}
+              x={nodeContextMenu.x}
+              y={nodeContextMenu.y}
+              categories={categories}
+              statuses={statuses}
+              people={people}
+              onSetStatus={(status) => {
+                onSetTaskStatus(task.id, status);
+                setNodeContextMenu(null);
               }}
-            >
-              Zoom to group
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                onGroupToggleLock(groupContextMenu.groupId);
-                setGroupContextMenu(null);
+              onSetCategory={(category) => {
+                onSetTaskCategory(task.id, category);
+                setNodeContextMenu(null);
               }}
-            >
-              {ctxGroup?.locked ? "Unlock group" : "Lock group"}
-            </button>
-            <button
-              className="menu-item delete-item"
-              onClick={() => {
-                onGroupDelete(groupContextMenu.groupId);
-                setGroupContextMenu(null);
+              onDelete={() => {
+                onDeleteTask(task.id);
+                setNodeContextMenu(null);
               }}
-            >
-              Delete group
-            </button>
-          </div>
-        );
-      })()}
-      {nodeContextMenu && (() => {
-        const task = tasks.find((t) => t.id === nodeContextMenu.taskId);
-        if (!task) return null;
-        return (
-          <TaskContextMenu
-            task={task}
-            x={nodeContextMenu.x}
-            y={nodeContextMenu.y}
-            categories={categories}
-            statuses={statuses}
-            people={people}
-            onSetStatus={(status) => { onSetTaskStatus(task.id, status); setNodeContextMenu(null); }}
-            onSetCategory={(category) => { onSetTaskCategory(task.id, category); setNodeContextMenu(null); }}
-            onDelete={() => { onDeleteTask(task.id); setNodeContextMenu(null); }}
-            onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
-            onClose={() => setNodeContextMenu(null)}
-          />
-        );
-      })()}
+              onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
+              onClose={() => setNodeContextMenu(null)}
+            />
+          );
+        })()}
     </div>
   );
 });

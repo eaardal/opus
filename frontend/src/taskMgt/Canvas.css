@@ -46,7 +46,9 @@
   background: var(--menu-trigger-bg);
   color: var(--menu-trigger-color);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .canvas-toolbar-btn:hover {
@@ -128,7 +130,9 @@
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .help-close-btn:hover {
@@ -142,7 +146,7 @@
 }
 
 .help-table td {
-  padding: 5px 0;
+  padding-block: 5px;
   color: var(--text-secondary);
   font-size: 13px;
 }
@@ -150,6 +154,6 @@
 .help-key {
   color: var(--text-primary);
   font-weight: 500;
-  padding-right: 16px !important;
+  padding-right: 16px;
   white-space: nowrap;
 }

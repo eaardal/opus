@@ -8,7 +8,6 @@
   overflow: hidden;
 }
 
-
 .people-panel-title-row {
   display: flex;
   align-items: center;
@@ -33,7 +32,9 @@
   cursor: pointer;
   padding: 3px 6px;
   border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .add-person-btn:hover {

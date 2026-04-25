@@ -1,9 +1,9 @@
 import { useRef, useEffect } from "react";
 import "./TaskList.css";
-import { Task, Group, TaskStatus } from "./Sidebar";
+import type { Task, Group, TaskStatus } from "./Sidebar";
 import { TaskItem } from "./TaskItem";
-import { CategoryConfig, StatusConfig } from "./theme";
-import { Person } from "../teamMgt/types";
+import type { CategoryConfig, StatusConfig } from "./theme";
+import type { Person } from "../teamMgt/types";
 
 interface TaskListProps {
   tasks: Task[];
@@ -53,14 +53,13 @@ export function TaskList({
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   useEffect(() => {
-    if (focusTaskId) {
-      const input = inputRefs.current.get(focusTaskId);
-      if (input) {
-        input.focus();
-        onFocusTaskId(null);
-      }
+    if (!focusTaskId) return;
+    const input = inputRefs.current.get(focusTaskId);
+    if (input) {
+      input.focus();
+      onFocusTaskId(null);
     }
-  }, [focusTaskId, tasks, onFocusTaskId]);
+  }, [focusTaskId, onFocusTaskId]);
 
   const handleOpenMenu = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -80,21 +79,21 @@ export function TaskList({
   };
 
   const findGroup = (task: Task): Group | null =>
-    groups.find(g =>
-      task.x >= g.x && task.x <= g.x + g.width &&
-      task.y >= g.y && task.y <= g.y + g.height
+    groups.find(
+      (g) => task.x >= g.x && task.x <= g.x + g.width && task.y >= g.y && task.y <= g.y + g.height,
     ) ?? null;
 
   const grouped = new Map<string | null, Task[]>();
   for (const task of tasks) {
     const group = findGroup(task);
     const key = group ? group.id : null;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(task);
+    const existing = grouped.get(key);
+    if (existing) existing.push(task);
+    else grouped.set(key, [task]);
   }
 
   const groupOrder: (string | null)[] = [
-    ...groups.filter(g => grouped.has(g.id)).map(g => g.id),
+    ...groups.filter((g) => grouped.has(g.id)).map((g) => g.id),
     ...(grouped.has(null) ? [null] : []),
   ];
 
@@ -114,9 +113,7 @@ export function TaskList({
         onSetCategory={(category) => onSetTaskCategory(task.id, category)}
         onSetStatus={(status) => onSetTaskStatus(task.id, status)}
         onDelete={() => onDeleteTask(task.id)}
-        onSetHighlighted={(highlighted) =>
-          onSetHighlightedTaskId(highlighted ? task.id : null)
-        }
+        onSetHighlighted={(highlighted) => onSetHighlightedTaskId(highlighted ? task.id : null)}
         onToggleMenu={(e) => handleOpenMenu(task.id, e)}
         onCloseMenu={handleCloseMenu}
         onKeyDown={onTaskKeyDown}
@@ -133,15 +130,13 @@ export function TaskList({
 
   return (
     <div className="task-list">
-      {groupOrder.map(groupId => {
+      {groupOrder.map((groupId) => {
         const groupTasks = grouped.get(groupId) ?? [];
-        const group = groupId ? groups.find(g => g.id === groupId) : null;
+        const group = groupId ? groups.find((g) => g.id === groupId) : null;
         return (
           <div key={groupId ?? "__ungrouped__"} className="task-list-group">
             {group && (
-              <div className="task-list-group-header">
-                {group.title || "(unnamed group)"}
-              </div>
+              <div className="task-list-group-header">{group.title || "(unnamed group)"}</div>
             )}
             {groupTasks.map(renderTask)}
           </div>

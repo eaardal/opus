@@ -1,4 +1,4 @@
-import { TaskStatus, NodeShape } from "./Sidebar";
+import type { TaskStatus, NodeShape } from "./Sidebar";
 
 export type Theme = "dark" | "light";
 

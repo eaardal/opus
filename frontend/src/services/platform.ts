@@ -4,5 +4,4 @@ declare global {
   }
 }
 
-export const isDesktop =
-  typeof window !== "undefined" && typeof window.runtime !== "undefined";
+export const isDesktop = typeof window !== "undefined" && typeof window.runtime !== "undefined";

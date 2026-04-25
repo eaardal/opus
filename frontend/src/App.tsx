@@ -4,12 +4,12 @@ import { Save, FolderOpen, ChevronsLeft, Menu } from "lucide-react";
 import { authService, workspaceService } from "./services/container";
 import { useSelectedWorkspace } from "./workspace/SelectedWorkspaceProvider";
 import { confirm } from "./shared/ConfirmModal";
-import TaskMgtApp, { TaskMgtAppHandle } from "./taskMgt/App";
+import TaskMgtApp, { type TaskMgtAppHandle } from "./taskMgt/App";
 import { TeamMgt } from "./teamMgt/TeamMgt";
-import { TeamMgtHandle, Person, Team } from "./teamMgt/types";
+import type { TeamMgtHandle, Person, Team } from "./teamMgt/types";
 import {
-  ProjectData,
-  ProjectState,
+  type ProjectData,
+  type ProjectState,
   createDefaultProject,
   extractProjectState,
   parseWorkspaceFile,
@@ -383,9 +383,7 @@ function App() {
       )}
 
       <div className="app-shell-content">
-        <div
-          className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}
-        >
+        <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
           <TaskMgtApp
             ref={taskMgtRef}
             key={`${workspaceLoadCount}-${activeProjectId}`}
@@ -398,9 +396,7 @@ function App() {
             people={people}
           />
         </div>
-        <div
-          className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}
-        >
+        <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
           <TeamMgt
             key={workspaceLoadCount}
             ref={teamMgtRef}

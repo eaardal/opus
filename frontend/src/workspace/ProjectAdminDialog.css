@@ -41,7 +41,9 @@
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 
 .project-admin-close:hover {
@@ -108,7 +110,10 @@
   cursor: pointer;
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity 0.1s, background 0.1s, color 0.1s;
+  transition:
+    opacity 0.1s,
+    background 0.1s,
+    color 0.1s;
 }
 
 .project-admin-item:hover .project-admin-delete {
@@ -143,7 +148,10 @@
   cursor: pointer;
   width: 100%;
   justify-content: center;
-  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s,
+    color 0.1s;
 }
 
 .project-admin-add-btn:hover {

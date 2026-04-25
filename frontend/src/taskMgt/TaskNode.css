@@ -19,13 +19,13 @@
 }
 
 .node.highlighted {
-  stroke: var(--highlight-border) !important;
-  stroke-width: 4 !important;
+  stroke: var(--highlight-border);
+  stroke-width: 4;
 }
 
 .node.selected {
-  stroke: var(--selection-stroke) !important;
-  stroke-width: 3 !important;
+  stroke: var(--selection-stroke);
+  stroke-width: 3;
 }
 
 .node-text {

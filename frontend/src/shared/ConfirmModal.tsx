@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./ConfirmModal.css";
 
 interface ConfirmOptions {
@@ -35,6 +35,15 @@ export function ConfirmHost() {
     };
   }, []);
 
+  const answer = useCallback(
+    (result: boolean) => {
+      if (!pending) return;
+      pending.resolve(result);
+      setPending(null);
+    },
+    [pending],
+  );
+
   useEffect(() => {
     if (!pending) return;
     confirmBtnRef.current?.focus();
@@ -49,14 +58,7 @@ export function ConfirmHost() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pending]);
-
-  const answer = (result: boolean) => {
-    if (!pending) return;
-    pending.resolve(result);
-    setPending(null);
-  };
+  }, [pending, answer]);
 
   if (!pending) return null;
 

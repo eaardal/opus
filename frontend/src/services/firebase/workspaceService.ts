@@ -13,12 +13,7 @@ import {
   where,
   type DocumentData,
 } from "firebase/firestore";
-import type {
-  WorkspaceContent,
-  WorkspaceDocument,
-  WorkspaceService,
-  WorkspaceSummary,
-} from "../types";
+import type { WorkspaceDocument, WorkspaceService, WorkspaceSummary } from "../types";
 import { firebaseAuth, firestore } from "./client";
 
 const WORKSPACES_COLLECTION = "workspaces";
@@ -64,11 +59,7 @@ export const firebaseWorkspaceService: WorkspaceService = {
   async listMine() {
     const uid = requireUserId();
     const snap = await getDocs(
-      query(
-        workspacesCollection(),
-        where("ownerId", "==", uid),
-        orderBy("updatedAt", "desc"),
-      ),
+      query(workspacesCollection(), where("ownerId", "==", uid), orderBy("updatedAt", "desc")),
     );
     return snap.docs.map((d) => toSummary(d.id, d.data()));
   },
