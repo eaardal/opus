@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./App.css";
-import { Save, ChevronsLeft, LogOut } from "lucide-react";
+import { Save, FolderOpen, ChevronsLeft, LogOut } from "lucide-react";
 import { authService, workspaceService } from "./services/container";
 import { useSelectedWorkspace } from "./workspace/SelectedWorkspaceProvider";
 import { confirm } from "./shared/ConfirmModal";
@@ -12,6 +12,7 @@ import {
   ProjectState,
   createDefaultProject,
   extractProjectState,
+  parseWorkspaceFile,
 } from "./workspace/types";
 import { ProjectAdminDialog } from "./workspace/ProjectAdminDialog";
 
@@ -40,6 +41,7 @@ function App() {
   const activeProjectIdRef = useRef(activeProjectId);
   activeProjectIdRef.current = activeProjectId;
   const hydratedForRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Subscribe to the selected workspace document. The first snapshot
   // hydrates our in-memory state; later snapshots refresh only the
@@ -108,6 +110,39 @@ function App() {
       setSaving(false);
     }
   }, [workspaceId, saving, people, teams, getProjectsForSave]);
+
+  const handleOpenLegacyFile = useCallback(async () => {
+    if (hasUnsavedChanges) {
+      const confirmed = await confirm({
+        title: "Unsaved changes",
+        message: "Opening a savefile will discard your unsaved local edits. Continue?",
+        confirmLabel: "Open",
+      });
+      if (!confirmed) return;
+    }
+    fileInputRef.current?.click();
+  }, [hasUnsavedChanges]);
+
+  const handleLegacyFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseWorkspaceFile(JSON.parse(text));
+      const loaded = parsed.projects.length > 0 ? parsed.projects : [createDefaultProject()];
+      currentProjectStateRef.current = extractProjectState(loaded[0]);
+      setProjects(loaded);
+      setActiveProjectId(loaded[0].id);
+      setPeople(parsed.people);
+      setTeams(parsed.teams);
+      setHasUnsavedChanges(true);
+      setWorkspaceLoadCount((c) => c + 1);
+    } catch (err) {
+      console.error("Failed to open savefile:", err);
+      window.alert("Could not open file: the selected file is not a valid Opus savefile.");
+    }
+  }, []);
 
   const handleBackToPicker = useCallback(async () => {
     if (hasUnsavedChanges) {
@@ -224,6 +259,20 @@ function App() {
           >
             <Save size={16} />
           </button>
+          <button
+            className="app-bar-icon-btn"
+            onClick={handleOpenLegacyFile}
+            title="Open legacy savefile"
+          >
+            <FolderOpen size={16} />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            style={{ display: "none" }}
+            onChange={handleLegacyFileSelected}
+          />
           <span className="app-bar-filename">
             {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
             {workspaceName}
