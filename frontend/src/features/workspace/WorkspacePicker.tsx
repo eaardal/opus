@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { Settings } from "lucide-react";
 import { authService, workspaceService } from "../../services/container";
 import type { WorkspaceSummary } from "../../services/workspace.types";
@@ -15,6 +15,12 @@ export function WorkspacePicker() {
   const { select } = useSelectedWorkspace();
   const [state, setState] = useState<State>({ status: "loading" });
   const [settingsFor, setSettingsFor] = useState<WorkspaceSummary | null>(null);
+
+  // Reset theme to light when entering the picker. A workspace may have set
+  // dark mode on the document; the picker shouldn't inherit it.
+  useLayoutEffect(() => {
+    document.documentElement.setAttribute("data-theme", "light");
+  }, []);
 
   const reload = useCallback(async () => {
     setState({ status: "loading" });

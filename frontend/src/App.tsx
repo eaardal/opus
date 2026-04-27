@@ -16,6 +16,7 @@ import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
 import { resolveRole } from "./domain/workspace/roles";
 import { WorkspaceRoleProvider } from "./features/workspace/WorkspaceRoleContext";
+import { Avatar } from "./ui/Avatar";
 
 type ActiveModule = "tasks" | "teams";
 
@@ -309,6 +310,7 @@ function App() {
             <span className="app-bar-filename">
               {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
               {workspaceName}
+              {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
             </span>
           </div>
           <nav className="app-bar-nav">
@@ -326,6 +328,24 @@ function App() {
             </button>
           </nav>
           <div className="app-bar-right">
+            {auth.status === "signedIn" && (
+              <div className="app-bar-identity" title={auth.user.email ?? undefined}>
+                <Avatar
+                  photoURL={auth.user.photoURL}
+                  fallbackText={auth.user.displayName ?? auth.user.email ?? "?"}
+                  className="app-bar-avatar"
+                  fallbackClassName="app-bar-avatar-fallback"
+                />
+                <div className="app-bar-identity-text">
+                  <span className="app-bar-identity-name">
+                    {auth.user.displayName ?? auth.user.email ?? "Signed in"}
+                  </span>
+                  {auth.user.email && (
+                    <span className="app-bar-identity-email">{auth.user.email}</span>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="app-bar-menu-wrapper" ref={menuWrapperRef}>
               <button
                 type="button"
@@ -429,6 +449,17 @@ function App() {
       </div>
     </WorkspaceRoleProvider>
   );
+}
+
+function roleLabel(role: NonNullable<ReturnType<typeof resolveRole>>): string {
+  switch (role) {
+    case "owner":
+      return "Owner";
+    case "editor":
+      return "Editor";
+    case "viewer":
+      return "Viewer";
+  }
 }
 
 export default App;

@@ -4,6 +4,7 @@ import { userService, workspaceService } from "../../services/container";
 import type { RegisteredUser } from "../../services/user.types";
 import type { Role, WorkspaceDocument } from "../../services/workspace.types";
 import { isLastOwner } from "../../domain/workspace/roles";
+import { Avatar } from "../../ui/Avatar";
 import { buildMemberRows, filterCandidates, type MemberRow } from "./membersSection.logic";
 import "./MembersSection.css";
 
@@ -93,13 +94,12 @@ export function MembersSection({ workspaceId, doc, currentUid, canManage }: Memb
         {memberRows.map((m) => (
           <li key={m.uid} className="members-row">
             <div className="members-identity">
-              {m.photoURL ? (
-                <img src={m.photoURL} alt="" className="members-avatar" />
-              ) : (
-                <span className="members-avatar members-avatar-fallback" aria-hidden>
-                  {(m.displayName || m.email || "?").charAt(0).toUpperCase()}
-                </span>
-              )}
+              <Avatar
+                photoURL={m.photoURL}
+                fallbackText={m.displayName || m.email || "?"}
+                className="members-avatar"
+                fallbackClassName="members-avatar-fallback"
+              />
               <div className="members-text">
                 <span className="members-name">
                   {m.displayName || m.email}
@@ -178,6 +178,7 @@ function AddMemberRow({
 
   return (
     <div className="members-add">
+      <span className="workspace-settings-label">Add member to workspace</span>
       <div className="members-add-header">
         <UserPlus size={14} />
         <input
@@ -197,13 +198,12 @@ function AddMemberRow({
       {candidates.slice(0, 20).map((u) => (
         <div key={u.uid} className="members-add-candidate">
           <div className="members-identity">
-            {u.photoURL ? (
-              <img src={u.photoURL} alt="" className="members-avatar" />
-            ) : (
-              <span className="members-avatar members-avatar-fallback" aria-hidden>
-                {(u.displayName || u.email).charAt(0).toUpperCase()}
-              </span>
-            )}
+            <Avatar
+              photoURL={u.photoURL}
+              fallbackText={u.displayName || u.email}
+              className="members-avatar"
+              fallbackClassName="members-avatar-fallback"
+            />
             <div className="members-text">
               <span className="members-name">{u.displayName || u.email}</span>
               <span className="members-email">{u.email}</span>
