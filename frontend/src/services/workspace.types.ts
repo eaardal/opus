@@ -3,10 +3,19 @@ import type { Person, Team } from "../domain/teams/types";
 
 export type WorkspaceId = string;
 
+export type Role = "owner" | "editor" | "viewer";
+
+export interface WorkspaceMember {
+  role: Role;
+  addedAt: Date;
+}
+
 export interface WorkspaceSummary {
   id: WorkspaceId;
   name: string;
   updatedAt: Date;
+  /** The current user's role in this workspace, resolved at list time. */
+  role: Role;
 }
 
 export interface WorkspaceDocument {
@@ -16,6 +25,10 @@ export interface WorkspaceDocument {
   people: Person[];
   teams: Team[];
   updatedAt: Date;
+  /** Map of uid -> member info. Absent on legacy docs (pre-roles). */
+  members?: Record<string, WorkspaceMember>;
+  /** Mirror of Object.keys(members) for array-contains queries. */
+  memberIds?: string[];
 }
 
 /** The subset of a workspace the user edits in-app. */
@@ -28,4 +41,7 @@ export interface WorkspaceService {
   saveContent(id: WorkspaceId, content: WorkspaceContent): Promise<void>;
   rename(id: WorkspaceId, name: string): Promise<void>;
   remove(id: WorkspaceId): Promise<void>;
+  addMember(id: WorkspaceId, uid: string, role: Role): Promise<void>;
+  updateMemberRole(id: WorkspaceId, uid: string, role: Role): Promise<void>;
+  removeMember(id: WorkspaceId, uid: string): Promise<void>;
 }

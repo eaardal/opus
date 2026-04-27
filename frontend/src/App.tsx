@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import "./App.css";
 import { Save, FolderOpen, ChevronsLeft, Menu } from "lucide-react";
 import { authService, workspaceService } from "./services/container";
 import { useSelectedWorkspace } from "./features/workspace/SelectedWorkspaceProvider";
+import { useAuthUser } from "./features/auth/useAuthUser";
 import { confirm } from "./ui/ConfirmModal";
 import TaskMgtApp, { type TaskMgtAppHandle } from "./features/tasks/TasksApp";
 import { TeamMgt } from "./features/teams/TeamsApp";
@@ -13,18 +14,29 @@ import { createDefaultProject, extractProjectState } from "./domain/workspace/pr
 import { parseWorkspaceFile } from "./domain/workspace/parseWorkspaceFile";
 import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
+import { resolveRole } from "./domain/workspace/roles";
+import { WorkspaceRoleProvider } from "./features/workspace/WorkspaceRoleContext";
 
 type ActiveModule = "tasks" | "teams";
 
 function App() {
   const { id: workspaceId, select } = useSelectedWorkspace();
+  const auth = useAuthUser();
+  const currentUid = auth.status === "signedIn" ? auth.user.uid : null;
 
   const {
     status: loadStatus,
     name: workspaceName,
     loadCount: workspaceLoadCount,
     hydration,
+    latestDoc,
   } = useWorkspaceLoader({ workspaceId, subscribe: workspaceService.subscribe });
+
+  const role = useMemo(
+    () => (currentUid ? resolveRole(latestDoc, currentUid) : null),
+    [latestDoc, currentUid],
+  );
+  const canEdit = role === "owner" || role === "editor";
 
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>("");
@@ -94,7 +106,7 @@ function App() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!workspaceId || saving) return;
+    if (!workspaceId || saving || !canEdit) return;
     setSaving(true);
     try {
       await workspaceService.saveContent(workspaceId, {
@@ -108,9 +120,10 @@ function App() {
     } finally {
       setSaving(false);
     }
-  }, [workspaceId, saving, people, teams, getProjectsForSave]);
+  }, [workspaceId, saving, canEdit, people, teams, getProjectsForSave]);
 
   const handleOpenLegacyFile = useCallback(async () => {
+    if (!canEdit) return;
     if (hasUnsavedChanges) {
       const confirmed = await confirm({
         title: "Unsaved changes",
@@ -120,28 +133,32 @@ function App() {
       if (!confirmed) return;
     }
     fileInputRef.current?.click();
-  }, [hasUnsavedChanges]);
+  }, [canEdit, hasUnsavedChanges]);
 
-  const handleLegacyFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const parsed = parseWorkspaceFile(JSON.parse(text));
-      const loaded = parsed.projects.length > 0 ? parsed.projects : [createDefaultProject()];
-      currentProjectStateRef.current = extractProjectState(loaded[0]);
-      setProjects(loaded);
-      setActiveProjectId(loaded[0].id);
-      setPeople(parsed.people);
-      setTeams(parsed.teams);
-      setHasUnsavedChanges(true);
-      setLocalReloadKey((c) => c + 1);
-    } catch (err) {
-      console.error("Failed to open savefile:", err);
-      window.alert("Could not open file: the selected file is not a valid Opus savefile.");
-    }
-  }, []);
+  const handleLegacyFileSelected = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      if (!canEdit) return;
+      try {
+        const text = await file.text();
+        const parsed = parseWorkspaceFile(JSON.parse(text));
+        const loaded = parsed.projects.length > 0 ? parsed.projects : [createDefaultProject()];
+        currentProjectStateRef.current = extractProjectState(loaded[0]);
+        setProjects(loaded);
+        setActiveProjectId(loaded[0].id);
+        setPeople(parsed.people);
+        setTeams(parsed.teams);
+        setHasUnsavedChanges(true);
+        setLocalReloadKey((c) => c + 1);
+      } catch (err) {
+        console.error("Failed to open savefile:", err);
+        window.alert("Could not open file: the selected file is not a valid Opus savefile.");
+      }
+    },
+    [canEdit],
+  );
 
   const handleBackToPicker = useCallback(async () => {
     if (hasUnsavedChanges) {
@@ -194,6 +211,7 @@ function App() {
   }, []);
 
   const handleAddProject = useCallback(() => {
+    if (!canEdit) return;
     const fresh = createDefaultProject("New Project");
     setProjects((prev) => [
       ...prev.map((p) =>
@@ -206,193 +224,210 @@ function App() {
     currentProjectStateRef.current = extractProjectState(fresh);
     setActiveProjectId(fresh.id);
     setHasUnsavedChanges(true);
-  }, []);
+  }, [canEdit]);
 
-  const handleRenameProject = useCallback((id: string, name: string) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
-    setHasUnsavedChanges(true);
-  }, []);
+  const handleRenameProject = useCallback(
+    (id: string, name: string) => {
+      if (!canEdit) return;
+      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
+      setHasUnsavedChanges(true);
+    },
+    [canEdit],
+  );
 
-  const handleDeleteProject = useCallback(async (id: string) => {
-    const current = projectsRef.current;
-    if (current.length <= 1) return;
-    const project = current.find((p) => p.id === id);
-    const confirmed = await confirm({
-      title: "Delete Project",
-      message: `Delete "${project?.name || "this project"}"? This cannot be undone.`,
-      confirmLabel: "Delete",
-    });
-    if (!confirmed) return;
-    const remaining = current.filter((p) => p.id !== id);
-    setProjects(remaining);
-    if (activeProjectIdRef.current === id) {
-      const next = remaining[0];
-      currentProjectStateRef.current = extractProjectState(next);
-      setActiveProjectId(next.id);
-    }
-    setHasUnsavedChanges(true);
-  }, []);
+  const handleDeleteProject = useCallback(
+    async (id: string) => {
+      if (!canEdit) return;
+      const current = projectsRef.current;
+      if (current.length <= 1) return;
+      const project = current.find((p) => p.id === id);
+      const confirmed = await confirm({
+        title: "Delete Project",
+        message: `Delete "${project?.name || "this project"}"? This cannot be undone.`,
+        confirmLabel: "Delete",
+      });
+      if (!confirmed) return;
+      const remaining = current.filter((p) => p.id !== id);
+      setProjects(remaining);
+      if (activeProjectIdRef.current === id) {
+        const next = remaining[0];
+        currentProjectStateRef.current = extractProjectState(next);
+        setActiveProjectId(next.id);
+      }
+      setHasUnsavedChanges(true);
+    },
+    [canEdit],
+  );
 
   if (loadStatus !== "ready" || !activeProject) {
     return <div className="app-loading">Loading workspace…</div>;
   }
 
-  const saveTitle = saving ? "Saving…" : hasUnsavedChanges ? "Save workspace" : "Saved";
+  const saveTitle = !canEdit
+    ? "View-only — sign-in lacks edit permission"
+    : saving
+      ? "Saving…"
+      : hasUnsavedChanges
+        ? "Save workspace"
+        : "Saved";
 
   return (
-    <div className="app-shell">
-      <div className="top-app-bar">
-        <div className="app-bar-left">
-          <button
-            className="app-bar-icon-btn"
-            onClick={handleBackToPicker}
-            title="Switch workspace"
-          >
-            <ChevronsLeft size={16} />
-          </button>
-          <button
-            className="app-bar-icon-btn"
-            onClick={handleSave}
-            title={saveTitle}
-            disabled={saving}
-          >
-            <Save size={16} />
-          </button>
-          <button
-            className="app-bar-icon-btn"
-            onClick={handleOpenLegacyFile}
-            title="Open legacy savefile"
-          >
-            <FolderOpen size={16} />
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,application/json"
-            style={{ display: "none" }}
-            onChange={handleLegacyFileSelected}
-          />
-          <span className="app-bar-filename">
-            {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
-            {workspaceName}
-          </span>
-        </div>
-        <nav className="app-bar-nav">
-          <button
-            className={`app-bar-tab ${activeModule === "tasks" ? "active" : ""}`}
-            onClick={() => setActiveModule("tasks")}
-          >
-            Tasks
-          </button>
-          <button
-            className={`app-bar-tab ${activeModule === "teams" ? "active" : ""}`}
-            onClick={() => setActiveModule("teams")}
-          >
-            Teams
-          </button>
-        </nav>
-        <div className="app-bar-right">
-          <div className="app-bar-menu-wrapper" ref={menuWrapperRef}>
+    <WorkspaceRoleProvider role={role}>
+      <div className="app-shell">
+        <div className="top-app-bar">
+          <div className="app-bar-left">
             <button
-              type="button"
               className="app-bar-icon-btn"
-              onClick={() => setAppMenuOpen((open) => !open)}
-              title="Menu"
-              aria-label="Menu"
-              aria-expanded={appMenuOpen}
+              onClick={handleBackToPicker}
+              title="Switch workspace"
             >
-              <Menu size={16} />
+              <ChevronsLeft size={16} />
             </button>
-            {appMenuOpen && (
-              <div className="app-bar-menu-dropdown" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="app-bar-menu-item"
-                  onClick={() => {
-                    setAppMenuOpen(false);
-                    taskMgtRef.current?.exportAsPng();
-                  }}
-                >
-                  Export as PNG
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="app-bar-menu-item"
-                  onClick={() => {
-                    setAppMenuOpen(false);
-                    taskMgtRef.current?.openHelp();
-                  }}
-                >
-                  How to Use
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="app-bar-menu-item"
-                  onClick={() => {
-                    setAppMenuOpen(false);
-                    taskMgtRef.current?.openSettings();
-                  }}
-                >
-                  Settings
-                </button>
-                <hr className="app-bar-menu-divider" />
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="app-bar-menu-item"
-                  onClick={() => {
-                    setAppMenuOpen(false);
-                    handleSignOut();
-                  }}
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
+            <button
+              className="app-bar-icon-btn"
+              onClick={handleSave}
+              title={saveTitle}
+              disabled={saving || !canEdit}
+            >
+              <Save size={16} />
+            </button>
+            <button
+              className="app-bar-icon-btn"
+              onClick={handleOpenLegacyFile}
+              title={canEdit ? "Open legacy savefile" : "View-only"}
+              disabled={!canEdit}
+            >
+              <FolderOpen size={16} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              style={{ display: "none" }}
+              onChange={handleLegacyFileSelected}
+            />
+            <span className="app-bar-filename">
+              {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
+              {workspaceName}
+            </span>
+          </div>
+          <nav className="app-bar-nav">
+            <button
+              className={`app-bar-tab ${activeModule === "tasks" ? "active" : ""}`}
+              onClick={() => setActiveModule("tasks")}
+            >
+              Tasks
+            </button>
+            <button
+              className={`app-bar-tab ${activeModule === "teams" ? "active" : ""}`}
+              onClick={() => setActiveModule("teams")}
+            >
+              Teams
+            </button>
+          </nav>
+          <div className="app-bar-right">
+            <div className="app-bar-menu-wrapper" ref={menuWrapperRef}>
+              <button
+                type="button"
+                className="app-bar-icon-btn"
+                onClick={() => setAppMenuOpen((open) => !open)}
+                title="Menu"
+                aria-label="Menu"
+                aria-expanded={appMenuOpen}
+              >
+                <Menu size={16} />
+              </button>
+              {appMenuOpen && (
+                <div className="app-bar-menu-dropdown" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="app-bar-menu-item"
+                    onClick={() => {
+                      setAppMenuOpen(false);
+                      taskMgtRef.current?.exportAsPng();
+                    }}
+                  >
+                    Export as PNG
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="app-bar-menu-item"
+                    onClick={() => {
+                      setAppMenuOpen(false);
+                      taskMgtRef.current?.openHelp();
+                    }}
+                  >
+                    How to Use
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="app-bar-menu-item"
+                    onClick={() => {
+                      setAppMenuOpen(false);
+                      taskMgtRef.current?.openSettings();
+                    }}
+                  >
+                    Settings
+                  </button>
+                  <hr className="app-bar-menu-divider" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="app-bar-menu-item"
+                    onClick={() => {
+                      setAppMenuOpen(false);
+                      handleSignOut();
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {showProjectAdmin && (
+          <ProjectAdminDialog
+            projects={projects}
+            activeProjectId={activeProjectId}
+            onAdd={handleAddProject}
+            onRename={handleRenameProject}
+            onDelete={handleDeleteProject}
+            onClose={() => setShowProjectAdmin(false)}
+          />
+        )}
+
+        <div className="app-shell-content">
+          <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
+            <TaskMgtApp
+              ref={taskMgtRef}
+              key={`${workspaceLoadCount}-${localReloadKey}-${activeProjectId}`}
+              initialProject={activeProject}
+              onStateChange={handleProjectStateChange}
+              projects={projects}
+              activeProjectId={activeProjectId}
+              onSwitchProject={handleSwitchProject}
+              onOpenProjectAdmin={() => setShowProjectAdmin(true)}
+              people={people}
+            />
+          </div>
+          <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
+            <TeamMgt
+              key={`${workspaceLoadCount}-${localReloadKey}`}
+              ref={teamMgtRef}
+              initialPeople={people}
+              initialTeams={teams}
+              onPeopleChange={setPeople}
+              onTeamsChange={setTeams}
+            />
           </div>
         </div>
       </div>
-
-      {showProjectAdmin && (
-        <ProjectAdminDialog
-          projects={projects}
-          activeProjectId={activeProjectId}
-          onAdd={handleAddProject}
-          onRename={handleRenameProject}
-          onDelete={handleDeleteProject}
-          onClose={() => setShowProjectAdmin(false)}
-        />
-      )}
-
-      <div className="app-shell-content">
-        <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
-          <TaskMgtApp
-            ref={taskMgtRef}
-            key={`${workspaceLoadCount}-${localReloadKey}-${activeProjectId}`}
-            initialProject={activeProject}
-            onStateChange={handleProjectStateChange}
-            projects={projects}
-            activeProjectId={activeProjectId}
-            onSwitchProject={handleSwitchProject}
-            onOpenProjectAdmin={() => setShowProjectAdmin(true)}
-            people={people}
-          />
-        </div>
-        <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
-          <TeamMgt
-            key={`${workspaceLoadCount}-${localReloadKey}`}
-            ref={teamMgtRef}
-            initialPeople={people}
-            initialTeams={teams}
-            onPeopleChange={setPeople}
-            onTeamsChange={setTeams}
-          />
-        </div>
-      </div>
-    </div>
+    </WorkspaceRoleProvider>
   );
 }
 

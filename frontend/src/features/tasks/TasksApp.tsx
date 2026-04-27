@@ -6,6 +6,7 @@ import type { Group, Task, TaskStatus } from "../../domain/tasks/types";
 import { Canvas, type CanvasHandle } from "./Canvas/Canvas";
 import type { ViewBox } from "../../domain/tasks/types";
 import { zoomViewBoxToGroup } from "../../domain/tasks/viewport";
+import { useWorkspaceRole } from "../workspace/WorkspaceRoleContext";
 import {
   addGroup as addGroupOp,
   addTask as addTaskOp,
@@ -57,11 +58,20 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   },
   ref,
 ) {
-  const { present, push, replace, undo, redo, canUndo, canRedo } = useHistory({
+  const { canEdit } = useWorkspaceRole();
+  const history = useHistory({
     tasks: initialProject.tasks,
     connections: initialProject.connections,
     groups: initialProject.groups,
   });
+  // When the user has no edit permission, every mutation funnels through these
+  // and becomes a no-op. This is the catch-all that protects the graph state
+  // even if a UI affordance was missed in the visual gating.
+  const push: typeof history.push = canEdit ? history.push : () => {};
+  const replace: typeof history.replace = canEdit ? history.replace : () => {};
+  const undo: typeof history.undo = canEdit ? history.undo : () => {};
+  const redo: typeof history.redo = canEdit ? history.redo : () => {};
+  const { present, canUndo, canRedo } = history;
   const { tasks, connections, groups } = present;
   const presentRef = useRef(present);
   presentRef.current = present;

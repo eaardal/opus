@@ -10,6 +10,7 @@ import { SignInWithGoogle } from "../../../wailsjs/go/main/App";
 import { isDesktop } from "../platform";
 import type { AuthService, AuthUser } from "../auth.types";
 import { firebaseAuth } from "./client";
+import { firebaseUserService } from "./userService";
 
 const ALLOWED_EMAIL_DOMAINS = ["tv2.no", "apparat.no"];
 const ALLOWED_EMAILS = ["eirikaardal@gmail.com"];
@@ -31,6 +32,22 @@ function toAuthUser(u: User | null): AuthUser | null {
     displayName: u.displayName,
     photoURL: u.photoURL,
   };
+}
+
+let lastRegisteredUid: string | null = null;
+
+function registerUserIfAllowed(user: AuthUser | null): void {
+  if (!user) {
+    lastRegisteredUid = null;
+    return;
+  }
+  if (!isEmailAllowed(user.email)) return;
+  if (user.uid === lastRegisteredUid) return;
+  lastRegisteredUid = user.uid;
+  firebaseUserService.upsertOnSignIn(user).catch((err) => {
+    lastRegisteredUid = null;
+    console.error("[auth] upsertOnSignIn failed:", err);
+  });
 }
 
 async function signInWeb(): Promise<void> {
@@ -62,7 +79,11 @@ export const firebaseAuthService: AuthService = {
     return toAuthUser(firebaseAuth.currentUser);
   },
   onAuthChange(callback) {
-    return onAuthStateChanged(firebaseAuth, (user) => callback(toAuthUser(user)));
+    return onAuthStateChanged(firebaseAuth, (user) => {
+      const authUser = toAuthUser(user);
+      registerUserIfAllowed(authUser);
+      callback(authUser);
+    });
   },
   async signIn() {
     if (isDesktop) await signInDesktop();

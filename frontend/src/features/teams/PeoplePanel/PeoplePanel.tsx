@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./PeoplePanel.css";
 import type { Person } from "../../../domain/teams/types";
+import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
 import { PersonItem } from "./PersonItem";
 
 interface PeoplePanelProps {
@@ -17,8 +18,10 @@ export function PeoplePanel({
   onDeletePerson,
 }: PeoplePanelProps) {
   const [focusPersonId, setFocusPersonId] = useState<string | null>(null);
+  const { canEdit } = useWorkspaceRole();
 
   const addAndFocus = () => {
+    if (!canEdit) return;
     const id = onAddPerson();
     setFocusPersonId(id);
   };
@@ -27,7 +30,12 @@ export function PeoplePanel({
     <div className="people-panel">
       <div className="people-panel-title-row">
         <span className="people-panel-title">People</span>
-        <button className="add-person-btn" onClick={addAndFocus}>
+        <button
+          className="add-person-btn"
+          onClick={addAndFocus}
+          disabled={!canEdit}
+          title={canEdit ? undefined : "View-only access"}
+        >
           + Add person
         </button>
       </div>

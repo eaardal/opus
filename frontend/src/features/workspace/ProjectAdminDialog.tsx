@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import "./ProjectAdminDialog.css";
 import type { ProjectData } from "../../domain/workspace/types";
+import { useWorkspaceRole } from "./WorkspaceRoleContext";
 
 interface ProjectAdminDialogProps {
   projects: ProjectData[];
@@ -23,6 +24,7 @@ export function ProjectAdminDialog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
+  const { canEdit } = useWorkspaceRole();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,6 +42,7 @@ export function ProjectAdminDialog({
   }, [editingId]);
 
   const startEdit = (project: ProjectData) => {
+    if (!canEdit) return;
     setEditingId(project.id);
     setEditValue(project.name);
   };
@@ -88,8 +91,14 @@ export function ProjectAdminDialog({
               <button
                 className="project-admin-delete"
                 onClick={() => onDelete(project.id)}
-                disabled={projects.length <= 1}
-                title={projects.length <= 1 ? "Cannot delete the last project" : "Delete project"}
+                disabled={!canEdit || projects.length <= 1}
+                title={
+                  !canEdit
+                    ? "View-only access"
+                    : projects.length <= 1
+                      ? "Cannot delete the last project"
+                      : "Delete project"
+                }
               >
                 <Trash2 size={13} />
               </button>
@@ -97,7 +106,12 @@ export function ProjectAdminDialog({
           ))}
         </div>
         <div className="project-admin-footer">
-          <button className="project-admin-add-btn" onClick={onAdd}>
+          <button
+            className="project-admin-add-btn"
+            onClick={onAdd}
+            disabled={!canEdit}
+            title={canEdit ? undefined : "View-only access"}
+          >
             <Plus size={14} />
             New project
           </button>

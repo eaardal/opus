@@ -1,5 +1,6 @@
 import "./TeamsPanel.css";
 import type { Person, Team } from "../../../domain/teams/types";
+import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
 import { TeamCard } from "./TeamCard";
 
 interface TeamsPanelProps {
@@ -17,11 +18,17 @@ export function TeamsPanel({
   onUpdateTeam,
   onDeleteTeam,
 }: TeamsPanelProps) {
+  const { canEdit } = useWorkspaceRole();
   return (
     <div className="teams-panel">
       <div className="teams-panel-header">
         <span className="teams-panel-title">Teams</span>
-        <button className="add-team-btn" onClick={onAddTeam}>
+        <button
+          className="add-team-btn"
+          onClick={onAddTeam}
+          disabled={!canEdit}
+          title={canEdit ? undefined : "View-only access"}
+        >
           + Add team
         </button>
       </div>

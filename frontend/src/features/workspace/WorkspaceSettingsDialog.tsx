@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { workspaceService } from "../../services/container";
 import { confirm } from "../../ui/ConfirmModal";
-import type { WorkspaceSummary } from "../../services/workspace.types";
+import { useAuthUser } from "../auth/useAuthUser";
+import {
+  canDeleteWorkspace,
+  canEdit as canEditFn,
+  canManageMembers,
+  resolveRole,
+} from "../../domain/workspace/roles";
+import type { WorkspaceDocument, WorkspaceSummary } from "../../services/workspace.types";
+import { MembersSection } from "./MembersSection";
 import "./WorkspaceSettingsDialog.css";
 
 interface WorkspaceSettingsDialogProps {
@@ -18,11 +26,22 @@ export function WorkspaceSettingsDialog({
   onRenamed,
   onDeleted,
 }: WorkspaceSettingsDialogProps) {
+  const auth = useAuthUser();
+  const currentUid = auth.status === "signedIn" ? auth.user.uid : null;
+  const [doc, setDoc] = useState<WorkspaceDocument | null>(null);
   const [name, setName] = useState(workspace.name);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return workspaceService.subscribe(workspace.id, setDoc);
+  }, [workspace.id]);
+
+  useEffect(() => {
+    if (doc) setName(doc.name);
+  }, [doc]);
 
   useEffect(() => {
     nameInputRef.current?.focus();
@@ -37,13 +56,19 @@ export function WorkspaceSettingsDialog({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  const role = currentUid ? resolveRole(doc, currentUid) : null;
+  const canEdit = canEditFn(role);
+  const canDelete = canDeleteWorkspace(role);
+  const canManage = canManageMembers(role);
+
   const trimmed = name.trim();
-  const nameChanged = trimmed.length > 0 && trimmed !== workspace.name;
+  const baseName = doc?.name ?? workspace.name;
+  const nameChanged = trimmed.length > 0 && trimmed !== baseName;
   const busy = saving || deleting;
 
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nameChanged || busy) return;
+    if (!nameChanged || busy || !canEdit) return;
     setSaving(true);
     setError(null);
     try {
@@ -58,10 +83,10 @@ export function WorkspaceSettingsDialog({
   };
 
   const handleDelete = async () => {
-    if (busy) return;
+    if (busy || !canDelete) return;
     const confirmed = await confirm({
       title: "Delete workspace",
-      message: `Delete "${workspace.name}"? This permanently removes all projects, tasks, people and teams in it. This cannot be undone.`,
+      message: `Delete "${baseName}"? This permanently removes all projects, tasks, people and teams in it. This cannot be undone.`,
       confirmLabel: "Delete",
     });
     if (!confirmed) return;
@@ -110,35 +135,47 @@ export function WorkspaceSettingsDialog({
               className="workspace-settings-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={busy}
+              disabled={busy || !canEdit}
             />
             <button
               type="submit"
               className="workspace-settings-primary-btn"
-              disabled={!nameChanged || busy}
+              disabled={!nameChanged || busy || !canEdit}
+              title={canEdit ? undefined : "View-only access"}
             >
               {saving ? "Saving…" : "Save"}
             </button>
           </div>
         </form>
 
-        <div className="workspace-settings-section workspace-settings-danger">
-          <h4 className="workspace-settings-danger-title">Danger zone</h4>
-          <div className="workspace-settings-row workspace-settings-danger-row">
-            <span className="workspace-settings-danger-text">
-              Delete this workspace and everything in it.
-            </span>
-            <button
-              type="button"
-              className="workspace-settings-danger-btn"
-              onClick={handleDelete}
-              disabled={busy}
-            >
-              <Trash2 size={14} />
-              {deleting ? "Deleting…" : "Delete"}
-            </button>
+        {doc && currentUid && (
+          <MembersSection
+            workspaceId={workspace.id}
+            doc={doc}
+            currentUid={currentUid}
+            canManage={canManage}
+          />
+        )}
+
+        {canDelete && (
+          <div className="workspace-settings-section workspace-settings-danger">
+            <h4 className="workspace-settings-danger-title">Danger zone</h4>
+            <div className="workspace-settings-row workspace-settings-danger-row">
+              <span className="workspace-settings-danger-text">
+                Delete this workspace and everything in it.
+              </span>
+              <button
+                type="button"
+                className="workspace-settings-danger-btn"
+                onClick={handleDelete}
+                disabled={busy}
+              >
+                <Trash2 size={14} />
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {error && <p className="workspace-settings-error">{error}</p>}
       </div>

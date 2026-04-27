@@ -5,6 +5,7 @@ import { TaskList } from "./TaskList";
 import type { CategoryConfig, StatusConfig } from "../theme";
 import type { ProjectData } from "../../../domain/workspace/types";
 import { ProjectSelector } from "../../workspace/ProjectSelector";
+import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
 import type { Person } from "../../../domain/teams/types";
 import type { Group, Task, TaskStatus } from "../../../domain/tasks/types";
 
@@ -68,6 +69,7 @@ export function Sidebar({
   onAssignPeople,
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { canEdit } = useWorkspaceRole();
 
   if (collapsed) {
     return (
@@ -101,10 +103,20 @@ export function Sidebar({
         </button>
       </div>
       <div className="add-buttons">
-        <button className="add-btn" onClick={onAddTask}>
+        <button
+          className="add-btn"
+          onClick={onAddTask}
+          disabled={!canEdit}
+          title={canEdit ? undefined : "View-only access"}
+        >
           + Add Task
         </button>
-        <button className="add-btn" onClick={onAddGroup}>
+        <button
+          className="add-btn"
+          onClick={onAddGroup}
+          disabled={!canEdit}
+          title={canEdit ? undefined : "View-only access"}
+        >
           + Add Group
         </button>
       </div>

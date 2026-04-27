@@ -24,6 +24,10 @@ export interface UseWorkspaceLoaderResult {
    *  hydrates exactly once per workspace id — subsequent snapshots only update
    *  `name`, so unsaved local edits are not clobbered by remote echoes. */
   hydration: WorkspaceHydration | null;
+  /** The latest snapshot of the workspace document. Updates on every snapshot
+   *  (unlike `hydration`, which is one-shot). Used to derive live values that
+   *  must reflect remote changes — e.g. the current user's role. */
+  latestDoc: WorkspaceDocument | null;
 }
 
 interface UseWorkspaceLoaderArgs {
@@ -44,19 +48,23 @@ export function useWorkspaceLoader({
   const [name, setName] = useState("");
   const [loadCount, setLoadCount] = useState(0);
   const [hydration, setHydration] = useState<WorkspaceHydration | null>(null);
+  const [latestDoc, setLatestDoc] = useState<WorkspaceDocument | null>(null);
   const hydratedForRef = useRef<WorkspaceId | null>(null);
 
   useEffect(() => {
     if (!workspaceId) return;
     setStatus("loading");
+    setLatestDoc(null);
     hydratedForRef.current = null;
 
     return subscribe(workspaceId, (doc) => {
       if (!doc) {
+        setLatestDoc(null);
         setStatus("missing");
         return;
       }
       setName(doc.name);
+      setLatestDoc(doc);
       if (hydratedForRef.current === workspaceId) return;
       hydratedForRef.current = workspaceId;
 
@@ -72,5 +80,5 @@ export function useWorkspaceLoader({
     });
   }, [workspaceId, subscribe]);
 
-  return { status, name, loadCount, hydration };
+  return { status, name, loadCount, hydration, latestDoc };
 }

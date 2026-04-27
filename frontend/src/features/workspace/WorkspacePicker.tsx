@@ -65,16 +65,26 @@ export function WorkspacePicker() {
             Sign out
           </button>
         </header>
-        <h2 className="workspace-picker-subtitle">Your workspaces</h2>
         {state.status === "loading" && <p className="workspace-picker-status">Loading…</p>}
         {state.status === "error" && <p className="workspace-picker-error">{state.message}</p>}
         {state.status === "ready" && (
           <>
-            <WorkspaceList
-              workspaces={state.workspaces}
+            <WorkspaceSection
+              title="Your workspaces"
+              workspaces={state.workspaces.filter((w) => w.role === "owner")}
+              emptyMessage="No workspaces yet. Create one below."
               onOpen={select}
               onOpenSettings={setSettingsFor}
             />
+            {state.workspaces.some((w) => w.role !== "owner") && (
+              <WorkspaceSection
+                title="Shared with you"
+                workspaces={state.workspaces.filter((w) => w.role !== "owner")}
+                emptyMessage=""
+                onOpen={select}
+                onOpenSettings={setSettingsFor}
+              />
+            )}
             <CreateWorkspaceRow
               onCreated={(id) => {
                 select(id);
@@ -96,41 +106,65 @@ export function WorkspacePicker() {
   );
 }
 
-function WorkspaceList({
+function WorkspaceSection({
+  title,
   workspaces,
+  emptyMessage,
   onOpen,
   onOpenSettings,
 }: {
+  title: string;
   workspaces: WorkspaceSummary[];
+  emptyMessage: string;
   onOpen: (id: string) => void;
   onOpenSettings: (workspace: WorkspaceSummary) => void;
 }) {
-  if (workspaces.length === 0) {
-    return <p className="workspace-picker-empty">No workspaces yet. Create one below.</p>;
-  }
   return (
-    <ul className="workspace-picker-list">
-      {workspaces.map((w) => (
-        <li key={w.id} className="workspace-picker-row">
-          <button type="button" className="workspace-picker-item" onClick={() => onOpen(w.id)}>
-            <span className="workspace-picker-item-name">{w.name}</span>
-            <span className="workspace-picker-item-meta">
-              Updated {formatRelative(w.updatedAt)}
-            </span>
-          </button>
-          <button
-            type="button"
-            className="workspace-picker-settings-btn"
-            onClick={() => onOpenSettings(w)}
-            title="Workspace settings"
-            aria-label={`Settings for ${w.name}`}
-          >
-            <Settings size={16} />
-          </button>
-        </li>
-      ))}
-    </ul>
+    <div className="workspace-picker-section">
+      <h2 className="workspace-picker-subtitle">{title}</h2>
+      {workspaces.length === 0 ? (
+        emptyMessage ? (
+          <p className="workspace-picker-empty">{emptyMessage}</p>
+        ) : null
+      ) : (
+        <ul className="workspace-picker-list">
+          {workspaces.map((w) => (
+            <li key={w.id} className="workspace-picker-row">
+              <button type="button" className="workspace-picker-item" onClick={() => onOpen(w.id)}>
+                <span className="workspace-picker-item-name">{w.name}</span>
+                <span className="workspace-picker-item-meta">
+                  {w.role !== "owner" && (
+                    <span className="workspace-picker-role-badge">{roleLabel(w.role)}</span>
+                  )}
+                  Updated {formatRelative(w.updatedAt)}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="workspace-picker-settings-btn"
+                onClick={() => onOpenSettings(w)}
+                title="Workspace settings"
+                aria-label={`Settings for ${w.name}`}
+              >
+                <Settings size={16} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
+}
+
+function roleLabel(role: WorkspaceSummary["role"]): string {
+  switch (role) {
+    case "owner":
+      return "Owner";
+    case "editor":
+      return "Editor";
+    case "viewer":
+      return "Viewer";
+  }
 }
 
 function CreateWorkspaceRow({ onCreated }: { onCreated: (id: string) => void }) {
