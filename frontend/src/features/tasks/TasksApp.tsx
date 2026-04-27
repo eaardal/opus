@@ -80,16 +80,30 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const [viewBox, setViewBox] = useState<ViewBox>(initialProject.viewBox);
   const [taskQueues] = useState<PersonTaskQueue[]>(initialProject.taskQueues ?? []);
 
-  // Report live state to workspace owner (skip first render to avoid marking dirty on mount)
-  const isFirstRender = useRef(true);
+  // Report live state to the workspace owner. Compare against the previous
+  // snapshot rather than a one-shot "first render" flag — React 18 StrictMode
+  // double-invokes effects on mount (setup → cleanup → setup), and a flag-based
+  // guard would let the second invocation fire onStateChange with the initial
+  // state and falsely mark the workspace as having unsaved changes.
   const onStateChangeRef = useRef(onStateChange);
   onStateChangeRef.current = onStateChange;
+  const prevStateRef = useRef<ProjectState | null>(null);
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    const current: ProjectState = { tasks, connections, groups, viewBox, theme, taskQueues };
+    const prev = prevStateRef.current;
+    prevStateRef.current = current;
+    if (prev === null) return;
+    if (
+      prev.tasks === current.tasks &&
+      prev.connections === current.connections &&
+      prev.groups === current.groups &&
+      prev.viewBox === current.viewBox &&
+      prev.theme === current.theme &&
+      prev.taskQueues === current.taskQueues
+    ) {
       return;
     }
-    onStateChangeRef.current({ tasks, connections, groups, viewBox, theme, taskQueues });
+    onStateChangeRef.current(current);
   }, [tasks, connections, groups, viewBox, theme, taskQueues]);
   const categories = getCategories(theme);
   const statuses = getStatuses(theme);
