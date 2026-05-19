@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "domino-34fce"
+    "default": "domino-staging-dc209",
+    "production": "domino-34fce"
   }
 }

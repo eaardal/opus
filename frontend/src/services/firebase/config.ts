@@ -1,10 +1,10 @@
 import type { FirebaseOptions } from "firebase/app";
 
 export const firebaseConfig: FirebaseOptions = {
-  apiKey: "AIzaSyCiqZqxtleDM836EzrljKwUfVq3nEjR_Go",
-  authDomain: "domino-34fce.firebaseapp.com",
-  projectId: "domino-34fce",
-  storageBucket: "domino-34fce.firebasestorage.app",
-  messagingSenderId: "1409309678",
-  appId: "1:1409309678:web:1376d550a65139e92d4cff",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };

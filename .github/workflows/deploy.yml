@@ -89,8 +89,9 @@ jobs:
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
-  build:
-    name: Build
+  build-staging:
+    name: Build (staging)
+    needs: [format, lint, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -102,48 +103,120 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
-      - name: Build frontend
-        run: npm run build
+      - name: Build frontend (staging)
+        run: npm run build -- --mode staging
         working-directory: frontend
-      - name: Upload built dist as an artifact for the deploy job
+      - name: Upload staging dist artifact
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-dist-staging
           path: frontend/dist
           retention-days: 7
 
-  deploy:
-    name: Deploy
-    needs: [format, lint, test, build]
+  build-production:
+    name: Build (production)
+    needs: [format, lint, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Build frontend (production)
+        run: npm run build
+        working-directory: frontend
+      - name: Upload production dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-production
+          path: frontend/dist
+          retention-days: 7
+
+  deploy-pr-preview:
+    name: Deploy PR Preview (staging)
+    needs: [build-staging]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download staging dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-staging
+          path: frontend/dist
+      - name: Deploy preview to Firebase Hosting (staging)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
+          projectId: domino-staging-dc209
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [build-staging]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download built dist
+      - name: Download staging dist
         uses: actions/download-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-dist-staging
           path: frontend/dist
 
-      # PR pushes land in an ephemeral per-PR preview channel and the
-      # action comments the URL on the PR. Master pushes go to 'live'.
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase Hosting (staging)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: domino-34fce
-          channelId: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'live' || '' }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
+          projectId: domino-staging-dc209
+          channelId: live
 
       # Rules + indexes only ship on master pushes, never from PRs —
       # otherwise a contributor could open a PR that weakens access
-      # control, and preview-channel runs would apply it to prod.
-      - name: Authenticate to Google Cloud
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      # control, and preview-channel runs would apply it to staging.
+      - name: Authenticate to Google Cloud (staging)
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
 
-      - name: Deploy Firestore rules and indexes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      - name: Deploy Firestore rules and indexes (staging)
+        run: npx firebase-tools@13 deploy --only firestore:rules,firestore:indexes --project domino-staging-dc209 --non-interactive --force
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [deploy-staging, build-production]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download production dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-production
+          path: frontend/dist
+
+      - name: Deploy to Firebase Hosting (production)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PRODUCTION }}
+          projectId: domino-34fce
+          channelId: live
+
+      - name: Authenticate to Google Cloud (production)
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PRODUCTION }}
+
+      - name: Deploy Firestore rules and indexes (production)
         run: npx firebase-tools@13 deploy --only firestore:rules,firestore:indexes --project domino-34fce --non-interactive --force
