@@ -188,7 +188,7 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
 
       - name: Deploy Firestore rules and indexes (staging)
-        run: npx firebase-tools@13 deploy --only firestore:rules,firestore:indexes --project domino-staging-dc209 --non-interactive --force
+        run: npx firebase-tools@14.24.1 deploy --only firestore:rules,firestore:indexes --project domino-staging-dc209 --non-interactive --force
 
   deploy-production:
     name: Deploy to Production
@@ -219,4 +219,4 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PRODUCTION }}
 
       - name: Deploy Firestore rules and indexes (production)
-        run: npx firebase-tools@13 deploy --only firestore:rules,firestore:indexes --project domino-34fce --non-interactive --force
+        run: npx firebase-tools@14.24.1 deploy --only firestore:rules,firestore:indexes --project domino-34fce --non-interactive --force
