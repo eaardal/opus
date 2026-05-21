@@ -15,7 +15,7 @@ import {
   deleteGroup as deleteGroupOp,
   deleteTaskCascading,
   moveGroupWithTasks as moveGroupWithTasksOp,
-  removeConnection,
+  removeConnection as removeConnectionOp,
   toggleGroupLock as toggleGroupLockOp,
   updateGroup as updateGroupOp,
   updateTask as updateTaskOp,
@@ -27,25 +27,26 @@ import {
   serializeSelection,
 } from "../../domain/tasks/clipboard";
 import { getCategories, getStatuses } from "./theme";
-import { useHistory } from "../../hooks/useHistory";
+import { useHistory, type CanvasState } from "../../hooks/useHistory";
 import { useDragSelection } from "../../hooks/useDragSelection";
 import { useGlobalKeyboardShortcuts } from "../../hooks/useGlobalKeyboardShortcuts";
 import { useResizableSidebar } from "../../hooks/useResizableSidebar";
-import type { PersonTaskQueue, ProjectData, ProjectState } from "../../domain/workspace/types";
-import { createDefaultProject } from "../../domain/workspace/projectState";
+import type { PersonTaskQueue } from "../../domain/workspace/types";
 import type { Person } from "../../domain/teams/types";
+import { workspaceService } from "../../services/container";
+import { loadViewBox, saveViewBox } from "../../lib/viewBox";
+import type { ProjectSummary } from "../../services/workspace.types";
 
-const _defaultProject = createDefaultProject();
+const DEFAULT_VIEW_BOX: ViewBox = { x: 0, y: 0, width: 1200, height: 800 };
 
 interface AppProps {
-  initialProject?: ProjectData;
-  onStateChange?: (state: ProjectState) => void;
-  projects?: ProjectData[];
+  workspaceId: string;
+  projectId: string;
+  projects?: ProjectSummary[];
   activeProjectId?: string;
   onSwitchProject?: (id: string) => void;
   onOpenProjectAdmin?: () => void;
   people?: Person[];
-  workspaceId?: string;
 }
 
 export interface TaskMgtAppHandle {
@@ -56,26 +57,21 @@ export interface TaskMgtAppHandle {
 
 const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   {
-    initialProject = _defaultProject,
-    onStateChange = () => {},
-    projects = [_defaultProject],
-    activeProjectId = _defaultProject.id,
+    workspaceId,
+    projectId,
+    projects = [],
+    activeProjectId = "",
     onSwitchProject = () => {},
     onOpenProjectAdmin = () => {},
     people = [],
-    workspaceId = "",
   },
   ref,
 ) {
   const { canEdit } = useWorkspaceRole();
-  const history = useHistory({
-    tasks: initialProject.tasks,
-    connections: initialProject.connections,
-    groups: initialProject.groups,
-  });
-  // When the user has no edit permission, every mutation funnels through these
-  // and becomes a no-op. This is the catch-all that protects the graph state
-  // even if a UI affordance was missed in the visual gating.
+
+  const [loadStatus, setLoadStatus] = useState<"loading" | "ready">("loading");
+
+  const history = useHistory({ tasks: [], connections: [], groups: [] });
   const push: typeof history.push = canEdit ? history.push : () => {};
   const replace: typeof history.replace = canEdit ? history.replace : () => {};
   const undo: typeof history.undo = canEdit ? history.undo : () => {};
@@ -85,42 +81,106 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const presentRef = useRef(present);
   presentRef.current = present;
 
-  const [viewBox, setViewBox] = useState<ViewBox>(initialProject.viewBox);
-  const [taskQueues] = useState<PersonTaskQueue[]>(initialProject.taskQueues ?? []);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [viewBox, setViewBox] = useState<ViewBox>(loadViewBox(projectId) ?? DEFAULT_VIEW_BOX);
+  const [taskQueues, setTaskQueues] = useState<PersonTaskQueue[]>([]);
 
-  // Report live state to the workspace owner. Compare against the previous
-  // snapshot rather than a one-shot "first render" flag — React 18 StrictMode
-  // double-invokes effects on mount (setup → cleanup → setup), and a flag-based
-  // guard would let the second invocation fire onStateChange with the initial
-  // state and falsely mark the workspace as having unsaved changes.
-  const onStateChangeRef = useRef(onStateChange);
-  onStateChangeRef.current = onStateChange;
-  const prevStateRef = useRef<ProjectState | null>(null);
+  // Ref to detect whether an undo/redo just happened so we can batch-write.
+  const pendingUndoRedoRef = useRef<CanvasState | null>(null);
+
+  // ── Remote reconciliation ──────────────────────────────────────────────────
+
+  // Use a ref for isDragging so it can be read from the subscription callback
+  // without being listed as an effect dependency.
+  const isDraggingRef = useRef(false);
+
   useEffect(() => {
-    const current: ProjectState = { tasks, connections, groups, viewBox, taskQueues };
-    const prev = prevStateRef.current;
-    prevStateRef.current = current;
-    if (prev === null) return;
-    if (
-      prev.tasks === current.tasks &&
-      prev.connections === current.connections &&
-      prev.groups === current.groups &&
-      prev.viewBox === current.viewBox &&
-      prev.taskQueues === current.taskQueues
-    ) {
-      return;
-    }
-    onStateChangeRef.current(current);
-  }, [tasks, connections, groups, viewBox, taskQueues]);
+    const unsub = workspaceService.subscribeProjectContent(
+      workspaceId,
+      projectId,
+      (content, hasPendingWrites) => {
+        if (!content) return;
+
+        if (loadStatus === "loading") {
+          history.reset({
+            tasks: content.tasks,
+            connections: content.projectDoc.connections,
+            groups: content.groups,
+          });
+          setTheme(content.projectDoc.theme);
+          setTaskQueues(content.projectDoc.taskQueues);
+          setLoadStatus("ready");
+          return;
+        }
+
+        // Remote update from another client — apply only when safe.
+        // TODO: also guard against mid-typing edge case (blur-on-write means
+        // the user's in-progress text isn't in Firestore yet, so hasPendingWrites
+        // won't cover it — accepted risk for now, see architecture session notes).
+        if (hasPendingWrites || isDraggingRef.current) return;
+
+        history.replace({
+          tasks: content.tasks,
+          connections: content.projectDoc.connections,
+          groups: content.groups,
+        });
+        setTheme(content.projectDoc.theme);
+        setTaskQueues(content.projectDoc.taskQueues);
+      },
+    );
+    return unsub;
+    // workspaceId and projectId are stable for the lifetime of this component
+    // (key-based remount on change), so we intentionally exclude them here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Undo / redo Firestore batch sync ──────────────────────────────────────
+
+  const wrappedUndo = useCallback(() => {
+    pendingUndoRedoRef.current = presentRef.current;
+    undo();
+  }, [undo]);
+
+  const wrappedRedo = useCallback(() => {
+    pendingUndoRedoRef.current = presentRef.current;
+    redo();
+  }, [redo]);
+
+  useEffect(() => {
+    if (!pendingUndoRedoRef.current) return;
+    const before = pendingUndoRedoRef.current;
+    pendingUndoRedoRef.current = null;
+    const after = present;
+
+    const deletedTaskIds = before.tasks
+      .filter((t) => !after.tasks.some((nt) => nt.id === t.id))
+      .map((t) => t.id);
+    const deletedGroupIds = before.groups
+      .filter((g) => !after.groups.some((ng) => ng.id === g.id))
+      .map((g) => g.id);
+
+    workspaceService
+      .syncProjectState(workspaceId, projectId, after, deletedTaskIds, deletedGroupIds)
+      .catch(console.error);
+  }, [present, workspaceId, projectId]);
+
+  // ── ViewBox persistence (localStorage) ────────────────────────────────────
+
+  const handleViewBoxChange = useCallback(
+    (vb: ViewBox) => {
+      setViewBox(vb);
+      saveViewBox(projectId, vb);
+    },
+    [projectId],
+  );
+
   const categories = getCategories();
   const statuses = getStatuses();
+
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
 
   const canvasRef = useRef<CanvasHandle>(null);
@@ -132,19 +192,61 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     startResize: handleResizeMouseDown,
   } = useResizableSidebar({ initialWidth: 350, minWidth: 200, maxWidth: 600 });
 
+  // ── Drag-complete and connection callbacks (Firestore writes) ────────────────
+
+  const handleConnectionAdded = useCallback(
+    (from: string, to: string) => {
+      workspaceService.addConnection(workspaceId, projectId, { from, to }).catch(console.error);
+    },
+    [workspaceId, projectId],
+  );
+
+  const handleDragComplete = useCallback(
+    (movedTaskIds: string[], movedGroupIds: string[]) => {
+      isDraggingRef.current = false;
+      const state = presentRef.current;
+      movedTaskIds.forEach((id) => {
+        const task = state.tasks.find((t) => t.id === id);
+        if (task) {
+          workspaceService
+            .updateTask(workspaceId, projectId, id, { x: task.x, y: task.y })
+            .catch(console.error);
+        }
+      });
+      movedGroupIds.forEach((id) => {
+        const group = state.groups.find((g) => g.id === id);
+        if (group) {
+          workspaceService
+            .updateGroup(workspaceId, projectId, id, {
+              x: group.x,
+              y: group.y,
+              width: group.width,
+              height: group.height,
+            })
+            .catch(console.error);
+        }
+      });
+    },
+    [workspaceId, projectId],
+  );
+
   const dragSelection = useDragSelection({
     present,
     push,
     replace,
     getSvgCoords: (e) => canvasRef.current?.getSvgCoords(e) ?? { x: 0, y: 0 },
     onClearHighlight: () => setHighlightedTaskId(null),
+    onDragComplete: handleDragComplete,
+    onConnectionAdded: handleConnectionAdded,
   });
+
   const {
     draggingNode,
     connecting,
     selection,
     selectedNodes,
     selectedGroups,
+    isDragging,
     handleNodeMouseDown,
     handleGroupMouseDown,
     handleCanvasMouseDown,
@@ -154,11 +256,20 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     selectElements,
   } = dragSelection;
 
+  // Keep the ref in sync for the subscription callback to read.
+  isDraggingRef.current = isDragging;
+
   useImperativeHandle(ref, () => ({
     exportAsPng: () => canvasRef.current?.exportAsPng(),
     openSettings: () => canvasRef.current?.openSettings(),
     openHelp: () => canvasRef.current?.openHelp(),
   }));
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
 
   const handleDeleteSelected = useCallback(async () => {
     if (selectedNodes.size === 0 && selectedGroups.size === 0) return;
@@ -177,16 +288,22 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     });
 
     if (confirmed) {
-      push(
-        deleteEntities(
-          { tasks, connections, groups },
-          new Set(selectedTaskList.map((t) => t.id)),
-          new Set(selectedGroupList.map((g) => g.id)),
-        ),
-      );
+      const taskIds = new Set(selectedTaskList.map((t) => t.id));
+      const groupIds = new Set(selectedGroupList.map((g) => g.id));
+      const next = deleteEntities({ tasks, connections, groups }, taskIds, groupIds);
+      push(next);
       clearSelection();
+      workspaceService
+        .deleteManyEntities(
+          workspaceId,
+          projectId,
+          Array.from(taskIds),
+          Array.from(groupIds),
+          next.connections,
+        )
+        .catch(console.error);
     }
-  }, [selectedNodes, selectedGroups, tasks, groups, connections, push, clearSelection]);
+  }, [selectedNodes, selectedGroups, tasks, groups, connections, push, clearSelection, workspaceId, projectId]);
 
   const handleCopy = useCallback(async () => {
     if (selectedNodes.size === 0 && selectedGroups.size === 0) return;
@@ -265,8 +382,8 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   );
 
   const { shiftPressed } = useGlobalKeyboardShortcuts({
-    onUndo: undo,
-    onRedo: redo,
+    onUndo: wrappedUndo,
+    onRedo: wrappedRedo,
     onEscape: clearSelection,
     onDelete: handleDeleteSelected,
     onCopy: handleCopy,
@@ -296,16 +413,20 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     const newTask = buildNewTask(viewBox.x + 50, viewBox.y + 50);
     push({ tasks: addTaskOp(present.tasks, newTask), connections, groups });
     setFocusTaskId(newTask.id);
+    workspaceService.addTask(workspaceId, projectId, newTask).catch(console.error);
   };
 
   const addTaskAt = (x: number, y: number) => {
     const newTask = buildNewTask(x, y);
     push({ tasks: addTaskOp(present.tasks, newTask), connections, groups });
     setFocusTaskId(newTask.id);
+    workspaceService.addTask(workspaceId, projectId, newTask).catch(console.error);
   };
 
   const addGroupAt = (x: number, y: number) => {
-    push({ tasks, connections, groups: addGroupOp(groups, buildNewGroup(x, y)) });
+    const newGroup = buildNewGroup(x, y);
+    push({ tasks, connections, groups: addGroupOp(groups, newGroup) });
+    workspaceService.addGroup(workspaceId, projectId, newGroup).catch(console.error);
   };
 
   const handleTaskKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -317,16 +438,19 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
 
   const updateTaskText = (id: string, text: string) => {
     push({ tasks: updateTaskOp(tasks, id, { text }), connections, groups });
+    workspaceService.updateTask(workspaceId, projectId, id, { text }).catch(console.error);
   };
 
   const setTaskCategory = (id: string, category: string | undefined) => {
     push({ tasks: updateTaskOp(tasks, id, { category }), connections, groups });
     setOpenMenuId(null);
+    workspaceService.updateTask(workspaceId, projectId, id, { category }).catch(console.error);
   };
 
   const setTaskStatus = (id: string, status: TaskStatus) => {
     push({ tasks: updateTaskOp(tasks, id, { status }), connections, groups });
     setOpenMenuId(null);
+    workspaceService.updateTask(workspaceId, projectId, id, { status }).catch(console.error);
   };
 
   const deleteTask = async (id: string) => {
@@ -340,15 +464,16 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     if (confirmed) {
       const next = deleteTaskCascading(tasks, connections, id);
       push({ tasks: next.tasks, connections: next.connections, groups });
+      workspaceService
+        .deleteTask(workspaceId, projectId, id, next.connections)
+        .catch(console.error);
     }
   };
 
   const addGroup = () => {
-    push({
-      tasks,
-      connections,
-      groups: addGroupOp(groups, buildNewGroup(viewBox.x + 20, viewBox.y + 20)),
-    });
+    const newGroup = buildNewGroup(viewBox.x + 20, viewBox.y + 20);
+    push({ tasks, connections, groups: addGroupOp(groups, newGroup) });
+    workspaceService.addGroup(workspaceId, projectId, newGroup).catch(console.error);
   };
 
   const handleGroupMoveStart = useCallback(() => {
@@ -383,16 +508,41 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     [replace],
   );
 
+  const handleGroupMoveEnd = useCallback(
+    (id: string) => {
+      const group = presentRef.current.groups.find((g) => g.id === id);
+      if (group) {
+        workspaceService
+          .updateGroup(workspaceId, projectId, id, { x: group.x, y: group.y })
+          .catch(console.error);
+      }
+    },
+    [workspaceId, projectId],
+  );
+
   const resizeGroup = useCallback(
     (id: string, x: number, y: number, width: number, height: number) => {
       const { tasks: t, connections: c, groups: g } = presentRef.current;
-      replace({
-        tasks: t,
-        connections: c,
-        groups: updateGroupOp(g, id, { x, y, width, height }),
-      });
+      replace({ tasks: t, connections: c, groups: updateGroupOp(g, id, { x, y, width, height }) });
     },
     [replace],
+  );
+
+  const handleGroupResizeEnd = useCallback(
+    (id: string) => {
+      const group = presentRef.current.groups.find((g) => g.id === id);
+      if (group) {
+        workspaceService
+          .updateGroup(workspaceId, projectId, id, {
+            x: group.x,
+            y: group.y,
+            width: group.width,
+            height: group.height,
+          })
+          .catch(console.error);
+      }
+    },
+    [workspaceId, projectId],
   );
 
   const deleteGroup = async (id: string) => {
@@ -405,11 +555,19 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     });
     if (confirmed) {
       push({ tasks, connections, groups: deleteGroupOp(groups, id) });
+      workspaceService.deleteGroup(workspaceId, projectId, id).catch(console.error);
     }
   };
 
   const toggleGroupLock = (id: string) => {
-    push({ tasks, connections, groups: toggleGroupLockOp(groups, id) });
+    const next = toggleGroupLockOp(groups, id);
+    push({ tasks, connections, groups: next });
+    const group = next.find((g) => g.id === id);
+    if (group) {
+      workspaceService
+        .updateGroup(workspaceId, projectId, id, { locked: group.locked })
+        .catch(console.error);
+    }
   };
 
   const assignPeople = (taskId: string, personIds: string[]) => {
@@ -418,18 +576,28 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
       connections,
       groups,
     });
+    workspaceService
+      .updateTask(workspaceId, projectId, taskId, { assignedPersonIds: personIds })
+      .catch(console.error);
   };
 
   const assignPersonAndSetInProgress = (taskId: string, personId: string) => {
-    push({
-      tasks: assignPersonInProgress(tasks, taskId, personId),
-      connections,
-      groups,
-    });
+    const nextTasks = assignPersonInProgress(tasks, taskId, personId);
+    push({ tasks: nextTasks, connections, groups });
+    const updated = nextTasks.find((t) => t.id === taskId);
+    if (updated) {
+      workspaceService
+        .updateTask(workspaceId, projectId, taskId, {
+          assignedPersonIds: updated.assignedPersonIds,
+          status: updated.status,
+        })
+        .catch(console.error);
+    }
   };
 
   const updateGroupTitle = (id: string, title: string) => {
     push({ tasks, connections, groups: updateGroupOp(groups, id, { title }) });
+    workspaceService.updateGroup(workspaceId, projectId, id, { title }).catch(console.error);
   };
 
   const zoomToGroup = (id: string) => {
@@ -438,7 +606,8 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     const svg = canvasRef.current?.getSvgElement();
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    setViewBox(zoomViewBoxToGroup(group, { width: rect.width, height: rect.height }, 80));
+    const newVb = zoomViewBoxToGroup(group, { width: rect.width, height: rect.height }, 80);
+    handleViewBoxChange(newVb);
   };
 
   const handleNodeClick = (taskId: string) => {
@@ -451,14 +620,28 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
 
   const handleRemoveConnection = (e: React.MouseEvent, from: string, to: string) => {
     if (e.shiftKey) {
-      push({ tasks, connections: removeConnection(connections, from, to), groups });
+      const next = removeConnectionOp(connections, from, to);
+      push({ tasks, connections: next, groups });
+      workspaceService.removeConnection(workspaceId, projectId, { from, to }).catch(console.error);
     }
+  };
+
+  const handleToggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    workspaceService
+      .updateProjectMeta(workspaceId, projectId, { theme: newTheme })
+      .catch(console.error);
   };
 
   const registerTaskItemRef = useCallback((id: string, el: HTMLDivElement | null) => {
     if (el) taskItemRefs.current.set(id, el);
     else taskItemRefs.current.delete(id);
   }, []);
+
+  if (loadStatus === "loading") {
+    return <div className="canvas-loading">Loading project…</div>;
+  }
 
   return (
     <div id="App" className={isResizing ? "resizing" : ""}>
@@ -524,8 +707,10 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onGroupMove={moveGroup}
         onGroupMoveWithTasks={moveGroupAndTasks}
         onGroupMoveStart={handleGroupMoveStart}
+        onGroupMoveEnd={handleGroupMoveEnd}
         onGroupResize={resizeGroup}
         onGroupResizeStart={handleGroupResizeStart}
+        onGroupResizeEnd={handleGroupResizeEnd}
         onGroupTitleChange={updateGroupTitle}
         onGroupZoomTo={zoomToGroup}
         onGroupToggleLock={toggleGroupLock}
@@ -534,7 +719,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onAssignPeople={assignPeople}
         onAssignPersonAndSetInProgress={assignPersonAndSetInProgress}
         viewBox={viewBox}
-        onViewBoxChange={setViewBox}
+        onViewBoxChange={handleViewBoxChange}
         onSetTaskStatus={setTaskStatus}
         onSetTaskCategory={setTaskCategory}
         onDuplicateTask={handleDuplicateTask}
@@ -545,8 +730,8 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onCreateGroupAt={addGroupAt}
         canUndo={canUndo}
         canRedo={canRedo}
-        onUndo={undo}
-        onRedo={redo}
+        onUndo={wrappedUndo}
+        onRedo={wrappedRedo}
         onHighlightTask={setHighlightedTaskId}
       />
     </div>

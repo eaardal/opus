@@ -41,8 +41,10 @@ interface GroupRectProps {
   onMove: (id: string, x: number, y: number) => void;
   onMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
   onMoveStart: () => void;
+  onMoveEnd: (id: string) => void;
   onResize: (id: string, x: number, y: number, width: number, height: number) => void;
   onResizeStart: () => void;
+  onResizeEnd: (id: string) => void;
   onTitleChange: (id: string, title: string) => void;
   onZoomTo: (id: string) => void;
   onToggleLock: (id: string) => void;
@@ -62,8 +64,10 @@ export function GroupRect({
   onMove,
   onMoveWithTasks,
   onMoveStart,
+  onMoveEnd,
   onResize,
   onResizeStart,
+  onResizeEnd,
   onTitleChange,
   onZoomTo,
   onToggleLock,
@@ -133,6 +137,7 @@ export function GroupRect({
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      onMoveEnd(group.id);
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -194,6 +199,7 @@ export function GroupRect({
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      onResizeEnd(group.id);
     };
 
     document.addEventListener("mousemove", handleMouseMove);

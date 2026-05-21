@@ -73,8 +73,10 @@ interface CanvasProps {
   onGroupMove: (id: string, x: number, y: number) => void;
   onGroupMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
   onGroupMoveStart: () => void;
+  onGroupMoveEnd: (id: string) => void;
   onGroupResize: (id: string, x: number, y: number, width: number, height: number) => void;
   onGroupResizeStart: () => void;
+  onGroupResizeEnd: (id: string) => void;
   onGroupTitleChange: (id: string, title: string) => void;
   onGroupZoomTo: (id: string) => void;
   onGroupToggleLock: (id: string) => void;
@@ -125,8 +127,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupMove,
     onGroupMoveWithTasks,
     onGroupMoveStart,
+    onGroupMoveEnd,
     onGroupResize,
     onGroupResizeStart,
+    onGroupResizeEnd,
     onGroupTitleChange,
     onGroupZoomTo,
     onGroupToggleLock,
@@ -510,8 +514,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onMove={onGroupMove}
             onMoveWithTasks={onGroupMoveWithTasks}
             onMoveStart={onGroupMoveStart}
+            onMoveEnd={onGroupMoveEnd}
             onResize={onGroupResize}
             onResizeStart={onGroupResizeStart}
+            onResizeEnd={onGroupResizeEnd}
             onTitleChange={onGroupTitleChange}
             onZoomTo={onGroupZoomTo}
             onToggleLock={onGroupToggleLock}

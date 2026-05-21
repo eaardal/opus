@@ -95,6 +95,56 @@ service cloud.firestore {
 
       // Delete: owners only.
       allow delete: if isAllowedUser() && isOwner();
+
+      // ── Projects subcollection ──────────────────────────────────────────────
+      match /projects/{projectId} {
+        allow get, list: if isAllowedUser() && (
+          ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
+            && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
+          || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
+        );
+        allow create, update, delete: if isAllowedUser() && canEditContent();
+
+        // ── Tasks subcollection ───────────────────────────────────────────────
+        match /tasks/{taskId} {
+          allow get, list: if isAllowedUser() && (
+            ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
+              && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
+            || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
+          );
+          allow create, update, delete: if isAllowedUser() && canEditContent();
+        }
+
+        // ── Groups subcollection ──────────────────────────────────────────────
+        match /groups/{groupId} {
+          allow get, list: if isAllowedUser() && (
+            ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
+              && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
+            || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
+          );
+          allow create, update, delete: if isAllowedUser() && canEditContent();
+        }
+      }
+
+      // ── People subcollection ────────────────────────────────────────────────
+      match /people/{personId} {
+        allow get, list: if isAllowedUser() && (
+          ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
+            && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
+          || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
+        );
+        allow create, update, delete: if isAllowedUser() && canEditContent();
+      }
+
+      // ── Teams subcollection ─────────────────────────────────────────────────
+      match /teams/{teamId} {
+        allow get, list: if isAllowedUser() && (
+          ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
+            && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
+          || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
+        );
+        allow create, update, delete: if isAllowedUser() && canEditContent();
+      }
     }
 
     // Default deny for anything else.

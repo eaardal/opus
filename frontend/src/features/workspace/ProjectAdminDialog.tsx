@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import "./ProjectAdminDialog.css";
-import type { ProjectData } from "../../domain/workspace/types";
+import type { ProjectSummary } from "../../services/workspace.types";
 import { useWorkspaceRole } from "./WorkspaceRoleContext";
 
 interface ProjectAdminDialogProps {
-  projects: ProjectData[];
+  projects: ProjectSummary[];
   activeProjectId: string;
   onAdd: () => void;
   onRename: (id: string, name: string) => void;
@@ -41,7 +41,7 @@ export function ProjectAdminDialog({
     }
   }, [editingId]);
 
-  const startEdit = (project: ProjectData) => {
+  const startEdit = (project: ProjectSummary) => {
     if (!canEdit) return;
     setEditingId(project.id);
     setEditValue(project.name);

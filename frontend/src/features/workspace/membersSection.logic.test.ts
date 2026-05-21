@@ -6,9 +6,6 @@ import { buildMemberRows, filterCandidates } from "./membersSection.logic";
 const baseDoc = (overrides: Partial<WorkspaceDocument> = {}): WorkspaceDocument => ({
   ownerId: "owner-uid",
   name: "WS",
-  projects: [],
-  people: [],
-  teams: [],
   updatedAt: new Date(),
   ...overrides,
 });

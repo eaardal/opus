@@ -40,6 +40,17 @@ interface UseDragSelectionArgs {
   getSvgCoords: (e: React.MouseEvent) => { x: number; y: number };
   /** Clear the "highlighted task" state in the parent (called on canvas click). */
   onClearHighlight: () => void;
+  /**
+   * Called when a node or selection drag completes (mouse up). Receives the
+   * IDs of all tasks and groups whose positions changed during the drag.
+   * Used to fire Firestore writes only at the end of a drag, not per-tick.
+   */
+  onDragComplete?: (movedTaskIds: string[], movedGroupIds: string[]) => void;
+  /**
+   * Called when a new connection edge is successfully created via shift-drag.
+   * Used to fire a Firestore write for the new connection.
+   */
+  onConnectionAdded?: (from: string, to: string) => void;
 }
 
 export interface UseDragSelectionResult {
@@ -48,6 +59,8 @@ export interface UseDragSelectionResult {
   selection: SelectionRect | null;
   selectedNodes: Set<string>;
   selectedGroups: Set<string>;
+  /** True while any node or selection drag is in progress. */
+  isDragging: boolean;
   handleNodeMouseDown: (e: React.MouseEvent, taskId: string) => void;
   handleGroupMouseDown: (e: React.MouseEvent, groupId: string) => void;
   handleCanvasMouseDown: (e: React.MouseEvent, svgEl: SVGSVGElement | null) => void;
@@ -66,6 +79,8 @@ export function useDragSelection({
   replace,
   getSvgCoords,
   onClearHighlight,
+  onDragComplete,
+  onConnectionAdded,
 }: UseDragSelectionArgs): UseDragSelectionResult {
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<ConnectingState | null>(null);
@@ -74,15 +89,22 @@ export function useDragSelection({
   const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
 
-  // Refs let the handlers read the latest values without listing them in
-  // useCallback dependency arrays (which would cause re-binding on every
-  // render and detach event listeners mid-drag).
   const presentRef = useRef(present);
   presentRef.current = present;
   const selectedNodesRef = useRef(selectedNodes);
   selectedNodesRef.current = selectedNodes;
   const selectedGroupsRef = useRef(selectedGroups);
   selectedGroupsRef.current = selectedGroups;
+  const draggingNodeRef = useRef(draggingNode);
+  draggingNodeRef.current = draggingNode;
+  const draggingSelectionRef = useRef(draggingSelection);
+  draggingSelectionRef.current = draggingSelection;
+  const onDragCompleteRef = useRef(onDragComplete);
+  onDragCompleteRef.current = onDragComplete;
+  const onConnectionAddedRef = useRef(onConnectionAdded);
+  onConnectionAddedRef.current = onConnectionAdded;
+
+  const isDragging = draggingNode !== null || draggingSelection !== null;
 
   const startSelectionDrag = useCallback((coords: { x: number; y: number }) => {
     const { tasks, groups } = presentRef.current;
@@ -225,6 +247,7 @@ export function useDragSelection({
               connections: nextConnections,
               groups: current.groups,
             });
+            onConnectionAddedRef.current?.(connecting.from, targetTask.id);
           }
         }
       }
@@ -238,6 +261,18 @@ export function useDragSelection({
         });
         setSelectedNodes(taskIds);
         setSelectedGroups(groupIds);
+      }
+
+      // Fire drag-complete callback with IDs of moved entities.
+      const activeDraggingNode = draggingNodeRef.current;
+      const activeDraggingSelection = draggingSelectionRef.current;
+      if (activeDraggingNode) {
+        onDragCompleteRef.current?.([activeDraggingNode], []);
+      } else if (activeDraggingSelection) {
+        onDragCompleteRef.current?.(
+          Array.from(activeDraggingSelection.nodePositions.keys()),
+          Array.from(activeDraggingSelection.groupPositions.keys()),
+        );
       }
 
       setDraggingNode(null);
@@ -271,6 +306,7 @@ export function useDragSelection({
     selection,
     selectedNodes,
     selectedGroups,
+    isDragging,
     handleNodeMouseDown,
     handleGroupMouseDown,
     handleCanvasMouseDown,

@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Settings } from "lucide-react";
 import "./ProjectSelector.css";
-import type { ProjectData } from "../../domain/workspace/types";
+import type { ProjectSummary } from "../../services/workspace.types";
 
 interface ProjectSelectorProps {
-  projects: ProjectData[];
+  projects: ProjectSummary[];
   activeProjectId: string;
   onSwitch: (id: string) => void;
   onOpenAdmin: () => void;

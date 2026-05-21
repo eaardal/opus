@@ -12,34 +12,74 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
 } from "firebase/firestore";
 import type {
+  ProjectContent,
+  ProjectDocument,
+  ProjectSummary,
   Role,
   WorkspaceDocument,
   WorkspaceMember,
   WorkspaceService,
   WorkspaceSummary,
 } from "../workspace.types";
+import type { Task, Group, Connection } from "../../domain/tasks/types";
+import type { Person, Team } from "../../domain/teams/types";
 import { firebaseAuth, firestore } from "./client";
 
-const WORKSPACES_COLLECTION = "workspaces";
+// ── Collection / document path helpers ────────────────────────────────────────
+
+const WORKSPACES = "workspaces";
+
+function workspacesCol() {
+  return collection(firestore, WORKSPACES);
+}
+function workspaceDoc(id: string) {
+  return doc(firestore, WORKSPACES, id);
+}
+function projectsCol(workspaceId: string) {
+  return collection(firestore, WORKSPACES, workspaceId, "projects");
+}
+function projectDoc(workspaceId: string, projectId: string) {
+  return doc(firestore, WORKSPACES, workspaceId, "projects", projectId);
+}
+function tasksCol(workspaceId: string, projectId: string) {
+  return collection(firestore, WORKSPACES, workspaceId, "projects", projectId, "tasks");
+}
+function taskDoc(workspaceId: string, projectId: string, taskId: string) {
+  return doc(firestore, WORKSPACES, workspaceId, "projects", projectId, "tasks", taskId);
+}
+function groupsCol(workspaceId: string, projectId: string) {
+  return collection(firestore, WORKSPACES, workspaceId, "projects", projectId, "groups");
+}
+function groupDoc(workspaceId: string, projectId: string, groupId: string) {
+  return doc(firestore, WORKSPACES, workspaceId, "projects", projectId, "groups", groupId);
+}
+function peopleCol(workspaceId: string) {
+  return collection(firestore, WORKSPACES, workspaceId, "people");
+}
+function personDoc(workspaceId: string, personId: string) {
+  return doc(firestore, WORKSPACES, workspaceId, "people", personId);
+}
+function teamsCol(workspaceId: string) {
+  return collection(firestore, WORKSPACES, workspaceId, "teams");
+}
+function teamDoc(workspaceId: string, teamId: string) {
+  return doc(firestore, WORKSPACES, workspaceId, "teams", teamId);
+}
+
+// ── Firestore → domain type converters ───────────────────────────────────────
 
 function requireUserEmail(): string {
   const email = firebaseAuth.currentUser?.email;
   if (!email) throw new Error("no signed-in user");
   return email;
-}
-
-function workspacesCollection() {
-  return collection(firestore, WORKSPACES_COLLECTION);
-}
-
-function workspaceDoc(id: string) {
-  return doc(firestore, WORKSPACES_COLLECTION, id);
 }
 
 function timestampToDate(value: unknown): Date {
@@ -58,13 +98,10 @@ function toMembers(raw: unknown): Record<string, WorkspaceMember> | undefined {
   return out;
 }
 
-function toDocument(data: DocumentData): WorkspaceDocument {
+function toWorkspaceDocument(data: DocumentData): WorkspaceDocument {
   return {
     ownerId: data.ownerId,
     name: data.name ?? "Untitled",
-    projects: data.projects ?? [],
-    people: data.people ?? [],
-    teams: data.teams ?? [],
     updatedAt: timestampToDate(data.updatedAt),
     members: toMembers(data.members),
     memberIds: Array.isArray(data.memberIds) ? [...data.memberIds] : undefined,
@@ -109,23 +146,70 @@ function dedupeSummariesById(summaries: WorkspaceSummary[]): WorkspaceSummary[] 
   return Array.from(seen.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
 
+function toProjectDocument(data: DocumentData): ProjectDocument {
+  return {
+    id: data.id ?? "",
+    name: data.name ?? "Untitled",
+    theme: data.theme ?? "dark",
+    taskQueues: Array.isArray(data.taskQueues) ? data.taskQueues : [],
+    connections: Array.isArray(data.connections) ? data.connections : [],
+  };
+}
+
+function toTask(data: DocumentData): Task {
+  return {
+    id: data.id,
+    text: data.text ?? "",
+    x: data.x ?? 0,
+    y: data.y ?? 0,
+    status: data.status ?? "pending",
+    category: data.category ?? undefined,
+    assignedPersonIds: Array.isArray(data.assignedPersonIds) ? data.assignedPersonIds : undefined,
+  };
+}
+
+function toGroup(data: DocumentData): Group {
+  return {
+    id: data.id,
+    title: data.title ?? "",
+    x: data.x ?? 0,
+    y: data.y ?? 0,
+    width: data.width ?? 200,
+    height: data.height ?? 150,
+    locked: data.locked ?? false,
+  };
+}
+
+function toPerson(data: DocumentData): Person {
+  return {
+    id: data.id,
+    name: data.name ?? "",
+    picture: data.picture ?? null,
+  };
+}
+
+function toTeam(data: DocumentData): Team {
+  return {
+    id: data.id,
+    name: data.name ?? "",
+    memberIds: Array.isArray(data.memberIds) ? data.memberIds : [],
+  };
+}
+
+// ── Service implementation ────────────────────────────────────────────────────
+
 export const firebaseWorkspaceService: WorkspaceService = {
+  // ── Workspace management ─────────────────────────────────────────────────
+
   async listMine() {
     const email = requireUserEmail();
     const memberSnap = await getDocs(
-      query(
-        workspacesCollection(),
-        where("memberIds", "array-contains", email),
-        orderBy("updatedAt", "desc"),
-      ),
+      query(workspacesCol(), where("memberIds", "array-contains", email), orderBy("updatedAt", "desc")),
     );
-    // Backstop for legacy workspaces that pre-date the members map. If the
-    // user once created a workspace and was later removed from its members,
-    // the rules will deny this query — log and continue with member results.
     let legacyDocs: WorkspaceSummary[] = [];
     try {
       const legacySnap = await getDocs(
-        query(workspacesCollection(), where("ownerId", "==", email), orderBy("updatedAt", "desc")),
+        query(workspacesCol(), where("ownerId", "==", email), orderBy("updatedAt", "desc")),
       );
       legacyDocs = legacySnap.docs.map((d) => toSummary(d.id, d.data(), email));
     } catch (err) {
@@ -139,7 +223,7 @@ export const firebaseWorkspaceService: WorkspaceService = {
 
   async create(name) {
     const email = requireUserEmail();
-    const ref = await addDoc(workspacesCollection(), {
+    const ref = await addDoc(workspacesCol(), {
       ownerId: email,
       name,
       projects: [],
@@ -153,28 +237,14 @@ export const firebaseWorkspaceService: WorkspaceService = {
     return ref.id;
   },
 
-  subscribe(id, callback, onError) {
-    return onSnapshot(
-      workspaceDoc(id),
-      (snap) => callback(snap.exists() ? toDocument(snap.data()) : null),
-      (err) => onError?.(err),
-    );
-  },
-
-  async saveContent(id, content) {
-    await updateDoc(workspaceDoc(id), {
-      projects: content.projects,
-      people: content.people,
-      teams: content.teams,
-      updatedAt: serverTimestamp(),
+  subscribe(id, callback) {
+    return onSnapshot(workspaceDoc(id), (snap) => {
+      callback(snap.exists() ? toWorkspaceDocument(snap.data()) : null);
     });
   },
 
   async rename(id, name) {
-    await updateDoc(workspaceDoc(id), {
-      name,
-      updatedAt: serverTimestamp(),
-    });
+    await updateDoc(workspaceDoc(id), { name, updatedAt: serverTimestamp() });
   },
 
   async remove(id) {
@@ -196,8 +266,6 @@ export const firebaseWorkspaceService: WorkspaceService = {
       });
       return;
     }
-    // Lazy upgrade: legacy doc with only `ownerId`. Seed members with the
-    // existing owner plus the new member.
     const ownerId = data.ownerId as string;
     await updateDoc(workspaceDoc(id), {
       members: {
@@ -222,5 +290,188 @@ export const firebaseWorkspaceService: WorkspaceService = {
       memberIds: arrayRemove(uid),
       updatedAt: serverTimestamp(),
     });
+  },
+
+  // ── Subscriptions ────────────────────────────────────────────────────────
+
+  subscribeProjects(id, callback) {
+    return onSnapshot(projectsCol(id), (snap) => {
+      const summaries: ProjectSummary[] = snap.docs.map((d) => ({
+        id: d.id,
+        name: d.data().name ?? "Untitled",
+      }));
+      callback(summaries);
+    });
+  },
+
+  subscribeProjectContent(id, projectId, callback) {
+    let projectDocData: ProjectDocument | null = null;
+    let tasks: Task[] | null = null;
+    let groups: Group[] | null = null;
+    const pendingWrites = { project: false, tasks: false, groups: false };
+
+    const hasPendingWrites = () =>
+      pendingWrites.project || pendingWrites.tasks || pendingWrites.groups;
+
+    const fire = () => {
+      if (!projectDocData || tasks === null || groups === null) return;
+      callback({ projectDoc: projectDocData, tasks, groups }, hasPendingWrites());
+    };
+
+    const unsubProject = onSnapshot(projectDoc(id, projectId), (snap) => {
+      pendingWrites.project = snap.metadata.hasPendingWrites;
+      projectDocData = snap.exists() ? toProjectDocument({ ...snap.data(), id: snap.id }) : null;
+      fire();
+    });
+
+    const unsubTasks = onSnapshot(tasksCol(id, projectId), (snap) => {
+      pendingWrites.tasks = snap.metadata.hasPendingWrites;
+      tasks = snap.docs.map((d) => toTask(d.data()));
+      fire();
+    });
+
+    const unsubGroups = onSnapshot(groupsCol(id, projectId), (snap) => {
+      pendingWrites.groups = snap.metadata.hasPendingWrites;
+      groups = snap.docs.map((d) => toGroup(d.data()));
+      fire();
+    });
+
+    return () => {
+      unsubProject();
+      unsubTasks();
+      unsubGroups();
+    };
+  },
+
+  subscribePeople(id, callback) {
+    return onSnapshot(peopleCol(id), (snap) => {
+      callback(snap.docs.map((d) => toPerson(d.data())));
+    });
+  },
+
+  subscribeTeams(id, callback) {
+    return onSnapshot(teamsCol(id), (snap) => {
+      callback(snap.docs.map((d) => toTeam(d.data())));
+    });
+  },
+
+  // ── Project writes ───────────────────────────────────────────────────────
+
+  async addProject(id, project) {
+    await setDoc(projectDoc(id, project.id), {
+      id: project.id,
+      name: project.name,
+      theme: project.theme,
+      taskQueues: project.taskQueues,
+      connections: project.connections,
+    });
+  },
+
+  async updateProjectMeta(id, projectId, changes) {
+    await updateDoc(projectDoc(id, projectId), changes);
+  },
+
+  async deleteProject(id, projectId) {
+    // Delete all tasks and groups in subcollections before deleting the project doc.
+    const batch = writeBatch(firestore);
+    const [taskSnap, groupSnap] = await Promise.all([
+      getDocs(tasksCol(id, projectId)),
+      getDocs(groupsCol(id, projectId)),
+    ]);
+    taskSnap.docs.forEach((d) => batch.delete(d.ref));
+    groupSnap.docs.forEach((d) => batch.delete(d.ref));
+    batch.delete(projectDoc(id, projectId));
+    await batch.commit();
+  },
+
+  // ── Task writes ──────────────────────────────────────────────────────────
+
+  async addTask(id, projectId, task) {
+    await setDoc(taskDoc(id, projectId, task.id), task);
+  },
+
+  async updateTask(id, projectId, taskId, changes) {
+    await updateDoc(taskDoc(id, projectId, taskId), changes);
+  },
+
+  async deleteTask(id, projectId, taskId, newConnections) {
+    const batch = writeBatch(firestore);
+    batch.delete(taskDoc(id, projectId, taskId));
+    batch.update(projectDoc(id, projectId), { connections: newConnections });
+    await batch.commit();
+  },
+
+  async deleteManyEntities(id, projectId, taskIds, groupIds, newConnections) {
+    const batch = writeBatch(firestore);
+    taskIds.forEach((tid) => batch.delete(taskDoc(id, projectId, tid)));
+    groupIds.forEach((gid) => batch.delete(groupDoc(id, projectId, gid)));
+    if (taskIds.length > 0) {
+      batch.update(projectDoc(id, projectId), { connections: newConnections });
+    }
+    await batch.commit();
+  },
+
+  // ── Group writes ─────────────────────────────────────────────────────────
+
+  async addGroup(id, projectId, group) {
+    await setDoc(groupDoc(id, projectId, group.id), group);
+  },
+
+  async updateGroup(id, projectId, groupId, changes) {
+    await updateDoc(groupDoc(id, projectId, groupId), changes);
+  },
+
+  async deleteGroup(id, projectId, groupId) {
+    await deleteDoc(groupDoc(id, projectId, groupId));
+  },
+
+  // ── Connection writes ────────────────────────────────────────────────────
+
+  async addConnection(id, projectId, connection) {
+    await updateDoc(projectDoc(id, projectId), { connections: arrayUnion(connection) });
+  },
+
+  async removeConnection(id, projectId, connection) {
+    await updateDoc(projectDoc(id, projectId), { connections: arrayRemove(connection) });
+  },
+
+  // ── Undo / redo full-state sync ──────────────────────────────────────────
+
+  async syncProjectState(id, projectId, state, deletedTaskIds, deletedGroupIds) {
+    const batch = writeBatch(firestore);
+    state.tasks.forEach((task) => batch.set(taskDoc(id, projectId, task.id), task));
+    state.groups.forEach((group) => batch.set(groupDoc(id, projectId, group.id), group));
+    deletedTaskIds.forEach((tid) => batch.delete(taskDoc(id, projectId, tid)));
+    deletedGroupIds.forEach((gid) => batch.delete(groupDoc(id, projectId, gid)));
+    batch.update(projectDoc(id, projectId), { connections: state.connections });
+    await batch.commit();
+  },
+
+  // ── People writes ────────────────────────────────────────────────────────
+
+  async addPerson(id, person) {
+    await setDoc(personDoc(id, person.id), person);
+  },
+
+  async updatePerson(id, personId, changes) {
+    await updateDoc(personDoc(id, personId), changes);
+  },
+
+  async deletePerson(id, personId) {
+    await deleteDoc(personDoc(id, personId));
+  },
+
+  // ── Team writes ──────────────────────────────────────────────────────────
+
+  async addTeam(id, team) {
+    await setDoc(teamDoc(id, team.id), team);
+  },
+
+  async updateTeam(id, teamId, changes) {
+    await updateDoc(teamDoc(id, teamId), changes);
+  },
+
+  async deleteTeam(id, teamId) {
+    await deleteDoc(teamDoc(id, teamId));
   },
 };

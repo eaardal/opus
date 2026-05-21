@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import "./App.css";
-import { Save, FolderOpen, ChevronsLeft, Menu } from "lucide-react";
+import { ChevronsLeft, Menu } from "lucide-react";
 import { authService, workspaceService } from "./services/container";
 import { useSelectedWorkspace } from "./features/workspace/SelectedWorkspaceProvider";
 import { useAuthUser } from "./features/auth/useAuthUser";
@@ -9,11 +9,6 @@ import { ChangelogModal } from "./ui/ChangelogModal";
 import { CHANGELOG } from "./generated/changelog";
 import TaskMgtApp, { type TaskMgtAppHandle } from "./features/tasks/TasksApp";
 import { TeamMgt } from "./features/teams/TeamsApp";
-import type { Person, Team } from "./domain/teams/types";
-import type { TeamMgtHandle } from "./features/teams/types";
-import type { ProjectData, ProjectState } from "./domain/workspace/types";
-import { createDefaultProject, extractProjectState } from "./domain/workspace/projectState";
-import { parseWorkspaceFile } from "./domain/workspace/parseWorkspaceFile";
 import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
 import { resolveRole } from "./domain/workspace/roles";
@@ -67,12 +62,11 @@ function App() {
     loadError,
     name: workspaceName,
     loadCount: workspaceLoadCount,
-    hydration,
+    projects,
+    people,
+    teams,
     latestDoc,
-  } = useWorkspaceLoader({
-    workspaceId,
-    subscribe: workspaceService.subscribe,
-  });
+  } = useWorkspaceLoader({ workspaceId, service: workspaceService });
 
   const role = useMemo(
     () => (currentUid ? resolveRole(latestDoc, currentUid) : null),
@@ -80,35 +74,34 @@ function App() {
   );
   const canEdit = role === "owner" || role === "editor";
 
-  const [projects, setProjects] = useState<ProjectData[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>("");
-  const [people, setPeople] = useState<Person[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [activeModule, setActiveModule] = useState<ActiveModule>("tasks");
   const [showProjectAdmin, setShowProjectAdmin] = useState(false);
-
-  // Bumped when in-memory state is replaced from a non-workspace source
-  // (currently: opening a legacy save file). Used in the child key so the
-  // task/team views remount with fresh internal state.
-  const [localReloadKey, setLocalReloadKey] = useState(0);
-
-  const teamMgtRef = useRef<TeamMgtHandle>(null);
-  const taskMgtRef = useRef<TaskMgtAppHandle>(null);
-  const currentProjectStateRef = useRef<ProjectState | null>(null);
-  const projectsRef = useRef(projects);
-  projectsRef.current = projects;
-  const activeProjectIdRef = useRef(activeProjectId);
-  activeProjectIdRef.current = activeProjectId;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [lastSeenVersion, setLastSeenVersion] = useState<string | null>(
     readLastSeenChangelogVersion,
   );
   const hasNewChangelog = lastSeenVersion !== (CHANGELOG[0]?.version ?? "");
+
+  const taskMgtRef = useRef<TaskMgtAppHandle>(null);
+  const menuWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Set initial active project when workspace loads or switches.
+  useEffect(() => {
+    if (workspaceLoadCount > 0 && projects.length > 0) {
+      setActiveProjectId((prev) => {
+        if (prev && projects.some((p) => p.id === prev)) return prev;
+        const storedId = workspaceId ? readLastActiveProjectId(workspaceId) : null;
+        const restored = storedId ? projects.find((p) => p.id === storedId) : null;
+        return restored ? restored.id : projects[0].id;
+      });
+    }
+  }, [workspaceLoadCount, projects, workspaceId]);
+
+  useEffect(() => {
+    if (loadStatus === "missing") select(null);
+  }, [loadStatus, select]);
 
   useEffect(() => {
     if (!appMenuOpen) return;
@@ -121,196 +114,58 @@ function App() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [appMenuOpen]);
 
-  // Apply the hook's hydration data to local editing state when a workspace loads.
-  useEffect(() => {
-    if (!hydration) return;
-    const storedId = workspaceId ? readLastActiveProjectId(workspaceId) : null;
-    const restored = storedId ? hydration.projects.find((p) => p.id === storedId) : null;
-    const initial = restored ?? hydration.projects[0];
-    currentProjectStateRef.current = extractProjectState(initial);
-    setProjects(hydration.projects);
-    setActiveProjectId(initial.id);
-    setPeople(hydration.people);
-    setTeams(hydration.teams);
-    setHasUnsavedChanges(false);
-  }, [hydration, workspaceId]);
-
-  // If the doc vanished (deleted elsewhere), drop to the picker.
-  useEffect(() => {
-    if (loadStatus === "missing") select(null);
-  }, [loadStatus, select]);
-
-  const activeProject = projects.find((p) => p.id === activeProjectId) ?? projects[0];
-
-  const handleProjectStateChange = useCallback((state: ProjectState) => {
-    currentProjectStateRef.current = state;
-    setHasUnsavedChanges(true);
-  }, []);
-
-  const getProjectsForSave = useCallback((): ProjectData[] => {
-    return projectsRef.current.map((p) =>
-      p.id === activeProjectIdRef.current && currentProjectStateRef.current
-        ? { ...p, ...currentProjectStateRef.current }
-        : p,
-    );
-  }, []);
-
-  const handleSave = useCallback(async () => {
-    if (!workspaceId || saving || !canEdit) return;
-    setSaving(true);
-    try {
-      await workspaceService.saveContent(workspaceId, {
-        projects: getProjectsForSave(),
-        people,
-        teams,
-      });
-      setHasUnsavedChanges(false);
-    } catch (err) {
-      console.error("Save failed:", err);
-    } finally {
-      setSaving(false);
-    }
-  }, [workspaceId, saving, canEdit, people, teams, getProjectsForSave]);
-
-  const handleOpenLegacyFile = useCallback(async () => {
-    if (!canEdit) return;
-    if (hasUnsavedChanges) {
-      const confirmed = await confirm({
-        title: "Unsaved changes",
-        message: "Opening a savefile will discard your unsaved local edits. Continue?",
-        confirmLabel: "Open",
-      });
-      if (!confirmed) return;
-    }
-    fileInputRef.current?.click();
-  }, [canEdit, hasUnsavedChanges]);
-
-  const handleLegacyFileSelected = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
-      if (!canEdit) return;
-      try {
-        const text = await file.text();
-        const parsed = parseWorkspaceFile(JSON.parse(text));
-        const loaded = parsed.projects.length > 0 ? parsed.projects : [createDefaultProject()];
-        currentProjectStateRef.current = extractProjectState(loaded[0]);
-        setProjects(loaded);
-        setActiveProjectId(loaded[0].id);
-        setPeople(parsed.people);
-        setTeams(parsed.teams);
-        setHasUnsavedChanges(true);
-        setLocalReloadKey((c) => c + 1);
-      } catch (err) {
-        console.error("Failed to open savefile:", err);
-        window.alert("Could not open file: the selected file is not a valid Opus savefile.");
-      }
-    },
-    [canEdit],
-  );
-
-  const handleBackToPicker = useCallback(async () => {
-    if (hasUnsavedChanges) {
-      const confirmed = await confirm({
-        title: "Unsaved changes",
-        message: "Leave this workspace without saving? Your local edits will be lost.",
-        confirmLabel: "Leave",
-      });
-      if (!confirmed) return;
-    }
+  const handleBackToPicker = useCallback(() => {
     select(null);
-  }, [hasUnsavedChanges, select]);
+  }, [select]);
 
   const handleSignOut = useCallback(async () => {
-    if (hasUnsavedChanges) {
-      const confirmed = await confirm({
-        title: "Unsaved changes",
-        message: "Sign out without saving? Your local edits will be lost.",
-        confirmLabel: "Sign out",
-      });
-      if (!confirmed) return;
-    }
     await authService.signOut();
-  }, [hasUnsavedChanges]);
+  }, []);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
+  const handleSwitchProject = useCallback((newId: string) => {
+    setActiveProjectId(newId);
+    if (workspaceId) writeLastActiveProjectId(workspaceId, newId);
+  }, [workspaceId]);
+
+  const handleAddProject = useCallback(async () => {
+    if (!canEdit || !workspaceId) return;
+    const project = {
+      id: crypto.randomUUID(),
+      name: "New Project",
+      theme: "dark" as const,
+      taskQueues: [],
+      connections: [],
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleSave]);
-
-  // Project management (intra-workspace projects, unchanged semantics).
-  const handleSwitchProject = useCallback(
-    (newId: string) => {
-      if (newId === activeProjectIdRef.current) return;
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === activeProjectIdRef.current && currentProjectStateRef.current
-            ? { ...p, ...currentProjectStateRef.current }
-            : p,
-        ),
-      );
-      const newProject = projectsRef.current.find((p) => p.id === newId);
-      if (newProject) currentProjectStateRef.current = extractProjectState(newProject);
-      if (workspaceId) writeLastActiveProjectId(workspaceId, newId);
-      setActiveProjectId(newId);
-    },
-    [workspaceId],
-  );
-
-  const handleAddProject = useCallback(() => {
-    if (!canEdit) return;
-    const fresh = createDefaultProject("New Project");
-    setProjects((prev) => [
-      ...prev.map((p) =>
-        p.id === activeProjectIdRef.current && currentProjectStateRef.current
-          ? { ...p, ...currentProjectStateRef.current }
-          : p,
-      ),
-      fresh,
-    ]);
-    currentProjectStateRef.current = extractProjectState(fresh);
-    setActiveProjectId(fresh.id);
-    setHasUnsavedChanges(true);
-  }, [canEdit]);
+    await workspaceService.addProject(workspaceId, project).catch(console.error);
+    setActiveProjectId(project.id);
+  }, [canEdit, workspaceId]);
 
   const handleRenameProject = useCallback(
     (id: string, name: string) => {
-      if (!canEdit) return;
-      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
-      setHasUnsavedChanges(true);
+      if (!canEdit || !workspaceId) return;
+      workspaceService.updateProjectMeta(workspaceId, id, { name }).catch(console.error);
     },
-    [canEdit],
+    [canEdit, workspaceId],
   );
 
   const handleDeleteProject = useCallback(
     async (id: string) => {
-      if (!canEdit) return;
-      const current = projectsRef.current;
-      if (current.length <= 1) return;
-      const project = current.find((p) => p.id === id);
+      if (!canEdit || !workspaceId) return;
+      if (projects.length <= 1) return;
+      const project = projects.find((p) => p.id === id);
       const confirmed = await confirm({
         title: "Delete Project",
         message: `Delete "${project?.name || "this project"}"? This cannot be undone.`,
         confirmLabel: "Delete",
       });
       if (!confirmed) return;
-      const remaining = current.filter((p) => p.id !== id);
-      setProjects(remaining);
-      if (activeProjectIdRef.current === id) {
-        const next = remaining[0];
-        currentProjectStateRef.current = extractProjectState(next);
-        setActiveProjectId(next.id);
+      await workspaceService.deleteProject(workspaceId, id).catch(console.error);
+      if (activeProjectId === id) {
+        const remaining = projects.filter((p) => p.id !== id);
+        if (remaining.length > 0) setActiveProjectId(remaining[0].id);
       }
-      setHasUnsavedChanges(true);
     },
-    [canEdit],
+    [canEdit, workspaceId, projects, activeProjectId],
   );
 
   if (loadStatus === "error") {
@@ -343,17 +198,9 @@ function App() {
     );
   }
 
-  if (loadStatus !== "ready" || !activeProject) {
+  if (loadStatus !== "ready" || !activeProjectId) {
     return <div className="app-loading">Loading workspace…</div>;
   }
-
-  const saveTitle = !canEdit
-    ? "View-only — sign-in lacks edit permission"
-    : saving
-      ? "Saving…"
-      : hasUnsavedChanges
-        ? "Save workspace"
-        : "Saved";
 
   return (
     <WorkspaceRoleProvider role={role}>
@@ -367,37 +214,10 @@ function App() {
             >
               <ChevronsLeft size={16} />
             </button>
-            <button
-              className="app-bar-icon-btn"
-              onClick={handleSave}
-              title={saveTitle}
-              disabled={saving || !canEdit}
-            >
-              <Save size={16} />
-            </button>
-            <button
-              className="app-bar-icon-btn"
-              onClick={handleOpenLegacyFile}
-              title={canEdit ? "Open legacy savefile" : "View-only"}
-              disabled={!canEdit}
-            >
-              <FolderOpen size={16} />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json,application/json"
-              style={{ display: "none" }}
-              onChange={handleLegacyFileSelected}
-            />
-            <div className="app-bar-filename">
-              <span className="app-bar-filename-label">Workspace</span>
-              <div className="app-bar-filename-row">
-                {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
-                {workspaceName}
-                {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
-              </div>
-            </div>
+            <span className="app-bar-filename">
+              {workspaceName}
+              {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
+            </span>
           </div>
           <nav className="app-bar-nav">
             <button
@@ -499,7 +319,7 @@ function App() {
                     className="app-bar-menu-item"
                     onClick={() => {
                       setAppMenuOpen(false);
-                      handleSignOut();
+                      void handleSignOut();
                     }}
                   >
                     Sign out
@@ -514,9 +334,9 @@ function App() {
           <ProjectAdminDialog
             projects={projects}
             activeProjectId={activeProjectId}
-            onAdd={handleAddProject}
+            onAdd={() => void handleAddProject()}
             onRename={handleRenameProject}
-            onDelete={handleDeleteProject}
+            onDelete={(id) => void handleDeleteProject(id)}
             onClose={() => setShowProjectAdmin(false)}
           />
         )}
@@ -537,25 +357,22 @@ function App() {
           <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
             <TaskMgtApp
               ref={taskMgtRef}
-              key={`${workspaceLoadCount}-${localReloadKey}-${activeProjectId}`}
-              initialProject={activeProject}
-              onStateChange={handleProjectStateChange}
+              key={`${workspaceLoadCount}-${activeProjectId}`}
+              workspaceId={workspaceId!}
+              projectId={activeProjectId}
               projects={projects}
               activeProjectId={activeProjectId}
               onSwitchProject={handleSwitchProject}
               onOpenProjectAdmin={() => setShowProjectAdmin(true)}
               people={people}
-              workspaceId={workspaceId ?? ""}
             />
           </div>
           <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
             <TeamMgt
-              key={`${workspaceLoadCount}-${localReloadKey}`}
-              ref={teamMgtRef}
+              key={workspaceLoadCount}
+              workspaceId={workspaceId!}
               initialPeople={people}
               initialTeams={teams}
-              onPeopleChange={setPeople}
-              onTeamsChange={setTeams}
             />
           </div>
         </div>

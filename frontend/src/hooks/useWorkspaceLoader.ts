@@ -1,18 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { createDefaultProject } from "../domain/workspace/projectState";
-import type { ProjectData } from "../domain/workspace/types";
 import type { Person, Team } from "../domain/teams/types";
-import type { WorkspaceDocument, WorkspaceId } from "../services/workspace.types";
+import type { ProjectSummary, WorkspaceDocument, WorkspaceId, WorkspaceService } from "../services/workspace.types";
 
 export type WorkspaceLoadStatus = "loading" | "ready" | "missing" | "error";
 export type WorkspaceLoadError = "permission-denied" | "unknown";
-
-export interface WorkspaceHydration {
-  projects: ProjectData[];
-  activeProjectId: string;
-  people: Person[];
-  teams: Team[];
-}
 
 export interface UseWorkspaceLoaderResult {
   status: WorkspaceLoadStatus;
@@ -20,77 +11,105 @@ export interface UseWorkspaceLoaderResult {
   loadError: WorkspaceLoadError | null;
   /** Live workspace name — updates on every snapshot, including renames. */
   name: string;
-  /** Increments once per successful hydration (initial load or workspace switch).
-   *  Useful as part of a child-component key to force remount on switch. */
+  /** Increments once per successful load (initial load or workspace switch).
+   *  Use as part of a child-component key to force remount on switch. */
   loadCount: number;
-  /** Initial hydration data; only present when `status === "ready"`. The hook
-   *  hydrates exactly once per workspace id — subsequent snapshots only update
-   *  `name`, so unsaved local edits are not clobbered by remote echoes. */
-  hydration: WorkspaceHydration | null;
-  /** The latest snapshot of the workspace document. Updates on every snapshot
-   *  (unlike `hydration`, which is one-shot). Used to derive live values that
-   *  must reflect remote changes — e.g. the current user's role. */
+  /** Live list of project summaries (id + name). */
+  projects: ProjectSummary[];
+  /** Live list of people in the workspace. */
+  people: Person[];
+  /** Live list of teams in the workspace. */
+  teams: Team[];
+  /** Latest workspace root doc snapshot — used to derive roles. */
   latestDoc: WorkspaceDocument | null;
 }
 
 interface UseWorkspaceLoaderArgs {
   workspaceId: WorkspaceId | null;
-  subscribe: (
-    id: WorkspaceId,
-    callback: (doc: WorkspaceDocument | null) => void,
-    onError?: (err: Error) => void,
-  ) => () => void;
+  service: WorkspaceService;
 }
 
+/**
+ * Subscribes to all workspace-level Firestore data (root doc, projects list,
+ * people, teams) and surfaces a clean state machine. Returns ready once all
+ * four listeners have fired at least once.
+ */
 export function useWorkspaceLoader({
   workspaceId,
-  subscribe,
+  service,
 }: UseWorkspaceLoaderArgs): UseWorkspaceLoaderResult {
   const [status, setStatus] = useState<WorkspaceLoadStatus>("loading");
   const [loadError, setLoadError] = useState<WorkspaceLoadError | null>(null);
   const [name, setName] = useState("");
   const [loadCount, setLoadCount] = useState(0);
-  const [hydration, setHydration] = useState<WorkspaceHydration | null>(null);
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [latestDoc, setLatestDoc] = useState<WorkspaceDocument | null>(null);
-  const hydratedForRef = useRef<WorkspaceId | null>(null);
+
+  // Track which listeners have fired at least once for the current workspaceId.
+  const readyFlags = useRef({ meta: false, projects: false, people: false, teams: false });
+  const becameReadyRef = useRef(false);
 
   useEffect(() => {
     if (!workspaceId) return;
+
     setStatus("loading");
     setLoadError(null);
     setLatestDoc(null);
-    hydratedForRef.current = null;
+    setProjects([]);
+    setPeople([]);
+    setTeams([]);
+    readyFlags.current = { meta: false, projects: false, people: false, teams: false };
+    becameReadyRef.current = false;
 
-    return subscribe(
-      workspaceId,
-      (doc) => {
-        if (!doc) {
-          setLatestDoc(null);
-          setStatus("missing");
-          return;
-        }
-        setName(doc.name);
-        setLatestDoc(doc);
-        if (hydratedForRef.current === workspaceId) return;
-        hydratedForRef.current = workspaceId;
-
-        const projects = doc.projects.length > 0 ? doc.projects : [createDefaultProject()];
-        setHydration({
-          projects,
-          activeProjectId: projects[0].id,
-          people: doc.people,
-          teams: doc.teams,
-        });
+    const checkReady = () => {
+      if (becameReadyRef.current) return;
+      const { meta, projects: p, people: pe, teams: t } = readyFlags.current;
+      if (meta && p && pe && t) {
+        becameReadyRef.current = true;
         setLoadCount((c) => c + 1);
         setStatus("ready");
-      },
-      (err) => {
-        const code = (err as unknown as { code?: string }).code;
-        setLoadError(code === "permission-denied" ? "permission-denied" : "unknown");
-        setStatus("error");
-      },
-    );
-  }, [workspaceId, subscribe]);
+      }
+    };
 
-  return { status, loadError, name, loadCount, hydration, latestDoc };
+    const unsubMeta = service.subscribe(workspaceId, (doc) => {
+      if (!doc) {
+        setLatestDoc(null);
+        setStatus("missing");
+        return;
+      }
+      setName(doc.name);
+      setLatestDoc(doc);
+      readyFlags.current.meta = true;
+      checkReady();
+    });
+
+    const unsubProjects = service.subscribeProjects(workspaceId, (list) => {
+      setProjects(list);
+      readyFlags.current.projects = true;
+      checkReady();
+    });
+
+    const unsubPeople = service.subscribePeople(workspaceId, (list) => {
+      setPeople(list);
+      readyFlags.current.people = true;
+      checkReady();
+    });
+
+    const unsubTeams = service.subscribeTeams(workspaceId, (list) => {
+      setTeams(list);
+      readyFlags.current.teams = true;
+      checkReady();
+    });
+
+    return () => {
+      unsubMeta();
+      unsubProjects();
+      unsubPeople();
+      unsubTeams();
+    };
+  }, [workspaceId, service]);
+
+  return { status, loadError, name, loadCount, projects, people, teams, latestDoc };
 }

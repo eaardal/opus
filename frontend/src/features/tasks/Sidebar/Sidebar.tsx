@@ -3,7 +3,7 @@ import { PanelLeftOpen, PanelLeftClose } from "lucide-react";
 import "./Sidebar.css";
 import { TaskList } from "./TaskList";
 import type { CategoryConfig, StatusConfig } from "../theme";
-import type { ProjectData } from "../../../domain/workspace/types";
+import type { ProjectSummary } from "../../../services/workspace.types";
 import { ProjectSelector } from "../../workspace/ProjectSelector";
 import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
 import type { Person } from "../../../domain/teams/types";
@@ -15,7 +15,7 @@ interface SidebarProps {
   groups: Group[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
-  projects: ProjectData[];
+  projects: ProjectSummary[];
   activeProjectId: string;
   onSwitchProject: (id: string) => void;
   onOpenProjectAdmin: () => void;

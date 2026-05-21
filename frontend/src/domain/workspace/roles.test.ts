@@ -5,9 +5,6 @@ import { canDeleteWorkspace, canEdit, canManageMembers, isLastOwner, resolveRole
 const baseDoc = (overrides: Partial<WorkspaceDocument> = {}): WorkspaceDocument => ({
   ownerId: "owner-uid",
   name: "WS",
-  projects: [],
-  people: [],
-  teams: [],
   updatedAt: new Date(),
   ...overrides,
 });

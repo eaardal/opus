@@ -1,61 +1,39 @@
-import { useState, useCallback, useEffect, forwardRef, useImperativeHandle, useRef } from "react";
+import { useState, useCallback } from "react";
 import "./TeamsApp.css";
 import type { Person, Team } from "../../domain/teams/types";
-import type { TeamMgtHandle } from "./types";
 import { PeoplePanel } from "./PeoplePanel/PeoplePanel";
 import { TeamsPanel } from "./TeamsPanel/TeamsPanel";
 import { confirm } from "../../ui/ConfirmModal";
 import { useWorkspaceRole } from "../workspace/WorkspaceRoleContext";
+import { workspaceService } from "../../services/container";
 
 interface TeamMgtProps {
+  workspaceId: string;
   initialPeople?: Person[];
   initialTeams?: Team[];
-  onPeopleChange?: (people: Person[]) => void;
-  onTeamsChange?: (teams: Team[]) => void;
 }
 
-export const TeamMgt = forwardRef<TeamMgtHandle, TeamMgtProps>(function TeamMgt(
-  { initialPeople = [], initialTeams = [], onPeopleChange, onTeamsChange },
-  ref,
-) {
+export function TeamMgt({ workspaceId, initialPeople = [], initialTeams = [] }: TeamMgtProps) {
   const { canEdit } = useWorkspaceRole();
   const [people, setPeople] = useState<Person[]>(initialPeople);
   const [teams, setTeams] = useState<Team[]>(initialTeams);
 
-  const onPeopleChangeRef = useRef(onPeopleChange);
-  onPeopleChangeRef.current = onPeopleChange;
-  const onTeamsChangeRef = useRef(onTeamsChange);
-  onTeamsChangeRef.current = onTeamsChange;
-
-  useEffect(() => {
-    onPeopleChangeRef.current?.(people);
-  }, [people]);
-  useEffect(() => {
-    onTeamsChangeRef.current?.(teams);
-  }, [teams]);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      getPeople: () => people,
-      getTeams: () => teams,
-    }),
-    [people, teams],
-  );
-
   const addPerson = useCallback((): string => {
     if (!canEdit) return "";
     const id = crypto.randomUUID();
-    setPeople((prev) => [...prev, { id, name: "", picture: null }]);
+    const newPerson: Person = { id, name: "", picture: null };
+    setPeople((prev) => [...prev, newPerson]);
+    workspaceService.addPerson(workspaceId, newPerson).catch(console.error);
     return id;
-  }, [canEdit]);
+  }, [canEdit, workspaceId]);
 
   const updatePerson = useCallback(
     (id: string, updates: Partial<Person>) => {
       if (!canEdit) return;
       setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+      workspaceService.updatePerson(workspaceId, id, updates).catch(console.error);
     },
-    [canEdit],
+    [canEdit, workspaceId],
   );
 
   const deletePerson = useCallback(
@@ -68,25 +46,39 @@ export const TeamMgt = forwardRef<TeamMgtHandle, TeamMgtProps>(function TeamMgt(
         confirmLabel: "Delete",
       });
       if (!confirmed) return;
+
+      const affectedTeams = teams.filter((t) => t.memberIds.includes(id));
       setPeople((prev) => prev.filter((p) => p.id !== id));
       setTeams((prev) =>
         prev.map((t) => ({ ...t, memberIds: t.memberIds.filter((mid) => mid !== id) })),
       );
+
+      workspaceService.deletePerson(workspaceId, id).catch(console.error);
+      for (const team of affectedTeams) {
+        workspaceService
+          .updateTeam(workspaceId, team.id, {
+            memberIds: team.memberIds.filter((mid) => mid !== id),
+          })
+          .catch(console.error);
+      }
     },
-    [canEdit, people],
+    [canEdit, people, teams, workspaceId],
   );
 
   const addTeam = useCallback(() => {
     if (!canEdit) return;
-    setTeams((prev) => [...prev, { id: crypto.randomUUID(), name: "New Team", memberIds: [] }]);
-  }, [canEdit]);
+    const newTeam: Team = { id: crypto.randomUUID(), name: "New Team", memberIds: [] };
+    setTeams((prev) => [...prev, newTeam]);
+    workspaceService.addTeam(workspaceId, newTeam).catch(console.error);
+  }, [canEdit, workspaceId]);
 
   const updateTeam = useCallback(
     (id: string, updates: Partial<Team>) => {
       if (!canEdit) return;
       setTeams((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+      workspaceService.updateTeam(workspaceId, id, updates).catch(console.error);
     },
-    [canEdit],
+    [canEdit, workspaceId],
   );
 
   const deleteTeam = useCallback(
@@ -100,8 +92,9 @@ export const TeamMgt = forwardRef<TeamMgtHandle, TeamMgtProps>(function TeamMgt(
       });
       if (!confirmed) return;
       setTeams((prev) => prev.filter((t) => t.id !== id));
+      workspaceService.deleteTeam(workspaceId, id).catch(console.error);
     },
-    [canEdit, teams],
+    [canEdit, teams, workspaceId],
   );
 
   return (
@@ -121,4 +114,4 @@ export const TeamMgt = forwardRef<TeamMgtHandle, TeamMgtProps>(function TeamMgt(
       />
     </div>
   );
-});
+}
