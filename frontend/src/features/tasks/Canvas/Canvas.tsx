@@ -1,6 +1,6 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
-import { Maximize, Focus, Undo2, Redo2, LayoutList } from "lucide-react";
+import { Maximize, Focus, Undo2, Redo2, LayoutList, HelpCircle, Pin } from "lucide-react";
 import type { Task, Group, TaskStatus } from "../../../domain/tasks/types";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
@@ -168,6 +168,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     svgY: number;
   } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
+  const [isHelpPanelPinned, setIsHelpPanelPinned] = useState(false);
+  const helpPanelRef = useRef<HTMLDivElement>(null);
   const viewBoxInitialized = useRef(false);
 
   const { panMode, panning, tryStartPan, tryUpdatePan, tryEndPan } = useCanvasPan({
@@ -227,6 +230,17 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [canvasContextMenu]);
+
+  useEffect(() => {
+    if (!showHelpPanel || isHelpPanelPinned) return;
+    const handleClose = (e: MouseEvent) => {
+      if (helpPanelRef.current && !helpPanelRef.current.contains(e.target as Node)) {
+        setShowHelpPanel(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClose);
+    return () => document.removeEventListener("mousedown", handleClose);
+  }, [showHelpPanel, isHelpPanelPinned]);
 
   const handleNodeContextMenu = useCallback((e: React.MouseEvent, taskId: string) => {
     e.preventDefault();
@@ -552,6 +566,103 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         )}
       </svg>
       <ProgressBar tasks={tasks} statuses={statuses} groupBox={groupBox} />
+      <div className="help-panel-anchor" ref={helpPanelRef}>
+        {showHelpPanel && (
+          <div className="help-panel">
+            <div className="help-panel-header">
+              <span>Keyboard Shortcuts</span>
+              <div className="help-panel-header-actions">
+                <button
+                  className={`help-pin-btn ${isHelpPanelPinned ? "active" : ""}`}
+                  onClick={() => setIsHelpPanelPinned((v) => !v)}
+                  title={isHelpPanelPinned ? "Unpin" : "Pin"}
+                >
+                  <Pin size={13} />
+                </button>
+                <button className="help-close-btn" onClick={() => setShowHelpPanel(false)}>
+                  ×
+                </button>
+              </div>
+            </div>
+            <table className="help-table">
+              <tbody>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + S</td>
+                  <td>Save</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + Z</td>
+                  <td>Undo</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + Shift + Z</td>
+                  <td>Redo</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + Enter</td>
+                  <td>Add new task</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Shift + drag</td>
+                  <td>Connect nodes</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Shift + click connection</td>
+                  <td>Remove connection</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Space + drag</td>
+                  <td>Pan canvas</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Middle mouse + drag</td>
+                  <td>Pan canvas</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Scroll wheel</td>
+                  <td>Zoom in/out</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Drag on canvas</td>
+                  <td>Select — node/group must be fully inside the selection area</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + A</td>
+                  <td>Select all elements</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + C</td>
+                  <td>Copy selected elements</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + V</td>
+                  <td>Paste elements (works across projects and workspaces)</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Escape</td>
+                  <td>Clear selection</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Double-click group title</td>
+                  <td>Edit group name</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Double-click node tooltip</td>
+                  <td>Rename node</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+        <button
+          type="button"
+          className="help-panel-btn"
+          onClick={() => setShowHelpPanel((v) => !v)}
+          aria-label="Keyboard shortcuts"
+        >
+          <HelpCircle size={18} />
+        </button>
+      </div>
       {showHelp && (
         <div className="help-overlay" onClick={() => setShowHelp(false)}>
           <div className="help-dialog" onClick={(e) => e.stopPropagation()}>
