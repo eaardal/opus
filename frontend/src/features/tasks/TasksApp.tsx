@@ -147,6 +147,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     handleCanvasMouseMove,
     handleCanvasMouseUp,
     clearSelection,
+    selectElements,
   } = dragSelection;
 
   useImperativeHandle(ref, () => ({
@@ -216,10 +217,14 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         connections: [...connections, ...result.connections],
         groups: [...groups, ...result.groups],
       });
+      selectElements(
+        new Set(result.tasks.map((t) => t.id)),
+        new Set(result.groups.map((g) => g.id)),
+      );
     } catch {
       console.warn("[canvas] Paste failed — clipboard may be empty or access denied");
     }
-  }, [tasks, connections, groups, viewBox, workspaceId, push]);
+  }, [tasks, connections, groups, viewBox, workspaceId, push, selectElements]);
 
   const { shiftPressed } = useGlobalKeyboardShortcuts({
     onUndo: undo,

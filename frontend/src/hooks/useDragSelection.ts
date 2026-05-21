@@ -54,6 +54,7 @@ export interface UseDragSelectionResult {
   handleCanvasMouseMove: (e: React.MouseEvent, coords: { x: number; y: number }) => void;
   handleCanvasMouseUp: (e: React.MouseEvent, coords: { x: number; y: number }) => void;
   clearSelection: () => void;
+  selectElements: (taskIds: ReadonlySet<string>, groupIds: ReadonlySet<string>) => void;
 }
 
 const NODE_HIT_RADIUS = 25;
@@ -238,6 +239,16 @@ export function useDragSelection({
     setDraggingSelection(null);
   }, []);
 
+  const selectElements = useCallback(
+    (taskIds: ReadonlySet<string>, groupIds: ReadonlySet<string>) => {
+      setSelectedNodes(new Set(taskIds));
+      setSelectedGroups(new Set(groupIds));
+      setSelection(null);
+      setDraggingSelection(null);
+    },
+    [],
+  );
+
   return {
     draggingNode,
     connecting,
@@ -250,5 +261,6 @@ export function useDragSelection({
     handleCanvasMouseMove,
     handleCanvasMouseUp,
     clearSelection,
+    selectElements,
   };
 }
