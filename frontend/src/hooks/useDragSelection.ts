@@ -120,7 +120,7 @@ export function useDragSelection({
         push(presentRef.current);
         startSelectionDrag(coords);
       } else {
-        setSelectedNodes(new Set());
+        setSelectedNodes(new Set([taskId]));
         push(presentRef.current);
         setDraggingNode(taskId);
       }

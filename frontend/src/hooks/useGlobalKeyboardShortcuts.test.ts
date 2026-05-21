@@ -11,6 +11,7 @@ function makeHandlers() {
     onCopy: vi.fn(),
     onPaste: vi.fn(),
     onSelectAll: vi.fn(),
+    onDuplicate: vi.fn(),
   };
 }
 
@@ -94,6 +95,23 @@ describe("useGlobalKeyboardShortcuts", () => {
     document.body.appendChild(input);
     fireEvent.keyDown(input, { key: "c", metaKey: true, bubbles: true });
     expect(handlers.onCopy).not.toHaveBeenCalled();
+    input.remove();
+  });
+
+  test("Cmd/Ctrl+D calls onDuplicate", () => {
+    const handlers = makeHandlers();
+    renderHook(() => useGlobalKeyboardShortcuts(handlers));
+    fireEvent.keyDown(window, { key: "d", metaKey: true });
+    expect(handlers.onDuplicate).toHaveBeenCalledTimes(1);
+  });
+
+  test("Cmd/Ctrl+D is suppressed inside input elements", () => {
+    const handlers = makeHandlers();
+    renderHook(() => useGlobalKeyboardShortcuts(handlers));
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    fireEvent.keyDown(input, { key: "d", metaKey: true, bubbles: true });
+    expect(handlers.onDuplicate).not.toHaveBeenCalled();
     input.remove();
   });
 

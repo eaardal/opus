@@ -63,7 +63,7 @@ describe("handleNodeMouseDown", () => {
     expect(result.current.draggingNode).toBeNull();
   });
 
-  test("plain-clicking an unselected node clears the selection and starts a single-node drag", () => {
+  test("plain-clicking an unselected node selects it and starts a single-node drag", () => {
     const state: TaskGraphState = {
       tasks: [task("a", 0, 0), task("b", 10, 10)],
       connections: [],
@@ -71,17 +71,13 @@ describe("handleNodeMouseDown", () => {
     };
     const { result, push } = renderDragSelection({ state });
 
-    // Pre-seed with some other task selected so we can verify it gets cleared.
-    act(() => {
-      result.current.handleCanvasMouseUp(mouseEvent(), { x: 100, y: 100 });
-    });
-
     act(() => {
       result.current.handleNodeMouseDown(mouseEvent(), "b");
     });
 
     expect(result.current.draggingNode).toBe("b");
-    expect(result.current.selectedNodes.size).toBe(0);
+    expect(result.current.selectedNodes.has("b")).toBe(true);
+    expect(result.current.selectedNodes.size).toBe(1);
     // History gets a checkpoint before the drag begins.
     expect(push).toHaveBeenCalledWith(state);
   });

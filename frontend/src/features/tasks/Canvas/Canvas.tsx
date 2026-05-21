@@ -639,6 +639,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   <td>Paste elements (works across projects and workspaces)</td>
                 </tr>
                 <tr>
+                  <td className="help-key">Cmd/Ctrl + D</td>
+                  <td>Duplicate selected elements</td>
+                </tr>
+                <tr>
                   <td className="help-key">Escape</td>
                   <td>Clear selection</td>
                 </tr>
@@ -725,6 +729,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 <tr>
                   <td className="help-key">Cmd/Ctrl + V</td>
                   <td>Paste elements (works across projects and workspaces)</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + D</td>
+                  <td>Duplicate selected elements</td>
                 </tr>
                 <tr>
                   <td className="help-key">Escape</td>

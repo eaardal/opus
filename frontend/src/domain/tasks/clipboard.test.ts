@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { applyPaste, deserializeClipboard, serializeSelection } from "./clipboard";
+import { applyPaste, deserializeClipboard, duplicateElements, serializeSelection } from "./clipboard";
 import type { Connection, Group, Task, ViewBox } from "./types";
 
 const task = (id: string, x = 0, y = 0, overrides: Partial<Task> = {}): Task => ({
@@ -336,5 +336,121 @@ describe("applyPaste", () => {
     expect(result.tasks).toHaveLength(0);
     expect(result.connections).toHaveLength(0);
     expect(result.groups).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// duplicateElements
+// ============================================================================
+
+describe("duplicateElements", () => {
+  test("returns empty arrays when nothing is selected", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(),
+      selectedGroupIds: new Set(),
+      tasks: [task("t1")],
+      groups: [group("g1")],
+    });
+    expect(result.tasks).toHaveLength(0);
+    expect(result.groups).toHaveLength(0);
+  });
+
+  test("generates new IDs for duplicated tasks", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(["t1", "t2"]),
+      selectedGroupIds: new Set(),
+      tasks: [task("t1"), task("t2")],
+      groups: [],
+    });
+    const ids = result.tasks.map((t) => t.id);
+    expect(ids).not.toContain("t1");
+    expect(ids).not.toContain("t2");
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  test("generates new IDs for duplicated groups", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(),
+      selectedGroupIds: new Set(["g1"]),
+      tasks: [],
+      groups: [group("g1")],
+    });
+    expect(result.groups[0].id).not.toBe("g1");
+  });
+
+  test("offsets duplicated task positions by 20", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(["t1"]),
+      selectedGroupIds: new Set(),
+      tasks: [task("t1", 100, 200)],
+      groups: [],
+    });
+    expect(result.tasks[0].x).toBe(120);
+    expect(result.tasks[0].y).toBe(220);
+  });
+
+  test("offsets duplicated group positions by 20", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(),
+      selectedGroupIds: new Set(["g1"]),
+      tasks: [],
+      groups: [group("g1", 50, 80)],
+    });
+    expect(result.groups[0].x).toBe(70);
+    expect(result.groups[0].y).toBe(100);
+  });
+
+  test("preserves relative positions between duplicated tasks", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(["t1", "t2"]),
+      selectedGroupIds: new Set(),
+      tasks: [task("t1", 0, 0), task("t2", 100, 50)],
+      groups: [],
+    });
+    const t1 = result.tasks[0];
+    const t2 = result.tasks[1];
+    expect(t2.x - t1.x).toBe(100);
+    expect(t2.y - t1.y).toBe(50);
+  });
+
+  test("preserves task fields including assignedPersonIds", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(["t1"]),
+      selectedGroupIds: new Set(),
+      tasks: [
+        task("t1", 0, 0, {
+          text: "hello",
+          status: "completed",
+          category: "backend",
+          assignedPersonIds: ["person-1"],
+        }),
+      ],
+      groups: [],
+    });
+    const dup = result.tasks[0];
+    expect(dup.text).toBe("hello");
+    expect(dup.status).toBe("completed");
+    expect(dup.category).toBe("backend");
+    expect(dup.assignedPersonIds).toEqual(["person-1"]);
+  });
+
+  test("only duplicates selected tasks, not all tasks", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(["t1"]),
+      selectedGroupIds: new Set(),
+      tasks: [task("t1"), task("t2"), task("t3")],
+      groups: [],
+    });
+    expect(result.tasks).toHaveLength(1);
+  });
+
+  test("only duplicates selected groups, not all groups", () => {
+    const result = duplicateElements({
+      selectedTaskIds: new Set(),
+      selectedGroupIds: new Set(["g1"]),
+      tasks: [],
+      groups: [group("g1"), group("g2")],
+    });
+    expect(result.groups).toHaveLength(1);
   });
 });

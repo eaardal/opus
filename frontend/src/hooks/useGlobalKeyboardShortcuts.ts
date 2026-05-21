@@ -8,6 +8,7 @@ interface UseGlobalKeyboardShortcutsArgs {
   onCopy: () => void;
   onPaste: () => void;
   onSelectAll: () => void;
+  onDuplicate: () => void;
 }
 
 export interface UseGlobalKeyboardShortcutsResult {
@@ -23,6 +24,7 @@ export interface UseGlobalKeyboardShortcutsResult {
  *   - Cmd/Ctrl+A          → select all elements
  *   - Cmd/Ctrl+C          → copy selected elements
  *   - Cmd/Ctrl+V          → paste clipboard elements
+ *   - Cmd/Ctrl+D          → duplicate selected elements
  *   - Escape              → caller-defined (typically clears selection)
  *   - Delete / Backspace  → caller-defined (typically deletes selected items)
  *
@@ -38,11 +40,30 @@ export function useGlobalKeyboardShortcuts({
   onCopy,
   onPaste,
   onSelectAll,
+  onDuplicate,
 }: UseGlobalKeyboardShortcutsArgs): UseGlobalKeyboardShortcutsResult {
   const [shiftPressed, setShiftPressed] = useState(false);
 
-  const handlersRef = useRef({ onUndo, onRedo, onEscape, onDelete, onCopy, onPaste, onSelectAll });
-  handlersRef.current = { onUndo, onRedo, onEscape, onDelete, onCopy, onPaste, onSelectAll };
+  const handlersRef = useRef({
+    onUndo,
+    onRedo,
+    onEscape,
+    onDelete,
+    onCopy,
+    onPaste,
+    onSelectAll,
+    onDuplicate,
+  });
+  handlersRef.current = {
+    onUndo,
+    onRedo,
+    onEscape,
+    onDelete,
+    onCopy,
+    onPaste,
+    onSelectAll,
+    onDuplicate,
+  };
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null) =>
@@ -71,6 +92,10 @@ export function useGlobalKeyboardShortcuts({
       }
       if (cmd && !e.shiftKey && e.key === "v") {
         handlersRef.current.onPaste();
+      }
+      if (cmd && !e.shiftKey && e.key === "d") {
+        e.preventDefault();
+        handlersRef.current.onDuplicate();
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {

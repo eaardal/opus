@@ -19,7 +19,12 @@ import {
   updateGroup as updateGroupOp,
   updateTask as updateTaskOp,
 } from "../../domain/tasks/operations";
-import { applyPaste, deserializeClipboard, serializeSelection } from "../../domain/tasks/clipboard";
+import {
+  applyPaste,
+  deserializeClipboard,
+  duplicateElements,
+  serializeSelection,
+} from "../../domain/tasks/clipboard";
 import { getCategories, getStatuses } from "./theme";
 import { useHistory } from "../../hooks/useHistory";
 import { useDragSelection } from "../../hooks/useDragSelection";
@@ -230,6 +235,25 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     selectElements(new Set(tasks.map((t) => t.id)), new Set(groups.map((g) => g.id)));
   }, [tasks, groups, selectElements]);
 
+  const handleDuplicate = useCallback(() => {
+    if (selectedNodes.size === 0 && selectedGroups.size === 0) return;
+    const result = duplicateElements({
+      selectedTaskIds: selectedNodes,
+      selectedGroupIds: selectedGroups,
+      tasks,
+      groups,
+    });
+    push({
+      tasks: [...tasks, ...result.tasks],
+      connections,
+      groups: [...groups, ...result.groups],
+    });
+    selectElements(
+      new Set(result.tasks.map((t) => t.id)),
+      new Set(result.groups.map((g) => g.id)),
+    );
+  }, [selectedNodes, selectedGroups, tasks, groups, connections, push, selectElements]);
+
   const { shiftPressed } = useGlobalKeyboardShortcuts({
     onUndo: undo,
     onRedo: redo,
@@ -238,6 +262,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     onCopy: handleCopy,
     onPaste: handlePaste,
     onSelectAll: handleSelectAll,
+    onDuplicate: handleDuplicate,
   });
 
   const buildNewTask = (x: number, y: number): Task => ({

@@ -3,6 +3,7 @@ import type { Connection, Group, Task, ViewBox } from "./types";
 const CLIPBOARD_TYPE = "domino/canvas-clipboard" as const;
 const CLIPBOARD_VERSION = 1 as const;
 const PASTE_OFFSET = 40;
+const DUPLICATE_OFFSET = 20;
 
 export interface CanvasClipboard {
   type: typeof CLIPBOARD_TYPE;
@@ -117,6 +118,44 @@ export function applyPaste({ clipboard, currentWorkspaceId, viewBox }: PasteArgs
   }));
 
   return { tasks, connections, groups };
+}
+
+interface DuplicateArgs {
+  selectedTaskIds: ReadonlySet<string>;
+  selectedGroupIds: ReadonlySet<string>;
+  tasks: Task[];
+  groups: Group[];
+}
+
+interface DuplicateResult {
+  tasks: Task[];
+  groups: Group[];
+}
+
+export function duplicateElements({
+  selectedTaskIds,
+  selectedGroupIds,
+  tasks,
+  groups,
+}: DuplicateArgs): DuplicateResult {
+  const selectedTasks = tasks.filter((t) => selectedTaskIds.has(t.id));
+  const selectedGroups = groups.filter((g) => selectedGroupIds.has(g.id));
+
+  const duplicatedTasks: Task[] = selectedTasks.map((t) => ({
+    ...t,
+    id: crypto.randomUUID(),
+    x: t.x + DUPLICATE_OFFSET,
+    y: t.y + DUPLICATE_OFFSET,
+  }));
+
+  const duplicatedGroups: Group[] = selectedGroups.map((g) => ({
+    ...g,
+    id: crypto.randomUUID(),
+    x: g.x + DUPLICATE_OFFSET,
+    y: g.y + DUPLICATE_OFFSET,
+  }));
+
+  return { tasks: duplicatedTasks, groups: duplicatedGroups };
 }
 
 interface BoundingBox {
