@@ -10,6 +10,7 @@ function makeHandlers() {
     onDelete: vi.fn(),
     onCopy: vi.fn(),
     onPaste: vi.fn(),
+    onSelectAll: vi.fn(),
   };
 }
 
@@ -63,6 +64,13 @@ describe("useGlobalKeyboardShortcuts", () => {
     expect(handlers.onDelete).not.toHaveBeenCalled();
     expect(handlers.onUndo).not.toHaveBeenCalled();
     input.remove();
+  });
+
+  test("Cmd/Ctrl+A calls onSelectAll", () => {
+    const handlers = makeHandlers();
+    renderHook(() => useGlobalKeyboardShortcuts(handlers));
+    fireEvent.keyDown(window, { key: "a", metaKey: true });
+    expect(handlers.onSelectAll).toHaveBeenCalledTimes(1);
   });
 
   test("Cmd/Ctrl+C calls onCopy", () => {
