@@ -248,10 +248,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
       connections,
       groups: [...groups, ...result.groups],
     });
-    selectElements(
-      new Set(result.tasks.map((t) => t.id)),
-      new Set(result.groups.map((g) => g.id)),
-    );
+    selectElements(new Set(result.tasks.map((t) => t.id)), new Set(result.groups.map((g) => g.id)));
   }, [selectedNodes, selectedGroups, tasks, groups, connections, push, selectElements]);
 
   const { shiftPressed } = useGlobalKeyboardShortcuts({

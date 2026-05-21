@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { applyPaste, deserializeClipboard, duplicateElements, serializeSelection } from "./clipboard";
+import {
+  applyPaste,
+  deserializeClipboard,
+  duplicateElements,
+  serializeSelection,
+} from "./clipboard";
 import type { Connection, Group, Task, ViewBox } from "./types";
 
 const task = (id: string, x = 0, y = 0, overrides: Partial<Task> = {}): Task => ({
