@@ -20,6 +20,24 @@ import { Avatar } from "./ui/Avatar";
 
 type ActiveModule = "tasks" | "teams";
 
+const lastProjectKey = (workspaceId: string) => `domino.lastActiveProjectId.${workspaceId}`;
+
+function readLastActiveProjectId(workspaceId: string): string | null {
+  try {
+    return localStorage.getItem(lastProjectKey(workspaceId));
+  } catch {
+    return null;
+  }
+}
+
+function writeLastActiveProjectId(workspaceId: string, projectId: string): void {
+  try {
+    localStorage.setItem(lastProjectKey(workspaceId), projectId);
+  } catch {
+    // ignore — selection still works in-memory
+  }
+}
+
 function App() {
   const { id: workspaceId, select } = useSelectedWorkspace();
   const auth = useAuthUser();
@@ -78,13 +96,16 @@ function App() {
   // Apply the hook's hydration data to local editing state when a workspace loads.
   useEffect(() => {
     if (!hydration) return;
-    currentProjectStateRef.current = extractProjectState(hydration.projects[0]);
+    const storedId = workspaceId ? readLastActiveProjectId(workspaceId) : null;
+    const restored = storedId ? hydration.projects.find((p) => p.id === storedId) : null;
+    const initial = restored ?? hydration.projects[0];
+    currentProjectStateRef.current = extractProjectState(initial);
     setProjects(hydration.projects);
-    setActiveProjectId(hydration.activeProjectId);
+    setActiveProjectId(initial.id);
     setPeople(hydration.people);
     setTeams(hydration.teams);
     setHasUnsavedChanges(false);
-  }, [hydration]);
+  }, [hydration, workspaceId]);
 
   // If the doc vanished (deleted elsewhere), drop to the picker.
   useEffect(() => {
@@ -197,19 +218,23 @@ function App() {
   }, [handleSave]);
 
   // Project management (intra-workspace projects, unchanged semantics).
-  const handleSwitchProject = useCallback((newId: string) => {
-    if (newId === activeProjectIdRef.current) return;
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === activeProjectIdRef.current && currentProjectStateRef.current
-          ? { ...p, ...currentProjectStateRef.current }
-          : p,
-      ),
-    );
-    const newProject = projectsRef.current.find((p) => p.id === newId);
-    if (newProject) currentProjectStateRef.current = extractProjectState(newProject);
-    setActiveProjectId(newId);
-  }, []);
+  const handleSwitchProject = useCallback(
+    (newId: string) => {
+      if (newId === activeProjectIdRef.current) return;
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === activeProjectIdRef.current && currentProjectStateRef.current
+            ? { ...p, ...currentProjectStateRef.current }
+            : p,
+        ),
+      );
+      const newProject = projectsRef.current.find((p) => p.id === newId);
+      if (newProject) currentProjectStateRef.current = extractProjectState(newProject);
+      if (workspaceId) writeLastActiveProjectId(workspaceId, newId);
+      setActiveProjectId(newId);
+    },
+    [workspaceId],
+  );
 
   const handleAddProject = useCallback(() => {
     if (!canEdit) return;
