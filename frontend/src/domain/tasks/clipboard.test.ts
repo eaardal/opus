@@ -161,17 +161,36 @@ describe("deserializeClipboard", () => {
   });
 
   test("returns null when type sentinel is wrong", () => {
-    const bad = JSON.stringify({ type: "other/thing", version: 1, workspaceId: "x", tasks: [], connections: [], groups: [] });
+    const bad = JSON.stringify({
+      type: "other/thing",
+      version: 1,
+      workspaceId: "x",
+      tasks: [],
+      connections: [],
+      groups: [],
+    });
     expect(deserializeClipboard(bad)).toBeNull();
   });
 
   test("returns null when version field is missing", () => {
-    const bad = JSON.stringify({ type: "domino/canvas-clipboard", workspaceId: "x", tasks: [], connections: [], groups: [] });
+    const bad = JSON.stringify({
+      type: "domino/canvas-clipboard",
+      workspaceId: "x",
+      tasks: [],
+      connections: [],
+      groups: [],
+    });
     expect(deserializeClipboard(bad)).toBeNull();
   });
 
   test("returns null when tasks array is missing", () => {
-    const bad = JSON.stringify({ type: "domino/canvas-clipboard", version: 1, workspaceId: "x", connections: [], groups: [] });
+    const bad = JSON.stringify({
+      type: "domino/canvas-clipboard",
+      version: 1,
+      workspaceId: "x",
+      connections: [],
+      groups: [],
+    });
     expect(deserializeClipboard(bad)).toBeNull();
   });
 
@@ -205,7 +224,7 @@ describe("applyPaste", () => {
       currentWorkspaceId: WORKSPACE_A,
       viewBox: viewBox(),
     });
-    const resultIds = result.tasks.map(t => t.id);
+    const resultIds = result.tasks.map((t) => t.id);
     expect(resultIds).not.toContain("t1");
     expect(resultIds).not.toContain("t2");
     expect(new Set(resultIds).size).toBe(2);
@@ -217,7 +236,7 @@ describe("applyPaste", () => {
       currentWorkspaceId: WORKSPACE_A,
       viewBox: viewBox(),
     });
-    const resultIds = result.groups.map(g => g.id);
+    const resultIds = result.groups.map((g) => g.id);
     expect(resultIds).not.toContain("g1");
     expect(new Set(resultIds).size).toBe(1);
   });
@@ -228,7 +247,7 @@ describe("applyPaste", () => {
       currentWorkspaceId: WORKSPACE_A,
       viewBox: viewBox(),
     });
-    const taskIds = new Set(result.tasks.map(t => t.id));
+    const taskIds = new Set(result.tasks.map((t) => t.id));
     expect(taskIds.has(result.connections[0].from)).toBe(true);
     expect(taskIds.has(result.connections[0].to)).toBe(true);
   });
@@ -297,7 +316,11 @@ describe("applyPaste", () => {
       connections: [],
       groups: [],
     });
-    const result = applyPaste({ clipboard: cb, currentWorkspaceId: WORKSPACE_A, viewBox: viewBox() });
+    const result = applyPaste({
+      clipboard: cb,
+      currentWorkspaceId: WORKSPACE_A,
+      viewBox: viewBox(),
+    });
     expect(result.tasks[0].text).toBe("hello");
     expect(result.tasks[0].status).toBe("completed");
     expect(result.tasks[0].category).toBe("backend");
@@ -305,7 +328,11 @@ describe("applyPaste", () => {
 
   test("returns empty arrays for an empty clipboard", () => {
     const cb = clipboard({ tasks: [], connections: [], groups: [] });
-    const result = applyPaste({ clipboard: cb, currentWorkspaceId: WORKSPACE_A, viewBox: viewBox() });
+    const result = applyPaste({
+      clipboard: cb,
+      currentWorkspaceId: WORKSPACE_A,
+      viewBox: viewBox(),
+    });
     expect(result.tasks).toHaveLength(0);
     expect(result.connections).toHaveLength(0);
     expect(result.groups).toHaveLength(0);

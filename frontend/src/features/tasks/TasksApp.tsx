@@ -227,10 +227,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   }, [tasks, connections, groups, viewBox, workspaceId, push, selectElements]);
 
   const handleSelectAll = useCallback(() => {
-    selectElements(
-      new Set(tasks.map((t) => t.id)),
-      new Set(groups.map((g) => g.id)),
-    );
+    selectElements(new Set(tasks.map((t) => t.id)), new Set(groups.map((g) => g.id)));
   }, [tasks, groups, selectElements]);
 
   const { shiftPressed } = useGlobalKeyboardShortcuts({
