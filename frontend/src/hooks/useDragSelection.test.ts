@@ -8,6 +8,8 @@ const mouseEvent = (overrides: Partial<MouseEvent> = {}) =>
     preventDefault: vi.fn(),
     stopPropagation: vi.fn(),
     shiftKey: false,
+    metaKey: false,
+    ctrlKey: false,
     target: null,
     ...overrides,
   }) as unknown as React.MouseEvent;
@@ -115,6 +117,153 @@ describe("handleNodeMouseDown", () => {
     // selectedNodes here, this test ends up the same as the previous one;
     // remove it if it adds noise.
     expect(push).toHaveBeenCalled();
+  });
+});
+
+describe("handleNodeMouseDown — Cmd/Ctrl multi-select", () => {
+  test("Cmd+click on an unselected node adds it to the selection", () => {
+    const state: TaskGraphState = {
+      tasks: [task("a", 0, 0), task("b", 10, 10)],
+      connections: [],
+      groups: [],
+    };
+    const { result } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleNodeMouseDown(mouseEvent({ metaKey: true }), "a");
+    });
+
+    expect(result.current.selectedNodes.has("a")).toBe(true);
+    expect(result.current.draggingNode).toBeNull();
+  });
+
+  test("Cmd+click on a selected node removes it from the selection", () => {
+    const state: TaskGraphState = {
+      tasks: [task("a", 0, 0), task("b", 10, 10)],
+      connections: [],
+      groups: [],
+    };
+    const { result } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleNodeMouseDown(mouseEvent({ metaKey: true }), "a");
+    });
+    act(() => {
+      result.current.handleNodeMouseDown(mouseEvent({ metaKey: true }), "a");
+    });
+
+    expect(result.current.selectedNodes.has("a")).toBe(false);
+  });
+
+  test("Cmd+click does not clear other selected nodes", () => {
+    const state: TaskGraphState = {
+      tasks: [task("a", 0, 0), task("b", 10, 10)],
+      connections: [],
+      groups: [],
+    };
+    const { result } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleNodeMouseDown(mouseEvent({ metaKey: true }), "a");
+    });
+    act(() => {
+      result.current.handleNodeMouseDown(mouseEvent({ metaKey: true }), "b");
+    });
+
+    expect(result.current.selectedNodes.has("a")).toBe(true);
+    expect(result.current.selectedNodes.has("b")).toBe(true);
+  });
+
+  test("Cmd+click does not start a drag", () => {
+    const state: TaskGraphState = { tasks: [task("a", 0, 0)], connections: [], groups: [] };
+    const { result, push } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleNodeMouseDown(mouseEvent({ metaKey: true }), "a");
+    });
+
+    expect(result.current.draggingNode).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  test("Ctrl+click works the same as Cmd+click", () => {
+    const state: TaskGraphState = { tasks: [task("a", 0, 0)], connections: [], groups: [] };
+    const { result } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleNodeMouseDown(mouseEvent({ ctrlKey: true }), "a");
+    });
+
+    expect(result.current.selectedNodes.has("a")).toBe(true);
+  });
+});
+
+describe("handleGroupMouseDown — Cmd/Ctrl multi-select", () => {
+  test("Cmd+click on an unselected group adds it to the selection", () => {
+    const state: TaskGraphState = {
+      tasks: [],
+      connections: [],
+      groups: [group("g1", 0, 0)],
+    };
+    const { result } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleGroupMouseDown(mouseEvent({ metaKey: true }), "g1");
+    });
+
+    expect(result.current.selectedGroups.has("g1")).toBe(true);
+  });
+
+  test("Cmd+click on a selected group removes it from the selection", () => {
+    const state: TaskGraphState = {
+      tasks: [],
+      connections: [],
+      groups: [group("g1", 0, 0)],
+    };
+    const { result } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleGroupMouseDown(mouseEvent({ metaKey: true }), "g1");
+    });
+    act(() => {
+      result.current.handleGroupMouseDown(mouseEvent({ metaKey: true }), "g1");
+    });
+
+    expect(result.current.selectedGroups.has("g1")).toBe(false);
+  });
+
+  test("Cmd+click does not clear other selected groups", () => {
+    const state: TaskGraphState = {
+      tasks: [],
+      connections: [],
+      groups: [group("g1", 0, 0), group("g2", 200, 0)],
+    };
+    const { result } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleGroupMouseDown(mouseEvent({ metaKey: true }), "g1");
+    });
+    act(() => {
+      result.current.handleGroupMouseDown(mouseEvent({ metaKey: true }), "g2");
+    });
+
+    expect(result.current.selectedGroups.has("g1")).toBe(true);
+    expect(result.current.selectedGroups.has("g2")).toBe(true);
+  });
+
+  test("Cmd+click does not start a drag", () => {
+    const state: TaskGraphState = {
+      tasks: [],
+      connections: [],
+      groups: [group("g1", 0, 0)],
+    };
+    const { result, push } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleGroupMouseDown(mouseEvent({ metaKey: true }), "g1");
+    });
+
+    expect(push).not.toHaveBeenCalled();
   });
 });
 

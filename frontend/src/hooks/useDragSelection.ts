@@ -108,6 +108,14 @@ export function useDragSelection({
       const coords = getSvgCoords(e);
       if (e.shiftKey) {
         setConnecting({ from: taskId, mouseX: coords.x, mouseY: coords.y });
+      } else if (e.metaKey || e.ctrlKey) {
+        const next = new Set(selectedNodesRef.current);
+        if (next.has(taskId)) {
+          next.delete(taskId);
+        } else {
+          next.add(taskId);
+        }
+        setSelectedNodes(next);
       } else if (selectedNodesRef.current.has(taskId)) {
         push(presentRef.current);
         startSelectionDrag(coords);
@@ -125,7 +133,15 @@ export function useDragSelection({
       e.preventDefault();
       e.stopPropagation();
       const coords = getSvgCoords(e);
-      if (selectedGroupsRef.current.has(groupId)) {
+      if (e.metaKey || e.ctrlKey) {
+        const next = new Set(selectedGroupsRef.current);
+        if (next.has(groupId)) {
+          next.delete(groupId);
+        } else {
+          next.add(groupId);
+        }
+        setSelectedGroups(next);
+      } else if (selectedGroupsRef.current.has(groupId)) {
         push(presentRef.current);
         startSelectionDrag(coords);
       }
