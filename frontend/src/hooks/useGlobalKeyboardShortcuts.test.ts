@@ -8,6 +8,8 @@ function makeHandlers() {
     onRedo: vi.fn(),
     onEscape: vi.fn(),
     onDelete: vi.fn(),
+    onCopy: vi.fn(),
+    onPaste: vi.fn(),
   };
 }
 
@@ -60,6 +62,30 @@ describe("useGlobalKeyboardShortcuts", () => {
     expect(handlers.onEscape).not.toHaveBeenCalled();
     expect(handlers.onDelete).not.toHaveBeenCalled();
     expect(handlers.onUndo).not.toHaveBeenCalled();
+    input.remove();
+  });
+
+  test("Cmd/Ctrl+C calls onCopy", () => {
+    const handlers = makeHandlers();
+    renderHook(() => useGlobalKeyboardShortcuts(handlers));
+    fireEvent.keyDown(window, { key: "c", metaKey: true });
+    expect(handlers.onCopy).toHaveBeenCalledTimes(1);
+  });
+
+  test("Cmd/Ctrl+V calls onPaste", () => {
+    const handlers = makeHandlers();
+    renderHook(() => useGlobalKeyboardShortcuts(handlers));
+    fireEvent.keyDown(window, { key: "v", metaKey: true });
+    expect(handlers.onPaste).toHaveBeenCalledTimes(1);
+  });
+
+  test("Cmd/Ctrl+C is suppressed inside input elements", () => {
+    const handlers = makeHandlers();
+    renderHook(() => useGlobalKeyboardShortcuts(handlers));
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    fireEvent.keyDown(input, { key: "c", metaKey: true, bubbles: true });
+    expect(handlers.onCopy).not.toHaveBeenCalled();
     input.remove();
   });
 

@@ -433,6 +433,7 @@ function App() {
               onSwitchProject={handleSwitchProject}
               onOpenProjectAdmin={() => setShowProjectAdmin(true)}
               people={people}
+              workspaceId={workspaceId ?? ""}
             />
           </div>
           <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>

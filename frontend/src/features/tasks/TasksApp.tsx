@@ -19,6 +19,7 @@ import {
   updateGroup as updateGroupOp,
   updateTask as updateTaskOp,
 } from "../../domain/tasks/operations";
+import { applyPaste, deserializeClipboard, serializeSelection } from "../../domain/tasks/clipboard";
 import { getCategories, getStatuses } from "./theme";
 import { useHistory } from "../../hooks/useHistory";
 import { useDragSelection } from "../../hooks/useDragSelection";
@@ -38,6 +39,7 @@ interface AppProps {
   onSwitchProject?: (id: string) => void;
   onOpenProjectAdmin?: () => void;
   people?: Person[];
+  workspaceId?: string;
 }
 
 export interface TaskMgtAppHandle {
@@ -55,6 +57,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     onSwitchProject = () => {},
     onOpenProjectAdmin = () => {},
     people = [],
+    workspaceId = "",
   },
   ref,
 ) {
@@ -184,11 +187,47 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     }
   }, [selectedNodes, selectedGroups, tasks, groups, connections, push, clearSelection]);
 
+  const handleCopy = useCallback(async () => {
+    if (selectedNodes.size === 0 && selectedGroups.size === 0) return;
+    const serialized = serializeSelection({
+      selectedTaskIds: selectedNodes,
+      selectedGroupIds: selectedGroups,
+      tasks,
+      connections,
+      groups,
+      workspaceId,
+    });
+    if (!serialized) return;
+    try {
+      await navigator.clipboard.writeText(serialized);
+    } catch {
+      // Clipboard access denied — silent fail
+    }
+  }, [selectedNodes, selectedGroups, tasks, connections, groups, workspaceId]);
+
+  const handlePaste = useCallback(async () => {
+    try {
+      const raw = await navigator.clipboard.readText();
+      const clipboard = deserializeClipboard(raw);
+      if (!clipboard) return;
+      const result = applyPaste({ clipboard, currentWorkspaceId: workspaceId, viewBox });
+      push({
+        tasks: [...tasks, ...result.tasks],
+        connections: [...connections, ...result.connections],
+        groups: [...groups, ...result.groups],
+      });
+    } catch {
+      console.warn("[canvas] Paste failed — clipboard may be empty or access denied");
+    }
+  }, [tasks, connections, groups, viewBox, workspaceId, push]);
+
   const { shiftPressed } = useGlobalKeyboardShortcuts({
     onUndo: undo,
     onRedo: redo,
     onEscape: clearSelection,
     onDelete: handleDeleteSelected,
+    onCopy: handleCopy,
+    onPaste: handlePaste,
   });
 
   const buildNewTask = (x: number, y: number): Task => ({

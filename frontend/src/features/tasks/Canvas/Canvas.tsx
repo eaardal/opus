@@ -604,6 +604,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   <td>Select — node/group must be fully inside the selection area</td>
                 </tr>
                 <tr>
+                  <td className="help-key">Cmd/Ctrl + C</td>
+                  <td>Copy selected elements</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Cmd/Ctrl + V</td>
+                  <td>Paste elements (works across projects and workspaces)</td>
+                </tr>
+                <tr>
                   <td className="help-key">Escape</td>
                   <td>Clear selection</td>
                 </tr>
