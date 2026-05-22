@@ -53,7 +53,7 @@ function renderCanvasPan({ viewBox = VIEWBOX, svg = makeMockSvg() }: RenderArgs 
   const result = renderHook(() => {
     // Use useRef so the ref identity stays stable across renders.
     const svgRef = useRef(svg) as RefObject<SVGSVGElement | null>;
-    return useCanvasPan({ svgRef, viewBox, onViewBoxChange });
+    return useCanvasPan({ svgRef, viewBox, onViewBoxChange, scrollToPan: true });
   });
   return { ...result, onViewBoxChange, svg };
 }

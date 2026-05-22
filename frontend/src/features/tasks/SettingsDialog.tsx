@@ -2,10 +2,12 @@ import "./SettingsDialog.css";
 
 export interface AppSettings {
   showBlockedBySection: boolean;
+  scrollToPan: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   showBlockedBySection: true,
+  scrollToPan: true,
 };
 
 const STORAGE_KEY = "app-settings";
@@ -85,6 +87,16 @@ export function SettingsDialog({
         <div className="settings-section">
           <div className="settings-section-title">Appearance</div>
           <ToggleRow label="Dark mode" checked={theme === "dark"} onChange={onToggleTheme} />
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">Canvas</div>
+          <ToggleRow
+            label="Scroll to pan"
+            description="Two-finger scroll and mouse wheel pan the canvas. Hold Ctrl to zoom."
+            checked={settings.scrollToPan}
+            onChange={(v) => set({ scrollToPan: v })}
+          />
         </div>
 
         <div className="settings-section">

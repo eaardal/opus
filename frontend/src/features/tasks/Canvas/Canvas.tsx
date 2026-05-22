@@ -188,6 +188,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     svgRef,
     viewBox,
     onViewBoxChange,
+    scrollToPan: settings.scrollToPan,
   });
 
   // Initialize viewBox dimensions from container size if not yet set
@@ -659,7 +660,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   <td>Pan canvas</td>
                 </tr>
                 <tr>
-                  <td className="help-key">Scroll wheel</td>
+                  <td className="help-key">Two-finger scroll / scroll wheel</td>
+                  <td>Pan canvas</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Ctrl + scroll / pinch</td>
                   <td>Zoom in/out</td>
                 </tr>
                 <tr>
@@ -751,7 +756,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   <td>Pan canvas</td>
                 </tr>
                 <tr>
-                  <td className="help-key">Scroll wheel</td>
+                  <td className="help-key">Two-finger scroll / scroll wheel</td>
+                  <td>Pan canvas</td>
+                </tr>
+                <tr>
+                  <td className="help-key">Ctrl + scroll / pinch</td>
                   <td>Zoom in/out</td>
                 </tr>
                 <tr>

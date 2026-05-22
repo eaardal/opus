@@ -13,6 +13,7 @@ interface UseCanvasPanArgs {
   svgRef: RefObject<SVGSVGElement | null>;
   viewBox: ViewBox;
   onViewBoxChange: (next: ViewBox) => void;
+  scrollToPan: boolean;
 }
 
 export interface UseCanvasPanResult {
@@ -30,7 +31,6 @@ export interface UseCanvasPanResult {
   tryEndPan: (e: React.MouseEvent) => boolean;
 }
 
-const ZOOM_SENSITIVITY = 0.001;
 const ZOOM_SENSITIVITY_TRACKPAD = 0.02;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 5;
@@ -51,6 +51,7 @@ export function useCanvasPan({
   svgRef,
   viewBox,
   onViewBoxChange,
+  scrollToPan,
 }: UseCanvasPanArgs): UseCanvasPanResult {
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [middleMouseHeld, setMiddleMouseHeld] = useState(false);
@@ -61,6 +62,8 @@ export function useCanvasPan({
   const panningRef = useRef(panning);
   panningRef.current = panning;
   const touchPanRef = useRef<PanningState | null>(null);
+  const scrollToPanRef = useRef(scrollToPan);
+  scrollToPanRef.current = scrollToPan;
 
   const panMode = spaceHeld || middleMouseHeld;
   const panModeRef = useRef(panMode);
@@ -85,25 +88,32 @@ export function useCanvasPan({
     };
   }, []);
 
-  // Wheel-zoom (registered on the SVG to allow preventDefault).
+  // Wheel handler (registered on the SVG to allow preventDefault).
+  // scrollToPan=true (default): plain scroll → pan, ctrlKey → zoom.
+  // scrollToPan=false (legacy): plain scroll → zoom.
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const rect = svg.getBoundingClientRect();
-      const sensitivity = e.ctrlKey ? ZOOM_SENSITIVITY_TRACKPAD : ZOOM_SENSITIVITY;
-      onViewBoxChange(
-        zoomViewBoxAtPoint({
-          viewBox: viewBoxRef.current,
-          screen: { width: rect.width, height: rect.height },
-          mouseFracX: (e.clientX - rect.left) / rect.width,
-          mouseFracY: (e.clientY - rect.top) / rect.height,
-          zoomFactor: 1 + e.deltaY * sensitivity,
-          minZoom: MIN_ZOOM,
-          maxZoom: MAX_ZOOM,
-        }),
-      );
+      if (e.ctrlKey || !scrollToPanRef.current) {
+        onViewBoxChange(
+          zoomViewBoxAtPoint({
+            viewBox: viewBoxRef.current,
+            screen: { width: rect.width, height: rect.height },
+            mouseFracX: (e.clientX - rect.left) / rect.width,
+            mouseFracY: (e.clientY - rect.top) / rect.height,
+            zoomFactor: 1 + e.deltaY * ZOOM_SENSITIVITY_TRACKPAD,
+            minZoom: MIN_ZOOM,
+            maxZoom: MAX_ZOOM,
+          }),
+        );
+      } else {
+        const scale = viewBoxRef.current.width / rect.width;
+        const vb = viewBoxRef.current;
+        onViewBoxChange({ ...vb, x: vb.x + e.deltaX * scale, y: vb.y + e.deltaY * scale });
+      }
     };
     svg.addEventListener("wheel", handleWheel, { passive: false });
     return () => svg.removeEventListener("wheel", handleWheel);
