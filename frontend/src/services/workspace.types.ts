@@ -37,7 +37,11 @@ export type WorkspaceContent = Pick<WorkspaceDocument, "projects" | "people" | "
 export interface WorkspaceService {
   listMine(): Promise<WorkspaceSummary[]>;
   create(name: string): Promise<WorkspaceId>;
-  subscribe(id: WorkspaceId, callback: (doc: WorkspaceDocument | null) => void): () => void;
+  subscribe(
+    id: WorkspaceId,
+    callback: (doc: WorkspaceDocument | null) => void,
+    onError?: (err: Error) => void,
+  ): () => void;
   saveContent(id: WorkspaceId, content: WorkspaceContent): Promise<void>;
   rename(id: WorkspaceId, name: string): Promise<void>;
   remove(id: WorkspaceId): Promise<void>;

@@ -4,7 +4,8 @@ import type { ProjectData } from "../domain/workspace/types";
 import type { Person, Team } from "../domain/teams/types";
 import type { WorkspaceDocument, WorkspaceId } from "../services/workspace.types";
 
-export type WorkspaceLoadStatus = "loading" | "ready" | "missing";
+export type WorkspaceLoadStatus = "loading" | "ready" | "missing" | "error";
+export type WorkspaceLoadError = "permission-denied" | "unknown";
 
 export interface WorkspaceHydration {
   projects: ProjectData[];
@@ -15,6 +16,8 @@ export interface WorkspaceHydration {
 
 export interface UseWorkspaceLoaderResult {
   status: WorkspaceLoadStatus;
+  /** Only set when `status === "error"`. */
+  loadError: WorkspaceLoadError | null;
   /** Live workspace name — updates on every snapshot, including renames. */
   name: string;
   /** Increments once per successful hydration (initial load or workspace switch).
@@ -32,19 +35,19 @@ export interface UseWorkspaceLoaderResult {
 
 interface UseWorkspaceLoaderArgs {
   workspaceId: WorkspaceId | null;
-  subscribe: (id: WorkspaceId, callback: (doc: WorkspaceDocument | null) => void) => () => void;
+  subscribe: (
+    id: WorkspaceId,
+    callback: (doc: WorkspaceDocument | null) => void,
+    onError?: (err: Error) => void,
+  ) => () => void;
 }
 
-/**
- * Subscribe to a Firestore workspace doc and surface a clean state machine.
- * Encapsulates the hydration-once + name-on-rename + missing-doc detection
- * dance that App.tsx used to do inline.
- */
 export function useWorkspaceLoader({
   workspaceId,
   subscribe,
 }: UseWorkspaceLoaderArgs): UseWorkspaceLoaderResult {
-  const [status, setStatus] = useState<WorkspaceLoadStatus>(workspaceId ? "loading" : "loading");
+  const [status, setStatus] = useState<WorkspaceLoadStatus>("loading");
+  const [loadError, setLoadError] = useState<WorkspaceLoadError | null>(null);
   const [name, setName] = useState("");
   const [loadCount, setLoadCount] = useState(0);
   const [hydration, setHydration] = useState<WorkspaceHydration | null>(null);
@@ -54,31 +57,40 @@ export function useWorkspaceLoader({
   useEffect(() => {
     if (!workspaceId) return;
     setStatus("loading");
+    setLoadError(null);
     setLatestDoc(null);
     hydratedForRef.current = null;
 
-    return subscribe(workspaceId, (doc) => {
-      if (!doc) {
-        setLatestDoc(null);
-        setStatus("missing");
-        return;
-      }
-      setName(doc.name);
-      setLatestDoc(doc);
-      if (hydratedForRef.current === workspaceId) return;
-      hydratedForRef.current = workspaceId;
+    return subscribe(
+      workspaceId,
+      (doc) => {
+        if (!doc) {
+          setLatestDoc(null);
+          setStatus("missing");
+          return;
+        }
+        setName(doc.name);
+        setLatestDoc(doc);
+        if (hydratedForRef.current === workspaceId) return;
+        hydratedForRef.current = workspaceId;
 
-      const projects = doc.projects.length > 0 ? doc.projects : [createDefaultProject()];
-      setHydration({
-        projects,
-        activeProjectId: projects[0].id,
-        people: doc.people,
-        teams: doc.teams,
-      });
-      setLoadCount((c) => c + 1);
-      setStatus("ready");
-    });
+        const projects = doc.projects.length > 0 ? doc.projects : [createDefaultProject()];
+        setHydration({
+          projects,
+          activeProjectId: projects[0].id,
+          people: doc.people,
+          teams: doc.teams,
+        });
+        setLoadCount((c) => c + 1);
+        setStatus("ready");
+      },
+      (err) => {
+        const code = (err as unknown as { code?: string }).code;
+        setLoadError(code === "permission-denied" ? "permission-denied" : "unknown");
+        setStatus("error");
+      },
+    );
   }, [workspaceId, subscribe]);
 
-  return { status, name, loadCount, hydration, latestDoc };
+  return { status, loadError, name, loadCount, hydration, latestDoc };
 }

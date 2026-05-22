@@ -64,6 +64,7 @@ function App() {
 
   const {
     status: loadStatus,
+    loadError,
     name: workspaceName,
     loadCount: workspaceLoadCount,
     hydration,
@@ -306,6 +307,40 @@ function App() {
     },
     [canEdit],
   );
+
+  if (loadStatus === "error") {
+    const isPermissionDenied = loadError === "permission-denied";
+    return (
+      <div className="app-loading">
+        <div className="app-load-error">
+          <p className="app-load-error-title">
+            {isPermissionDenied ? "Access denied" : "Failed to load workspace"}
+          </p>
+          <p className="app-load-error-body">
+            {isPermissionDenied
+              ? "You don't have permission to access this workspace. Your session may have expired or your access was revoked."
+              : "An unexpected error occurred while loading this workspace."}
+          </p>
+          <div className="app-load-error-actions">
+            <button
+              type="button"
+              className="app-load-error-btn"
+              onClick={() => select(null)}
+            >
+              Back to workspaces
+            </button>
+            <button
+              type="button"
+              className="app-load-error-btn app-load-error-btn-primary"
+              onClick={() => authService.signOut()}
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loadStatus !== "ready" || !activeProject) {
     return <div className="app-loading">Loading workspace…</div>;
