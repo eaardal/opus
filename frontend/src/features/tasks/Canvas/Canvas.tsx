@@ -1,6 +1,6 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
-import { Maximize, Focus, Undo2, Redo2, LayoutList, HelpCircle, Pin } from "lucide-react";
+import { Maximize, Focus, Undo2, Redo2, LayoutList, HelpCircle, Pin, Lock, LockOpen } from "lucide-react";
 import type { Task, Group, TaskStatus } from "../../../domain/tasks/types";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
@@ -153,6 +153,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const groupContextMenuRef = useRef<HTMLDivElement>(null);
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const multiSelectionContextMenuRef = useRef<HTMLDivElement>(null);
+  const [canvasLocked, setCanvasLocked] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
@@ -412,6 +413,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         </button>
         <button
           type="button"
+          className={`canvas-toolbar-btn canvas-lock-btn ${canvasLocked ? "active" : ""}`}
+          onClick={() => setCanvasLocked((v) => !v)}
+          aria-label={canvasLocked ? "Unlock canvas" : "Lock canvas"}
+          data-tooltip={canvasLocked ? "Unlock canvas" : "Lock canvas"}
+        >
+          {canvasLocked ? <Lock size={16} /> : <LockOpen size={16} />}
+        </button>
+        <button
+          type="button"
           className="canvas-toolbar-btn"
           onClick={fitToScreen}
           aria-label="Fit to screen"
@@ -491,6 +501,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             groupBox={groupBox}
             isSelected={selectedGroups.has(group.id)}
             panMode={panMode}
+            canvasLocked={canvasLocked}
             onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}
             onMoveWithTasks={onGroupMoveWithTasks}
@@ -531,7 +542,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   ?.map((id) => people.find((p) => p.id === id))
                   .filter(Boolean) as Person[]
               }
-              onMouseDown={(e) => onNodeMouseDown(e, task.id)}
+              onMouseDown={(e) => {
+                if (canvasLocked && !e.shiftKey) return;
+                onNodeMouseDown(e, task.id);
+              }}
               onClick={() => onNodeClick(task.id)}
               onMouseEnter={() => onNodeHover(task.id)}
               onMouseLeave={() => onNodeHover(null)}
@@ -576,7 +590,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                     ?.map((id) => people.find((p) => p.id === id))
                     .filter(Boolean) as Person[]
                 }
-                onMouseDown={(e) => onNodeMouseDown(e, task.id)}
+                onMouseDown={(e) => {
+                  if (canvasLocked && !e.shiftKey) return;
+                  onNodeMouseDown(e, task.id);
+                }}
                 onClick={() => onNodeClick(task.id)}
                 onMouseEnter={() => onNodeHover(task.id)}
                 onMouseLeave={() => onNodeHover(null)}

@@ -61,6 +61,10 @@
   color: var(--text-primary);
 }
 
+.canvas-lock-btn.active {
+  border: 3px solid orange;
+}
+
 .canvas-toolbar-btn[data-tooltip] {
   position: relative;
 }

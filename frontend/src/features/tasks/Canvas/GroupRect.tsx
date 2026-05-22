@@ -36,6 +36,7 @@ interface GroupRectProps {
   groupBox: GroupBoxConfig;
   isSelected: boolean;
   panMode: boolean;
+  canvasLocked?: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
@@ -56,6 +57,7 @@ export function GroupRect({
   groupBox,
   isSelected,
   panMode,
+  canvasLocked = false,
   onMouseDown: onGroupMouseDown,
   onMove,
   onMoveWithTasks,
@@ -100,6 +102,7 @@ export function GroupRect({
   const handleBodyMouseDown = (e: React.MouseEvent) => {
     if (editing) return;
     if (panMode || e.button === 1) return;
+    if (canvasLocked) return;
     if (group.locked && !e.shiftKey) return;
     if (isSelected) {
       onGroupMouseDown(e, group.id);
@@ -140,6 +143,7 @@ export function GroupRect({
 
   const handleEdgeMouseDown = (edge: ResizeEdge) => (e: React.MouseEvent) => {
     if (panMode || e.button === 1) return;
+    if (canvasLocked) return;
     if (group.locked && !e.shiftKey) return;
     e.preventDefault();
     e.stopPropagation();
