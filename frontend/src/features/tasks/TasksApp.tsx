@@ -14,6 +14,7 @@ import {
   deleteEntities,
   deleteGroup as deleteGroupOp,
   deleteTaskCascading,
+  moveGroupWithTasks as moveGroupWithTasksOp,
   removeConnection,
   toggleGroupLock as toggleGroupLockOp,
   updateGroup as updateGroupOp,
@@ -372,6 +373,15 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     [replace],
   );
 
+  const moveGroupAndTasks = useCallback(
+    (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => {
+      const { tasks: t, connections: c, groups: g } = presentRef.current;
+      const { tasks: nextTasks, groups: nextGroups } = moveGroupWithTasksOp(t, g, id, x, y, taskIds);
+      replace({ tasks: nextTasks, connections: c, groups: nextGroups });
+    },
+    [replace],
+  );
+
   const resizeGroup = useCallback(
     (id: string, x: number, y: number, width: number, height: number) => {
       const { tasks: t, connections: c, groups: g } = presentRef.current;
@@ -511,6 +521,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         selectedGroups={selectedGroups}
         onGroupMouseDown={handleGroupMouseDown}
         onGroupMove={moveGroup}
+        onGroupMoveWithTasks={moveGroupAndTasks}
         onGroupMoveStart={handleGroupMoveStart}
         onGroupResize={resizeGroup}
         onGroupResizeStart={handleGroupResizeStart}

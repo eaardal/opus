@@ -8,6 +8,7 @@ import {
   deleteEntities,
   deleteGroup,
   deleteTaskCascading,
+  moveGroupWithTasks,
   removeConnection,
   selectEntitiesInRect,
   toggleGroupLock,
@@ -326,5 +327,51 @@ describe("selectEntitiesInRect", () => {
       nodeRadius: NODE_R,
     });
     expect(taskIds).toEqual(new Set(["t"]));
+  });
+});
+
+describe("moveGroupWithTasks", () => {
+  const g = group("g1", { x: 10, y: 10, width: 200, height: 200 });
+
+  test("moves the group to the new position", () => {
+    const { groups } = moveGroupWithTasks([taskAt("t", 50, 50)], [g], "g1", 30, 40, new Set(["t"]));
+    expect(groups[0]).toMatchObject({ id: "g1", x: 30, y: 40 });
+  });
+
+  test("translates carried tasks by the same delta as the group", () => {
+    const t = taskAt("t", 50, 50);
+    const { tasks } = moveGroupWithTasks([t], [g], "g1", 20, 20, new Set(["t"]));
+    // group moved by dx=10, dy=10 — task should follow
+    expect(tasks[0]).toMatchObject({ id: "t", x: 60, y: 60 });
+  });
+
+  test("does not move tasks not in the carried set", () => {
+    const inside = taskAt("inside", 50, 50);
+    const outside = taskAt("outside", 500, 500);
+    const { tasks } = moveGroupWithTasks([inside, outside], [g], "g1", 20, 20, new Set(["inside"]));
+    expect(tasks.find((t) => t.id === "outside")).toMatchObject({ x: 500, y: 500 });
+  });
+
+  test("moves group without touching tasks when set is empty", () => {
+    const t = taskAt("t", 50, 50);
+    const { tasks, groups } = moveGroupWithTasks([t], [g], "g1", 100, 100, new Set());
+    expect(groups[0]).toMatchObject({ x: 100, y: 100 });
+    expect(tasks[0]).toMatchObject({ x: 50, y: 50 });
+  });
+
+  test("returns state unchanged when group id is not found", () => {
+    const t = taskAt("t", 50, 50);
+    const { tasks, groups } = moveGroupWithTasks([t], [g], "missing", 99, 99, new Set(["t"]));
+    expect(groups[0]).toMatchObject({ x: 10, y: 10 });
+    expect(tasks[0]).toMatchObject({ x: 50, y: 50 });
+  });
+
+  test("does not mutate the input arrays", () => {
+    const t = taskAt("t", 50, 50);
+    const origTasks = [t];
+    const origGroups = [g];
+    moveGroupWithTasks(origTasks, origGroups, "g1", 30, 30, new Set(["t"]));
+    expect(origTasks[0]).toMatchObject({ x: 50, y: 50 });
+    expect(origGroups[0]).toMatchObject({ x: 10, y: 10 });
   });
 });

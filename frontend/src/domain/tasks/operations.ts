@@ -84,6 +84,26 @@ export function toggleGroupLock(groups: Group[], id: string): Group[] {
   return groups.map((g) => (g.id === id ? { ...g, locked: !g.locked } : g));
 }
 
+export function moveGroupWithTasks(
+  tasks: Task[],
+  groups: Group[],
+  groupId: string,
+  x: number,
+  y: number,
+  taskIds: ReadonlySet<string>,
+): { tasks: Task[]; groups: Group[] } {
+  const target = groups.find((g) => g.id === groupId);
+  if (!target) return { tasks, groups };
+  const dx = x - target.x;
+  const dy = y - target.y;
+  return {
+    tasks: tasks.map((t) =>
+      taskIds.has(t.id) ? { ...t, x: t.x + dx, y: t.y + dy } : t,
+    ),
+    groups: groups.map((g) => (g.id === groupId ? { ...g, x, y } : g)),
+  };
+}
+
 // ============================================================================
 // Connections
 // ============================================================================

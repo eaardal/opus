@@ -38,6 +38,7 @@ interface GroupRectProps {
   panMode: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onMove: (id: string, x: number, y: number) => void;
+  onMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
   onMoveStart: () => void;
   onResize: (id: string, x: number, y: number, width: number, height: number) => void;
   onResizeStart: () => void;
@@ -57,6 +58,7 @@ export function GroupRect({
   panMode,
   onMouseDown: onGroupMouseDown,
   onMove,
+  onMoveWithTasks,
   onMoveStart,
   onResize,
   onResizeStart,
@@ -111,10 +113,20 @@ export function GroupRect({
     const startSvg = toSvgCoords(e.clientX, e.clientY);
     const origX = group.x;
     const origY = group.y;
+    const withTasks = !e.shiftKey;
+    const carriedTaskIds = withTasks
+      ? new Set(containedTasks.map((t) => t.id))
+      : new Set<string>();
 
     const handleMouseMove = (ev: MouseEvent) => {
       const currentSvg = toSvgCoords(ev.clientX, ev.clientY);
-      onMove(group.id, origX + currentSvg.x - startSvg.x, origY + currentSvg.y - startSvg.y);
+      const newX = origX + currentSvg.x - startSvg.x;
+      const newY = origY + currentSvg.y - startSvg.y;
+      if (withTasks) {
+        onMoveWithTasks(group.id, newX, newY, carriedTaskIds);
+      } else {
+        onMove(group.id, newX, newY);
+      }
     };
 
     const handleMouseUp = () => {

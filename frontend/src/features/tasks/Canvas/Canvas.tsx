@@ -61,6 +61,7 @@ interface CanvasProps {
   selectedGroups: Set<string>;
   onGroupMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onGroupMove: (id: string, x: number, y: number) => void;
+  onGroupMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
   onGroupMoveStart: () => void;
   onGroupResize: (id: string, x: number, y: number, width: number, height: number) => void;
   onGroupResizeStart: () => void;
@@ -114,6 +115,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     selectedGroups,
     onGroupMouseDown,
     onGroupMove,
+    onGroupMoveWithTasks,
     onGroupMoveStart,
     onGroupResize,
     onGroupResizeStart,
@@ -490,6 +492,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             panMode={panMode}
             onMouseDown={onGroupMouseDown}
             onMove={onGroupMove}
+            onMoveWithTasks={onGroupMoveWithTasks}
             onMoveStart={onGroupMoveStart}
             onResize={onGroupResize}
             onResizeStart={onGroupResizeStart}
