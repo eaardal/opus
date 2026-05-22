@@ -10,3 +10,5 @@ dist/
 .firebase
 .claude/settings.local.json
 .DS_Store
+firestore-debug.log
+firebase-debug.log
