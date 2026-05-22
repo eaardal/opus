@@ -16,16 +16,19 @@ Read `CHANGELOG.md` from the project root and extract the most recent version en
 ## Step 2 — Collect commits
 
 Run:
+
 ```
 git log {SINCE}..HEAD --no-merges --pretty=format:"%s"
 ```
 
 If SINCE was a date rather than a tag, run:
+
 ```
 git log --after="{date}" --no-merges --pretty=format:"%s"
 ```
 
 Collect the subject lines. Discard lines that look like:
+
 - Version bumps (`bump version`, `release v`, `prepare vX.Y.Z`)
 - CI/tooling noise (`trigger build`, `ci:`, `chore: bump`, `format code`)
 - Empty lines
@@ -34,10 +37,10 @@ Collect the subject lines. Discard lines that look like:
 
 Map each remaining subject line to one of three sections. Use the first matching rule:
 
-| Section     | Match when subject starts with or contains                              |
-|-------------|-------------------------------------------------------------------------|
-| **Added**   | `feat:`, `add `, `added `, `new `, `implement`, `introduce`, `support`  |
-| **Fixed**   | `fix:`, `fix `, `fixed `, `bug`, `resolve`, `correct`, `patch`, `revert`|
+| Section     | Match when subject starts with or contains                                                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Added**   | `feat:`, `add `, `added `, `new `, `implement`, `introduce`, `support`                                                                                        |
+| **Fixed**   | `fix:`, `fix `, `fixed `, `bug`, `resolve`, `correct`, `patch`, `revert`                                                                                      |
 | **Changed** | `refactor:`, `update`, `change`, `improve`, `rename`, `move`, `remove`, `delete`, `adjust`, `tweak`, `simplify`, `extract`, `migrate`, `upgrade`, `duplicate` |
 
 For each subject line, strip conventional commit prefixes (`feat:`, `fix:`, `chore:` etc.) before writing the bullet. Capitalise the first word. Do **not** end bullets with a period.
@@ -70,6 +73,7 @@ Show the user the complete draft entry in Keep a Changelog format:
 ```
 
 Then ask:
+
 > "Does this look right? Reply **yes** to write it, or give me your edits (add/remove/reword bullets, change the version) and I'll revise before writing."
 
 Wait for the user's response. If they provide changes, apply them and show the revised draft again before proceeding. Repeat until the user confirms with "yes" or equivalent.
@@ -84,6 +88,7 @@ Once confirmed:
 4. Write the updated file.
 
 The result should look like:
+
 ```
 # Changelog
 
@@ -99,8 +104,19 @@ The result should look like:
 ## Step 7 — Regenerate the TypeScript file
 
 Run:
+
 ```
 mise run generate:changelog
 ```
 
 Confirm the command exited successfully. Report the new version that was added and note that `frontend/src/generated/changelog.ts` has been updated.
+
+## Step 8 - Git tag
+
+Run:
+
+```
+git tag -a {version number} -m "{short summary of version}
+```
+
+Inform the user that the tag has been applied
