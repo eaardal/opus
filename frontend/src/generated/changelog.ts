@@ -14,81 +14,44 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "0.7.0",
-    date: "2026-05-22",
-    sections: [
+    "version": "0.4.0",
+    "date": "2026-05-22",
+    "sections": [
       {
-        name: "Added",
-        items: [
-          "Lock/unlock button to prevent all canvas elements from being moved",
-          "Pan canvas with scroll gesture, with option to disable in settings",
+        "name": "Added",
+        "items": [
+          "Lock/unlock button (top right in canvas) to prevent all canvas elements from being moved",
+          "Pan canvas with scroll gesture (two fingers on laptop touchpad, scrollwheel on external mouse), with option to disable in Settings",
           "Moving a group also moves its content; hold Shift to move the group independently",
-        ],
-      },
-    ],
-  },
-  {
-    version: "0.6.0",
-    date: "2026-05-22",
-    sections: [
-      {
-        name: "Added",
-        items: [
-          "Separate right-click context menu when multiple canvas nodes are selected",
-          "Duplicate option in the task right-click context menu",
-        ],
-      },
-      {
-        name: "Fixed",
-        items: [
-          "Permission denied errors now show an error screen with actionable options instead of an infinite loader",
-        ],
-      },
-    ],
-  },
-  {
-    version: "0.5.0",
-    date: "2026-05-22",
-    sections: [
-      {
-        name: "Added",
-        items: [
+          "New right-click context menu when multiple canvas nodes are selected",
           "Duplicate tasks or groups with Cmd+D",
-          "Help button on the canvas with a keyboard shortcuts reference",
-        ],
+          "Duplicate option in the task right-click context menu",
+          "Help button in the bottom right corner of the canvas with a keyboard shortcuts reference",
+          "Copy and paste tasks and groups (Cmd+C / Cmd+V). Can be copied in the same canvas or across projects or workspaces.",
+          "Select multiple elements by choosing each by Cmd+clicking them",
+          "Select all elements on the canvas with Cmd+A"
+        ]
       },
       {
-        name: "Fixed",
-        items: ["Last active project is now restored when reopening the app"],
-      },
-    ],
+        "name": "Fixed",
+        "items": [
+          "Permission denied errors now show an error screen with actionable options instead of an infinite loader",
+          "Last active project is now selected by defeault when re-opening the app"
+        ]
+      }
+    ]
   },
   {
-    version: "0.4.0",
-    date: "2026-04-15",
-    sections: [
+    "version": "0.3.0",
+    "date": "2026-04-17",
+    "sections": [
       {
-        name: "Added",
-        items: [
-          "Copy and paste tasks and groups (Cmd+C / Cmd+V)",
-          "Select multiple elements with Cmd+click",
-          "Select all elements with Cmd+A",
-          "Pasted elements are automatically selected after pasting",
-        ],
-      },
-    ],
-  },
-  {
-    version: "0.3.0",
-    date: "2026-02-10",
-    sections: [
-      {
-        name: "Added",
-        items: [
+        "name": "Added",
+        "items": [
           "Workspace roles: Owner, Editor, Viewer",
-          "User avatar and account info in the top bar",
-        ],
-      },
-    ],
-  },
+          "User avatar and account info in the top bar"
+        ]
+      }
+    ]
+  }
 ];

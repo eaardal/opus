@@ -12,7 +12,10 @@ import { TeamMgt } from "./features/teams/TeamsApp";
 import type { Person, Team } from "./domain/teams/types";
 import type { TeamMgtHandle } from "./features/teams/types";
 import type { ProjectData, ProjectState } from "./domain/workspace/types";
-import { createDefaultProject, extractProjectState } from "./domain/workspace/projectState";
+import {
+  createDefaultProject,
+  extractProjectState,
+} from "./domain/workspace/projectState";
 import { parseWorkspaceFile } from "./domain/workspace/parseWorkspaceFile";
 import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
@@ -22,7 +25,8 @@ import { Avatar } from "./ui/Avatar";
 
 type ActiveModule = "tasks" | "teams";
 
-const lastProjectKey = (workspaceId: string) => `domino.lastActiveProjectId.${workspaceId}`;
+const lastProjectKey = (workspaceId: string) =>
+  `domino.lastActiveProjectId.${workspaceId}`;
 const LAST_SEEN_CHANGELOG_KEY = "domino.lastSeenChangelogVersion";
 
 function readLastSeenChangelogVersion(): string | null {
@@ -49,7 +53,10 @@ function readLastActiveProjectId(workspaceId: string): string | null {
   }
 }
 
-function writeLastActiveProjectId(workspaceId: string, projectId: string): void {
+function writeLastActiveProjectId(
+  workspaceId: string,
+  projectId: string,
+): void {
   try {
     localStorage.setItem(lastProjectKey(workspaceId), projectId);
   } catch {
@@ -69,7 +76,10 @@ function App() {
     loadCount: workspaceLoadCount,
     hydration,
     latestDoc,
-  } = useWorkspaceLoader({ workspaceId, subscribe: workspaceService.subscribe });
+  } = useWorkspaceLoader({
+    workspaceId,
+    subscribe: workspaceService.subscribe,
+  });
 
   const role = useMemo(
     () => (currentUid ? resolveRole(latestDoc, currentUid) : null),
@@ -110,7 +120,10 @@ function App() {
   useEffect(() => {
     if (!appMenuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuWrapperRef.current && !menuWrapperRef.current.contains(e.target as Node)) {
+      if (
+        menuWrapperRef.current &&
+        !menuWrapperRef.current.contains(e.target as Node)
+      ) {
         setAppMenuOpen(false);
       }
     };
@@ -122,7 +135,9 @@ function App() {
   useEffect(() => {
     if (!hydration) return;
     const storedId = workspaceId ? readLastActiveProjectId(workspaceId) : null;
-    const restored = storedId ? hydration.projects.find((p) => p.id === storedId) : null;
+    const restored = storedId
+      ? hydration.projects.find((p) => p.id === storedId)
+      : null;
     const initial = restored ?? hydration.projects[0];
     currentProjectStateRef.current = extractProjectState(initial);
     setProjects(hydration.projects);
@@ -137,7 +152,8 @@ function App() {
     if (loadStatus === "missing") select(null);
   }, [loadStatus, select]);
 
-  const activeProject = projects.find((p) => p.id === activeProjectId) ?? projects[0];
+  const activeProject =
+    projects.find((p) => p.id === activeProjectId) ?? projects[0];
 
   const handleProjectStateChange = useCallback((state: ProjectState) => {
     currentProjectStateRef.current = state;
@@ -174,7 +190,8 @@ function App() {
     if (hasUnsavedChanges) {
       const confirmed = await confirm({
         title: "Unsaved changes",
-        message: "Opening a savefile will discard your unsaved local edits. Continue?",
+        message:
+          "Opening a savefile will discard your unsaved local edits. Continue?",
         confirmLabel: "Open",
       });
       if (!confirmed) return;
@@ -191,7 +208,10 @@ function App() {
       try {
         const text = await file.text();
         const parsed = parseWorkspaceFile(JSON.parse(text));
-        const loaded = parsed.projects.length > 0 ? parsed.projects : [createDefaultProject()];
+        const loaded =
+          parsed.projects.length > 0
+            ? parsed.projects
+            : [createDefaultProject()];
         currentProjectStateRef.current = extractProjectState(loaded[0]);
         setProjects(loaded);
         setActiveProjectId(loaded[0].id);
@@ -201,7 +221,9 @@ function App() {
         setLocalReloadKey((c) => c + 1);
       } catch (err) {
         console.error("Failed to open savefile:", err);
-        window.alert("Could not open file: the selected file is not a valid Opus savefile.");
+        window.alert(
+          "Could not open file: the selected file is not a valid Opus savefile.",
+        );
       }
     },
     [canEdit],
@@ -211,7 +233,8 @@ function App() {
     if (hasUnsavedChanges) {
       const confirmed = await confirm({
         title: "Unsaved changes",
-        message: "Leave this workspace without saving? Your local edits will be lost.",
+        message:
+          "Leave this workspace without saving? Your local edits will be lost.",
         confirmLabel: "Leave",
       });
       if (!confirmed) return;
@@ -254,7 +277,8 @@ function App() {
         ),
       );
       const newProject = projectsRef.current.find((p) => p.id === newId);
-      if (newProject) currentProjectStateRef.current = extractProjectState(newProject);
+      if (newProject)
+        currentProjectStateRef.current = extractProjectState(newProject);
       if (workspaceId) writeLastActiveProjectId(workspaceId, newId);
       setActiveProjectId(newId);
     },
@@ -280,7 +304,9 @@ function App() {
   const handleRenameProject = useCallback(
     (id: string, name: string) => {
       if (!canEdit) return;
-      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, name } : p)),
+      );
       setHasUnsavedChanges(true);
     },
     [canEdit],
@@ -324,7 +350,11 @@ function App() {
               : "An unexpected error occurred while loading this workspace."}
           </p>
           <div className="app-load-error-actions">
-            <button type="button" className="app-load-error-btn" onClick={() => select(null)}>
+            <button
+              type="button"
+              className="app-load-error-btn"
+              onClick={() => select(null)}
+            >
               Back to workspaces
             </button>
             <button
@@ -390,7 +420,9 @@ function App() {
             <span className="app-bar-filename">
               {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
               {workspaceName}
-              {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
+              {role && (
+                <span className="app-bar-role-badge">{roleLabel(role)}</span>
+              )}
             </span>
           </div>
           <nav className="app-bar-nav">
@@ -409,7 +441,10 @@ function App() {
           </nav>
           <div className="app-bar-right">
             {auth.status === "signedIn" && (
-              <div className="app-bar-identity" title={auth.user.email ?? undefined}>
+              <div
+                className="app-bar-identity"
+                title={auth.user.email ?? undefined}
+              >
                 <Avatar
                   photoURL={auth.user.photoURL}
                   fallbackText={auth.user.displayName ?? auth.user.email ?? "?"}
@@ -421,7 +456,9 @@ function App() {
                     {auth.user.displayName ?? auth.user.email ?? "Signed in"}
                   </span>
                   {auth.user.email && (
-                    <span className="app-bar-identity-email">{auth.user.email}</span>
+                    <span className="app-bar-identity-email">
+                      {auth.user.email}
+                    </span>
                   )}
                 </div>
               </div>
@@ -471,8 +508,10 @@ function App() {
                     }}
                   >
                     <span className="app-bar-menu-item-row">
-                      What's New
-                      {hasNewChangelog && <span className="app-bar-menu-new-dot" />}
+                      Changelog
+                      {hasNewChangelog && (
+                        <span className="app-bar-menu-new-dot" />
+                      )}
                     </span>
                   </button>
                   <button
@@ -528,7 +567,9 @@ function App() {
         )}
 
         <div className="app-shell-content">
-          <div className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}>
+          <div
+            className={`module-wrapper ${activeModule === "tasks" ? "" : "module-hidden"}`}
+          >
             <TaskMgtApp
               ref={taskMgtRef}
               key={`${workspaceLoadCount}-${localReloadKey}-${activeProjectId}`}
@@ -542,7 +583,9 @@ function App() {
               workspaceId={workspaceId ?? ""}
             />
           </div>
-          <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
+          <div
+            className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}
+          >
             <TeamMgt
               key={`${workspaceLoadCount}-${localReloadKey}`}
               ref={teamMgtRef}
