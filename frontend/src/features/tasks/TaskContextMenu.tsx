@@ -43,6 +43,7 @@ interface TaskContextMenuProps {
   people: Person[];
   onSetStatus: (status: TaskStatus) => void;
   onSetCategory: (category: string | undefined) => void;
+  onDuplicate: () => void;
   onDelete: () => void;
   onAssignPeople: (personIds: string[]) => void;
   onClose: () => void;
@@ -57,6 +58,7 @@ export function TaskContextMenu({
   people,
   onSetStatus,
   onSetCategory,
+  onDuplicate,
   onDelete,
   onAssignPeople,
   onClose,
@@ -175,6 +177,15 @@ export function TaskContextMenu({
       )}
 
       <hr className="menu-divider" />
+      <button
+        className="menu-item"
+        onClick={() => {
+          onDuplicate();
+          onClose();
+        }}
+      >
+        Duplicate
+      </button>
       {task.category && (
         <button
           className="menu-item clear-category"

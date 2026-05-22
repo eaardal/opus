@@ -251,6 +251,24 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     selectElements(new Set(result.tasks.map((t) => t.id)), new Set(result.groups.map((g) => g.id)));
   }, [selectedNodes, selectedGroups, tasks, groups, connections, push, selectElements]);
 
+  const handleDuplicateTask = useCallback(
+    (taskId: string) => {
+      const result = duplicateElements({
+        selectedTaskIds: new Set([taskId]),
+        selectedGroupIds: new Set(),
+        tasks,
+        groups,
+      });
+      push({
+        tasks: [...tasks, ...result.tasks],
+        connections,
+        groups: [...groups, ...result.groups],
+      });
+      selectElements(new Set(result.tasks.map((t) => t.id)), new Set());
+    },
+    [tasks, groups, connections, push, selectElements],
+  );
+
   const { shiftPressed } = useGlobalKeyboardShortcuts({
     onUndo: undo,
     onRedo: redo,
@@ -451,6 +469,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onUpdateTaskText={updateTaskText}
         onSetTaskCategory={setTaskCategory}
         onSetTaskStatus={setTaskStatus}
+        onDuplicateTask={handleDuplicateTask}
         onDeleteTask={deleteTask}
         onSetHighlightedTaskId={setHighlightedTaskId}
         onSetOpenMenuId={setOpenMenuId}
@@ -508,6 +527,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         onSetTaskStatus={setTaskStatus}
         onSetTaskCategory={setTaskCategory}
+        onDuplicateTask={handleDuplicateTask}
         onDeleteTask={deleteTask}
         onUpdateTaskText={updateTaskText}
         onCreateTaskAt={addTaskAt}

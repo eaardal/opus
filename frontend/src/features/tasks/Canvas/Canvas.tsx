@@ -77,6 +77,7 @@ interface CanvasProps {
   onToggleTheme: () => void;
   onSetTaskStatus: (id: string, status: TaskStatus) => void;
   onSetTaskCategory: (id: string, category: string | undefined) => void;
+  onDuplicateTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onUpdateTaskText: (id: string, text: string) => void;
   onCreateTaskAt: (x: number, y: number) => void;
@@ -128,6 +129,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onToggleTheme,
     onSetTaskStatus,
     onSetTaskCategory,
+    onDuplicateTask,
     onDeleteTask,
     onUpdateTaskText,
     onCreateTaskAt,
@@ -855,6 +857,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               }}
               onSetCategory={(category) => {
                 onSetTaskCategory(task.id, category);
+                setNodeContextMenu(null);
+              }}
+              onDuplicate={() => {
+                onDuplicateTask(task.id);
                 setNodeContextMenu(null);
               }}
               onDelete={() => {
