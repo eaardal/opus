@@ -5,6 +5,8 @@ import { authService, workspaceService } from "./services/container";
 import { useSelectedWorkspace } from "./features/workspace/SelectedWorkspaceProvider";
 import { useAuthUser } from "./features/auth/useAuthUser";
 import { confirm } from "./ui/ConfirmModal";
+import { ChangelogModal } from "./ui/ChangelogModal";
+import { CHANGELOG } from "./generated/changelog";
 import TaskMgtApp, { type TaskMgtAppHandle } from "./features/tasks/TasksApp";
 import { TeamMgt } from "./features/teams/TeamsApp";
 import type { Person, Team } from "./domain/teams/types";
@@ -21,6 +23,23 @@ import { Avatar } from "./ui/Avatar";
 type ActiveModule = "tasks" | "teams";
 
 const lastProjectKey = (workspaceId: string) => `domino.lastActiveProjectId.${workspaceId}`;
+const LAST_SEEN_CHANGELOG_KEY = "domino.lastSeenChangelogVersion";
+
+function readLastSeenChangelogVersion(): string | null {
+  try {
+    return localStorage.getItem(LAST_SEEN_CHANGELOG_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeLastSeenChangelogVersion(version: string): void {
+  try {
+    localStorage.setItem(LAST_SEEN_CHANGELOG_KEY, version);
+  } catch {
+    // ignore — badge state still works in-memory
+  }
+}
 
 function readLastActiveProjectId(workspaceId: string): string | null {
   try {
@@ -81,6 +100,9 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
+  const [lastSeenVersion, setLastSeenVersion] = useState<string | null>(readLastSeenChangelogVersion);
+  const hasNewChangelog = lastSeenVersion !== (CHANGELOG[0]?.version ?? "");
 
   useEffect(() => {
     if (!appMenuOpen) return;
@@ -412,6 +434,20 @@ function App() {
                     className="app-bar-menu-item"
                     onClick={() => {
                       setAppMenuOpen(false);
+                      setShowChangelog(true);
+                    }}
+                  >
+                    <span className="app-bar-menu-item-row">
+                      What's New
+                      {hasNewChangelog && <span className="app-bar-menu-new-dot" />}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="app-bar-menu-item"
+                    onClick={() => {
+                      setAppMenuOpen(false);
                       taskMgtRef.current?.openSettings();
                     }}
                   >
@@ -443,6 +479,18 @@ function App() {
             onRename={handleRenameProject}
             onDelete={handleDeleteProject}
             onClose={() => setShowProjectAdmin(false)}
+          />
+        )}
+
+        {showChangelog && (
+          <ChangelogModal
+            lastSeenVersion={lastSeenVersion}
+            onClose={() => {
+              const latest = CHANGELOG[0]?.version ?? "";
+              writeLastSeenChangelogVersion(latest);
+              setLastSeenVersion(latest);
+              setShowChangelog(false);
+            }}
           />
         )}
 

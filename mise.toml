@@ -12,9 +12,13 @@ _.file = ".env.local"
 description = "Generate Wails JS bindings from Go types"
 run = "wails generate module"
 
+[tasks."generate:changelog"]
+description = "Generate frontend/src/generated/changelog.ts from CHANGELOG.md"
+run = "go run ./scripts/generate-changelog/"
+
 [tasks.build]
 description = "Build Domino with Wails for the current platform"
-depends = ["generate"]
+depends = ["generate", "generate:changelog"]
 run = '''
 LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
 wails build -clean -ldflags "$LDFLAGS"
@@ -22,7 +26,7 @@ wails build -clean -ldflags "$LDFLAGS"
 
 [tasks."build:mac"]
 description = "Build Domino for macOS (universal binary: amd64 + arm64)"
-depends = ["generate"]
+depends = ["generate", "generate:changelog"]
 run = '''
 LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
 wails build -clean -platform darwin/universal -ldflags "$LDFLAGS"
@@ -30,7 +34,7 @@ wails build -clean -platform darwin/universal -ldflags "$LDFLAGS"
 
 [tasks."build:windows"]
 description = "Build Domino for Windows (amd64)"
-depends = ["generate"]
+depends = ["generate", "generate:changelog"]
 run = '''
 LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
 wails build -clean -platform windows/amd64 -ldflags "$LDFLAGS"
@@ -38,7 +42,7 @@ wails build -clean -platform windows/amd64 -ldflags "$LDFLAGS"
 
 [tasks."build:linux"]
 description = "Build Domino for Linux (amd64)"
-depends = ["generate"]
+depends = ["generate", "generate:changelog"]
 run = '''
 LDFLAGS="-X main.defaultGoogleOAuthClientID=${GOOGLE_OAUTH_CLIENT_ID:-} -X main.defaultGoogleOAuthClientSecret=${GOOGLE_OAUTH_CLIENT_SECRET:-}"
 wails build -clean -platform linux/amd64 -ldflags "$LDFLAGS"

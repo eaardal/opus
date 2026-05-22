@@ -211,6 +211,21 @@
   margin: 4px 0;
 }
 
+.app-bar-menu-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-bar-menu-new-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #3b82f6);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .app-shell-content {
   flex: 1;
   min-height: 0;
