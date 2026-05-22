@@ -61,13 +61,19 @@ function isCanvasClipboard(value: unknown): value is CanvasClipboard {
   if (typeof value !== "object" || value === null) return false;
   const obj = value as Record<string, unknown>;
   return (
-    obj["type"] === CLIPBOARD_TYPE &&
-    obj["version"] === CLIPBOARD_VERSION &&
-    typeof obj["workspaceId"] === "string" &&
-    Array.isArray(obj["tasks"]) &&
-    Array.isArray(obj["connections"]) &&
-    Array.isArray(obj["groups"])
+    obj.type === CLIPBOARD_TYPE &&
+    obj.version === CLIPBOARD_VERSION &&
+    typeof obj.workspaceId === "string" &&
+    Array.isArray(obj.tasks) &&
+    Array.isArray(obj.connections) &&
+    Array.isArray(obj.groups)
   );
+}
+
+function requireGet<K, V>(map: Map<K, V>, key: K): V {
+  const value = map.get(key);
+  if (value === undefined) throw new Error(`Map entry not found for key: ${String(key)}`);
+  return value;
 }
 
 interface PasteArgs {
@@ -99,20 +105,20 @@ export function applyPaste({ clipboard, currentWorkspaceId, viewBox }: PasteArgs
 
   const tasks: Task[] = clipboard.tasks.map((t) => ({
     ...t,
-    id: taskIdMap.get(t.id)!,
+    id: requireGet(taskIdMap, t.id),
     x: t.x + dx,
     y: t.y + dy,
     assignedPersonIds: isSameWorkspace ? (t.assignedPersonIds ?? []) : [],
   }));
 
   const connections: Connection[] = clipboard.connections.map((c) => ({
-    from: taskIdMap.get(c.from)!,
-    to: taskIdMap.get(c.to)!,
+    from: requireGet(taskIdMap, c.from),
+    to: requireGet(taskIdMap, c.to),
   }));
 
   const groups: Group[] = clipboard.groups.map((g) => ({
     ...g,
-    id: groupIdMap.get(g.id)!,
+    id: requireGet(groupIdMap, g.id),
     x: g.x + dx,
     y: g.y + dy,
   }));

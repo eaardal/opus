@@ -61,7 +61,7 @@ describe("serializeSelection", () => {
       groups: [],
       workspaceId: WORKSPACE_A,
     });
-    const parsed = JSON.parse(result!);
+    const parsed = JSON.parse(result as string);
     expect(parsed.tasks).toHaveLength(1);
     expect(parsed.tasks[0].id).toBe("t1");
     expect(parsed.groups).toHaveLength(0);
@@ -77,7 +77,7 @@ describe("serializeSelection", () => {
       groups: [g1],
       workspaceId: WORKSPACE_A,
     });
-    const parsed = JSON.parse(result!);
+    const parsed = JSON.parse(result as string);
     expect(parsed.groups).toHaveLength(1);
     expect(parsed.groups[0].id).toBe("g1");
   });
@@ -91,7 +91,7 @@ describe("serializeSelection", () => {
       groups: [],
       workspaceId: WORKSPACE_A,
     });
-    const parsed = JSON.parse(result!);
+    const parsed = JSON.parse(result as string);
     expect(parsed.connections).toHaveLength(1);
     expect(parsed.connections[0]).toEqual({ from: "t1", to: "t2" });
   });
@@ -105,7 +105,7 @@ describe("serializeSelection", () => {
       groups: [],
       workspaceId: WORKSPACE_A,
     });
-    const parsed = JSON.parse(result!);
+    const parsed = JSON.parse(result as string);
     expect(parsed.connections).toHaveLength(0);
   });
 
@@ -118,7 +118,7 @@ describe("serializeSelection", () => {
       groups: [],
       workspaceId: WORKSPACE_A,
     });
-    const parsed = JSON.parse(result!);
+    const parsed = JSON.parse(result as string);
     expect(parsed.type).toBe("domino/canvas-clipboard");
     expect(parsed.version).toBe(1);
     expect(parsed.workspaceId).toBe(WORKSPACE_A);
@@ -133,7 +133,7 @@ describe("serializeSelection", () => {
       groups: [],
       workspaceId: WORKSPACE_A,
     });
-    const parsed = JSON.parse(result!);
+    const parsed = JSON.parse(result as string);
     expect(parsed.tasks).toHaveLength(1);
     expect(parsed.tasks[0].id).toBe("t1");
   });
