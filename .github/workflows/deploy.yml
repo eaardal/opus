@@ -89,9 +89,29 @@ jobs:
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
+  test-firestore-rules:
+    name: Test Firestore Rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: firestore-rules-tests/package-lock.json
+      - name: Install Firestore rules test dependencies
+        run: npm ci
+        working-directory: firestore-rules-tests
+      - name: Run Firestore rules tests
+        run: npx firebase-tools@14.24.1 emulators:exec --only firestore 'cd firestore-rules-tests && npm test'
+
   build-staging:
     name: Build (staging)
-    needs: [format, lint, test]
+    needs: [format, lint, test, test-firestore-rules]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +135,7 @@ jobs:
 
   build-production:
     name: Build (production)
-    needs: [format, lint, test]
+    needs: [format, lint, test, test-firestore-rules]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
