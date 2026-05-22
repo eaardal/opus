@@ -14,6 +14,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    "version": "0.6.0",
+    "date": "2026-05-22",
+    "sections": [
+      {
+        "name": "Added",
+        "items": [
+          "Separate right-click context menu when multiple canvas nodes are selected",
+          "Duplicate option in the task right-click context menu"
+        ]
+      },
+      {
+        "name": "Fixed",
+        "items": [
+          "Permission denied errors now show an error screen with actionable options instead of an infinite loader"
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.5.0",
     "date": "2026-05-22",
     "sections": [

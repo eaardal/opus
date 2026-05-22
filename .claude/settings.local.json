@@ -16,7 +16,8 @@
       "Bash(npx biome *)",
       "Read(//tmp/claude/**)",
       "Bash(sed -i '' -e 's|from \"./Sidebar\"|from \"./Sidebar/Sidebar\"|g' -e 's|from \"./Canvas\"|from \"./Canvas/Canvas\"|g' src/features/tasks/TasksApp.tsx)",
-      "Bash(sed -i '' -e 's|from \"./PeoplePanel\"|from \"./PeoplePanel/PeoplePanel\"|g' -e 's|from \"./TeamsPanel\"|from \"./TeamsPanel/TeamsPanel\"|g' src/features/teams/TeamsApp.tsx)"
+      "Bash(sed -i '' -e 's|from \"./PeoplePanel\"|from \"./PeoplePanel/PeoplePanel\"|g' -e 's|from \"./TeamsPanel\"|from \"./TeamsPanel/TeamsPanel\"|g' src/features/teams/TeamsApp.tsx)",
+      "Bash(mise run generate:changelog 2>&1)"
     ]
   }
 }

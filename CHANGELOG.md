@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0] - 2026-05-22
+
+### Added
+- Separate right-click context menu when multiple canvas nodes are selected
+- Duplicate option in the task right-click context menu
+
+### Fixed
+- Permission denied errors now show an error screen with actionable options instead of an infinite loader
+
 ## [0.5.0] - 2026-05-22
 
 ### Added
