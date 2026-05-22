@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 // Stub the services/container so we don't pull in Firebase at test time.
 // `vi.hoisted` ensures `signIn` exists before vi.mock's factory runs.
@@ -19,10 +19,6 @@ import { SignInScreen } from "./SignInScreen";
 
 beforeEach(() => {
   signIn.mockReset();
-  document.documentElement.removeAttribute("data-theme");
-});
-afterEach(() => {
-  document.documentElement.removeAttribute("data-theme");
 });
 
 describe("SignInScreen", () => {
@@ -33,11 +29,6 @@ describe("SignInScreen", () => {
     const button = screen.getByRole("button", { name: "Sign in with Google" });
     expect(button).toBeTruthy();
     expect((button as HTMLButtonElement).disabled).toBe(false);
-  });
-
-  test("forces the document into light mode on mount", () => {
-    render(<SignInScreen />);
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
 
   test("disables the button and shows 'Signing in…' while signIn is pending", async () => {

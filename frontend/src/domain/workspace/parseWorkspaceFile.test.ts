@@ -14,7 +14,6 @@ describe("parseWorkspaceFile", () => {
             connections: [],
             groups: [],
             viewBox: { x: 0, y: 0, width: 800, height: 600 },
-            theme: "dark",
             taskQueues: [],
           },
         ],
@@ -40,7 +39,6 @@ describe("parseWorkspaceFile", () => {
         connections: [{ from: "t1", to: "t1" }],
         groups: [{ id: "g1", title: "G", x: 0, y: 0, width: 50, height: 50 }],
         viewBox: { x: -100, y: -50, width: 1000, height: 800 },
-        theme: "dark",
       });
       expect(result.version).toBe(2);
       expect(result.projects).toHaveLength(1);
@@ -49,7 +47,6 @@ describe("parseWorkspaceFile", () => {
       expect(result.projects[0].connections).toHaveLength(1);
       expect(result.projects[0].groups).toHaveLength(1);
       expect(result.projects[0].viewBox).toEqual({ x: -100, y: -50, width: 1000, height: 800 });
-      expect(result.projects[0].theme).toBe("dark");
       expect(result.projects[0].taskQueues).toEqual([]);
       expect(result.people).toEqual([]);
       expect(result.teams).toEqual([]);
@@ -61,17 +58,6 @@ describe("parseWorkspaceFile", () => {
       expect(project.connections).toEqual([]);
       expect(project.groups).toEqual([]);
       expect(project.viewBox).toEqual({ x: 0, y: 0, width: 0, height: 0 });
-      expect(project.theme).toBe("light");
-    });
-
-    test("normalises an unknown theme value to light", () => {
-      const result = parseWorkspaceFile({ tasks: [], theme: "neon" });
-      expect(result.projects[0].theme).toBe("light");
-    });
-
-    test("preserves theme: 'dark' verbatim", () => {
-      const result = parseWorkspaceFile({ tasks: [], theme: "dark" });
-      expect(result.projects[0].theme).toBe("dark");
     });
   });
 

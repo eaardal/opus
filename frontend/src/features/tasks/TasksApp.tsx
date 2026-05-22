@@ -85,7 +85,6 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const presentRef = useRef(present);
   presentRef.current = present;
 
-  const [theme, setTheme] = useState<"dark" | "light">(initialProject.theme);
   const [viewBox, setViewBox] = useState<ViewBox>(initialProject.viewBox);
   const [taskQueues] = useState<PersonTaskQueue[]>(initialProject.taskQueues ?? []);
 
@@ -98,7 +97,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   onStateChangeRef.current = onStateChange;
   const prevStateRef = useRef<ProjectState | null>(null);
   useEffect(() => {
-    const current: ProjectState = { tasks, connections, groups, viewBox, theme, taskQueues };
+    const current: ProjectState = { tasks, connections, groups, viewBox, taskQueues };
     const prev = prevStateRef.current;
     prevStateRef.current = current;
     if (prev === null) return;
@@ -107,15 +106,14 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
       prev.connections === current.connections &&
       prev.groups === current.groups &&
       prev.viewBox === current.viewBox &&
-      prev.theme === current.theme &&
       prev.taskQueues === current.taskQueues
     ) {
       return;
     }
     onStateChangeRef.current(current);
-  }, [tasks, connections, groups, viewBox, theme, taskQueues]);
-  const categories = getCategories(theme);
-  const statuses = getStatuses(theme);
+  }, [tasks, connections, groups, viewBox, taskQueues]);
+  const categories = getCategories();
+  const statuses = getStatuses();
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -161,10 +159,6 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     openSettings: () => canvasRef.current?.openSettings(),
     openHelp: () => canvasRef.current?.openHelp(),
   }));
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (selectedNodes.size === 0 && selectedGroups.size === 0) return;
@@ -541,8 +535,6 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onAssignPersonAndSetInProgress={assignPersonAndSetInProgress}
         viewBox={viewBox}
         onViewBoxChange={setViewBox}
-        theme={theme}
-        onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         onSetTaskStatus={setTaskStatus}
         onSetTaskCategory={setTaskCategory}
         onDuplicateTask={handleDuplicateTask}

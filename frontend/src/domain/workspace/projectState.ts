@@ -10,7 +10,6 @@ export function extractProjectState(p: ProjectData): ProjectState {
     connections: p.connections,
     groups: p.groups,
     viewBox: p.viewBox,
-    theme: p.theme,
     taskQueues: (p.taskQueues ?? []).map((q) => ({ personId: q.personId })),
   };
 }
@@ -24,7 +23,6 @@ export function createDefaultProject(name = "My Project"): ProjectData {
     connections: [],
     groups: [],
     viewBox: { x: 0, y: 0, width: 0, height: 0 },
-    theme: "light",
     taskQueues: [],
   };
 }

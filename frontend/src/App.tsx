@@ -390,11 +390,14 @@ function App() {
               style={{ display: "none" }}
               onChange={handleLegacyFileSelected}
             />
-            <span className="app-bar-filename">
-              {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
-              {workspaceName}
-              {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
-            </span>
+            <div className="app-bar-filename">
+              <span className="app-bar-filename-label">Workspace</span>
+              <div className="app-bar-filename-row">
+                {hasUnsavedChanges && <span className="app-bar-unsaved">●</span>}
+                {workspaceName}
+                {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
+              </div>
+            </div>
           </div>
           <nav className="app-bar-nav">
             <button

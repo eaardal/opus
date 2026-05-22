@@ -37,7 +37,6 @@ export function parseWorkspaceFile(raw: unknown): WorkspaceFile {
           connections: (data.connections ?? []) as Connection[],
           groups: (data.groups ?? []) as Group[],
           viewBox: (data.viewBox ?? { x: 0, y: 0, width: 0, height: 0 }) as ViewBox,
-          theme: data.theme === "dark" ? "dark" : "light",
           taskQueues: [],
         },
       ],

@@ -12,7 +12,6 @@ export interface ProjectData {
   connections: Connection[];
   groups: Group[];
   viewBox: ViewBox;
-  theme: "dark" | "light";
   taskQueues: PersonTaskQueue[];
 }
 
@@ -25,5 +24,5 @@ export interface WorkspaceFile {
 
 export type ProjectState = Pick<
   ProjectData,
-  "tasks" | "connections" | "groups" | "viewBox" | "theme" | "taskQueues"
+  "tasks" | "connections" | "groups" | "viewBox" | "taskQueues"
 >;

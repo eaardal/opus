@@ -84,8 +84,6 @@ interface CanvasProps {
   onAssignPersonAndSetInProgress: (taskId: string, personId: string) => void;
   viewBox: ViewBox;
   onViewBoxChange: (vb: ViewBox) => void;
-  theme: "dark" | "light";
-  onToggleTheme: () => void;
   onSetTaskStatus: (id: string, status: TaskStatus) => void;
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onDuplicateTask: (id: string) => void;
@@ -138,8 +136,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onAssignPersonAndSetInProgress,
     viewBox,
     onViewBoxChange,
-    theme,
-    onToggleTheme,
     onSetTaskStatus,
     onSetTaskCategory,
     onDuplicateTask,
@@ -156,8 +152,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   },
   ref,
 ) {
-  const groupBox = getGroupBox(theme);
-  const connector = getConnector(theme);
+  const groupBox = getGroupBox();
+  const connector = getConnector();
 
   const svgRef = useRef<SVGSVGElement>(null);
   const groupContextMenuRef = useRef<HTMLDivElement>(null);
@@ -469,9 +465,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       {showSettings && (
         <SettingsDialog
           settings={settings}
-          theme={theme}
           onChange={setSettings}
-          onToggleTheme={onToggleTheme}
           onClose={() => setShowSettings(false)}
         />
       )}
