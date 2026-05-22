@@ -14,6 +14,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    "version": "0.7.0",
+    "date": "2026-05-22",
+    "sections": [
+      {
+        "name": "Added",
+        "items": [
+          "Lock/unlock button to prevent all canvas elements from being moved",
+          "Pan canvas with scroll gesture, with option to disable in settings",
+          "Moving a group also moves its content; hold Shift to move the group independently"
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.6.0",
     "date": "2026-05-22",
     "sections": [

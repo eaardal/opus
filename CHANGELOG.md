@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0] - 2026-05-22
+
+### Added
+- Lock/unlock button to prevent all canvas elements from being moved
+- Pan canvas with scroll gesture, with option to disable in settings
+- Moving a group also moves its content; hold Shift to move the group independently
+
 ## [0.6.0] - 2026-05-22
 
 ### Added
