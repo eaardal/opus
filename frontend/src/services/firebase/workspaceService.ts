@@ -49,9 +49,7 @@ function timestampToDate(value: unknown): Date {
 function toMembers(raw: unknown): Record<string, WorkspaceMember> | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const out: Record<string, WorkspaceMember> = {};
-  for (const [uid, value] of Object.entries(
-    raw as Record<string, DocumentData>,
-  )) {
+  for (const [uid, value] of Object.entries(raw as Record<string, DocumentData>)) {
     out[uid] = {
       role: (value.role ?? "viewer") as Role,
       addedAt: timestampToDate(value.addedAt),
@@ -73,11 +71,7 @@ function toDocument(data: DocumentData): WorkspaceDocument {
   };
 }
 
-function toSummary(
-  id: string,
-  data: DocumentData,
-  uid: string,
-): WorkspaceSummary {
+function toSummary(id: string, data: DocumentData, uid: string): WorkspaceSummary {
   return {
     id,
     name: data.name ?? "Untitled",
@@ -98,11 +92,7 @@ function toSummary(
 function roleForListEntry(data: DocumentData, uid: string): Role {
   const members = data.members;
   const memberRole = members?.[uid]?.role;
-  if (
-    memberRole === "owner" ||
-    memberRole === "editor" ||
-    memberRole === "viewer"
-  ) {
+  if (memberRole === "owner" || memberRole === "editor" || memberRole === "viewer") {
     return memberRole;
   }
   if (data.ownerId === uid && (!members || Object.keys(members).length === 0)) {
@@ -111,16 +101,12 @@ function roleForListEntry(data: DocumentData, uid: string): Role {
   return "viewer";
 }
 
-function dedupeSummariesById(
-  summaries: WorkspaceSummary[],
-): WorkspaceSummary[] {
+function dedupeSummariesById(summaries: WorkspaceSummary[]): WorkspaceSummary[] {
   const seen = new Map<string, WorkspaceSummary>();
   for (const s of summaries) {
     if (!seen.has(s.id)) seen.set(s.id, s);
   }
-  return Array.from(seen.values()).sort(
-    (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
-  );
+  return Array.from(seen.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
 
 export const firebaseWorkspaceService: WorkspaceService = {
@@ -139,11 +125,7 @@ export const firebaseWorkspaceService: WorkspaceService = {
     let legacyDocs: WorkspaceSummary[] = [];
     try {
       const legacySnap = await getDocs(
-        query(
-          workspacesCollection(),
-          where("ownerId", "==", uid),
-          orderBy("updatedAt", "desc"),
-        ),
+        query(workspacesCollection(), where("ownerId", "==", uid), orderBy("updatedAt", "desc")),
       );
       legacyDocs = legacySnap.docs.map((d) => toSummary(d.id, d.data(), uid));
     } catch (err) {
@@ -204,9 +186,7 @@ export const firebaseWorkspaceService: WorkspaceService = {
     if (!snap.exists()) throw new Error(`workspace ${id} not found`);
     const data = snap.data();
     const hasMembers =
-      data.members &&
-      typeof data.members === "object" &&
-      Object.keys(data.members).length > 0;
+      data.members && typeof data.members === "object" && Object.keys(data.members).length > 0;
     const newEntry = { role, addedAt: Timestamp.now() };
     if (hasMembers) {
       await updateDoc(workspaceDoc(id), {

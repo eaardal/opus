@@ -102,7 +102,9 @@ function App() {
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
-  const [lastSeenVersion, setLastSeenVersion] = useState<string | null>(readLastSeenChangelogVersion);
+  const [lastSeenVersion, setLastSeenVersion] = useState<string | null>(
+    readLastSeenChangelogVersion,
+  );
   const hasNewChangelog = lastSeenVersion !== (CHANGELOG[0]?.version ?? "");
 
   useEffect(() => {
@@ -322,11 +324,7 @@ function App() {
               : "An unexpected error occurred while loading this workspace."}
           </p>
           <div className="app-load-error-actions">
-            <button
-              type="button"
-              className="app-load-error-btn"
-              onClick={() => select(null)}
-            >
+            <button type="button" className="app-load-error-btn" onClick={() => select(null)}>
               Back to workspaces
             </button>
             <button

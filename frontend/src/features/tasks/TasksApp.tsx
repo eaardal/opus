@@ -376,7 +376,14 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const moveGroupAndTasks = useCallback(
     (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => {
       const { tasks: t, connections: c, groups: g } = presentRef.current;
-      const { tasks: nextTasks, groups: nextGroups } = moveGroupWithTasksOp(t, g, id, x, y, taskIds);
+      const { tasks: nextTasks, groups: nextGroups } = moveGroupWithTasksOp(
+        t,
+        g,
+        id,
+        x,
+        y,
+        taskIds,
+      );
       replace({ tasks: nextTasks, connections: c, groups: nextGroups });
     },
     [replace],

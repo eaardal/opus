@@ -97,9 +97,7 @@ export function moveGroupWithTasks(
   const dx = x - target.x;
   const dy = y - target.y;
   return {
-    tasks: tasks.map((t) =>
-      taskIds.has(t.id) ? { ...t, x: t.x + dx, y: t.y + dy } : t,
-    ),
+    tasks: tasks.map((t) => (taskIds.has(t.id) ? { ...t, x: t.x + dx, y: t.y + dy } : t)),
     groups: groups.map((g) => (g.id === groupId ? { ...g, x, y } : g)),
   };
 }

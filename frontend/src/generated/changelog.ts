@@ -14,83 +14,81 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    "version": "0.7.0",
-    "date": "2026-05-22",
-    "sections": [
+    version: "0.7.0",
+    date: "2026-05-22",
+    sections: [
       {
-        "name": "Added",
-        "items": [
+        name: "Added",
+        items: [
           "Lock/unlock button to prevent all canvas elements from being moved",
           "Pan canvas with scroll gesture, with option to disable in settings",
-          "Moving a group also moves its content; hold Shift to move the group independently"
-        ]
-      }
-    ]
+          "Moving a group also moves its content; hold Shift to move the group independently",
+        ],
+      },
+    ],
   },
   {
-    "version": "0.6.0",
-    "date": "2026-05-22",
-    "sections": [
+    version: "0.6.0",
+    date: "2026-05-22",
+    sections: [
       {
-        "name": "Added",
-        "items": [
+        name: "Added",
+        items: [
           "Separate right-click context menu when multiple canvas nodes are selected",
-          "Duplicate option in the task right-click context menu"
-        ]
+          "Duplicate option in the task right-click context menu",
+        ],
       },
       {
-        "name": "Fixed",
-        "items": [
-          "Permission denied errors now show an error screen with actionable options instead of an infinite loader"
-        ]
-      }
-    ]
+        name: "Fixed",
+        items: [
+          "Permission denied errors now show an error screen with actionable options instead of an infinite loader",
+        ],
+      },
+    ],
   },
   {
-    "version": "0.5.0",
-    "date": "2026-05-22",
-    "sections": [
+    version: "0.5.0",
+    date: "2026-05-22",
+    sections: [
       {
-        "name": "Added",
-        "items": [
+        name: "Added",
+        items: [
           "Duplicate tasks or groups with Cmd+D",
-          "Help button on the canvas with a keyboard shortcuts reference"
-        ]
+          "Help button on the canvas with a keyboard shortcuts reference",
+        ],
       },
       {
-        "name": "Fixed",
-        "items": [
-          "Last active project is now restored when reopening the app"
-        ]
-      }
-    ]
+        name: "Fixed",
+        items: ["Last active project is now restored when reopening the app"],
+      },
+    ],
   },
   {
-    "version": "0.4.0",
-    "date": "2026-04-15",
-    "sections": [
+    version: "0.4.0",
+    date: "2026-04-15",
+    sections: [
       {
-        "name": "Added",
-        "items": [
+        name: "Added",
+        items: [
           "Copy and paste tasks and groups (Cmd+C / Cmd+V)",
           "Select multiple elements with Cmd+click",
           "Select all elements with Cmd+A",
-          "Pasted elements are automatically selected after pasting"
-        ]
-      }
-    ]
+          "Pasted elements are automatically selected after pasting",
+        ],
+      },
+    ],
   },
   {
-    "version": "0.3.0",
-    "date": "2026-02-10",
-    "sections": [
+    version: "0.3.0",
+    date: "2026-02-10",
+    sections: [
       {
-        "name": "Added",
-        "items": [
+        name: "Added",
+        items: [
           "Workspace roles: Owner, Editor, Viewer",
-          "User avatar and account info in the top bar"
-        ]
-      }
-    ]
-  }
+          "User avatar and account info in the top bar",
+        ],
+      },
+    ],
+  },
 ];

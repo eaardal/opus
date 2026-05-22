@@ -1,6 +1,16 @@
 import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import "./Canvas.css";
-import { Maximize, Focus, Undo2, Redo2, LayoutList, HelpCircle, Pin, Lock, LockOpen } from "lucide-react";
+import {
+  Maximize,
+  Focus,
+  Undo2,
+  Redo2,
+  LayoutList,
+  HelpCircle,
+  Pin,
+  Lock,
+  LockOpen,
+} from "lucide-react";
 import type { Task, Group, TaskStatus } from "../../../domain/tasks/types";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";

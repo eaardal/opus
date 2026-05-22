@@ -117,9 +117,7 @@ export function GroupRect({
     const origX = group.x;
     const origY = group.y;
     const withTasks = !e.shiftKey;
-    const carriedTaskIds = withTasks
-      ? new Set(containedTasks.map((t) => t.id))
-      : new Set<string>();
+    const carriedTaskIds = withTasks ? new Set(containedTasks.map((t) => t.id)) : new Set<string>();
 
     const handleMouseMove = (ev: MouseEvent) => {
       const currentSvg = toSvgCoords(ev.clientX, ev.clientY);
