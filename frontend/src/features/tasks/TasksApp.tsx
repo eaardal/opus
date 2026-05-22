@@ -529,6 +529,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onSetTaskCategory={setTaskCategory}
         onDuplicateTask={handleDuplicateTask}
         onDeleteTask={deleteTask}
+        onDeleteSelected={handleDeleteSelected}
         onUpdateTaskText={updateTaskText}
         onCreateTaskAt={addTaskAt}
         onCreateGroupAt={addGroupAt}

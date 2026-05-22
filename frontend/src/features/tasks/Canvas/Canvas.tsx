@@ -79,6 +79,7 @@ interface CanvasProps {
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onDuplicateTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
+  onDeleteSelected: () => void;
   onUpdateTaskText: (id: string, text: string) => void;
   onCreateTaskAt: (x: number, y: number) => void;
   onCreateGroupAt: (x: number, y: number) => void;
@@ -131,6 +132,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onSetTaskCategory,
     onDuplicateTask,
     onDeleteTask,
+    onDeleteSelected,
     onUpdateTaskText,
     onCreateTaskAt,
     onCreateGroupAt,
@@ -148,11 +150,16 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const svgRef = useRef<SVGSVGElement>(null);
   const groupContextMenuRef = useRef<HTMLDivElement>(null);
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
+  const multiSelectionContextMenuRef = useRef<HTMLDivElement>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{
     taskId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [multiSelectionContextMenu, setMultiSelectionContextMenu] = useState<{
     x: number;
     y: number;
   } | null>(null);
@@ -234,6 +241,27 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }, [canvasContextMenu]);
 
   useEffect(() => {
+    if (!multiSelectionContextMenu) return;
+    const handleClose = (e: MouseEvent) => {
+      if (
+        multiSelectionContextMenuRef.current &&
+        !multiSelectionContextMenuRef.current.contains(e.target as Node)
+      ) {
+        setMultiSelectionContextMenu(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMultiSelectionContextMenu(null);
+    };
+    document.addEventListener("mousedown", handleClose);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClose);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [multiSelectionContextMenu]);
+
+  useEffect(() => {
     if (!showHelpPanel || isHelpPanelPinned) return;
     const handleClose = (e: MouseEvent) => {
       if (helpPanelRef.current && !helpPanelRef.current.contains(e.target as Node)) {
@@ -244,11 +272,18 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     return () => document.removeEventListener("mousedown", handleClose);
   }, [showHelpPanel, isHelpPanelPinned]);
 
-  const handleNodeContextMenu = useCallback((e: React.MouseEvent, taskId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setNodeContextMenu({ taskId, x: e.clientX, y: e.clientY });
-  }, []);
+  const handleNodeContextMenu = useCallback(
+    (e: React.MouseEvent, taskId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (selectedNodes.size > 1 && selectedNodes.has(taskId)) {
+        setMultiSelectionContextMenu({ x: e.clientX, y: e.clientY });
+      } else {
+        setNodeContextMenu({ taskId, x: e.clientX, y: e.clientY });
+      }
+    },
+    [selectedNodes],
+  );
 
   const toSvgCoords = useCallback(
     (clientX: number, clientY: number): { x: number; y: number } =>
@@ -872,6 +907,29 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             />
           );
         })()}
+      {multiSelectionContextMenu && (
+        <div
+          ref={multiSelectionContextMenuRef}
+          className="task-menu"
+          style={{
+            position: "fixed",
+            top: multiSelectionContextMenu.y,
+            left: multiSelectionContextMenu.x,
+            transform: "none",
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <button
+            className="menu-item delete-item"
+            onClick={() => {
+              setMultiSelectionContextMenu(null);
+              void onDeleteSelected();
+            }}
+          >
+            Delete {selectedNodes.size} tasks
+          </button>
+        </div>
+      )}
     </div>
   );
 });
