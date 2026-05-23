@@ -28,10 +28,10 @@ import { firebaseAuth, firestore } from "./client";
 
 const WORKSPACES_COLLECTION = "workspaces";
 
-function requireUserId(): string {
-  const uid = firebaseAuth.currentUser?.uid;
-  if (!uid) throw new Error("no signed-in user");
-  return uid;
+function requireUserEmail(): string {
+  const email = firebaseAuth.currentUser?.email;
+  if (!email) throw new Error("no signed-in user");
+  return email;
 }
 
 function workspacesCollection() {
@@ -71,12 +71,12 @@ function toDocument(data: DocumentData): WorkspaceDocument {
   };
 }
 
-function toSummary(id: string, data: DocumentData, uid: string): WorkspaceSummary {
+function toSummary(id: string, data: DocumentData, email: string): WorkspaceSummary {
   return {
     id,
     name: data.name ?? "Untitled",
     updatedAt: timestampToDate(data.updatedAt),
-    role: roleForListEntry(data, uid),
+    role: roleForListEntry(data, email),
   };
 }
 
@@ -89,13 +89,13 @@ function toSummary(id: string, data: DocumentData, uid: string): WorkspaceSummar
  *  - User was removed from members but is still the original creator →
  *    "viewer" (matches the read-only access the rules grant them).
  */
-function roleForListEntry(data: DocumentData, uid: string): Role {
+function roleForListEntry(data: DocumentData, email: string): Role {
   const members = data.members;
-  const memberRole = members?.[uid]?.role;
+  const memberRole = members?.[email]?.role;
   if (memberRole === "owner" || memberRole === "editor" || memberRole === "viewer") {
     return memberRole;
   }
-  if (data.ownerId === uid && (!members || Object.keys(members).length === 0)) {
+  if (data.ownerId === email && (!members || Object.keys(members).length === 0)) {
     return "owner";
   }
   return "viewer";
@@ -111,11 +111,11 @@ function dedupeSummariesById(summaries: WorkspaceSummary[]): WorkspaceSummary[] 
 
 export const firebaseWorkspaceService: WorkspaceService = {
   async listMine() {
-    const uid = requireUserId();
+    const email = requireUserEmail();
     const memberSnap = await getDocs(
       query(
         workspacesCollection(),
-        where("memberIds", "array-contains", uid),
+        where("memberIds", "array-contains", email),
         orderBy("updatedAt", "desc"),
       ),
     );
@@ -125,28 +125,28 @@ export const firebaseWorkspaceService: WorkspaceService = {
     let legacyDocs: WorkspaceSummary[] = [];
     try {
       const legacySnap = await getDocs(
-        query(workspacesCollection(), where("ownerId", "==", uid), orderBy("updatedAt", "desc")),
+        query(workspacesCollection(), where("ownerId", "==", email), orderBy("updatedAt", "desc")),
       );
-      legacyDocs = legacySnap.docs.map((d) => toSummary(d.id, d.data(), uid));
+      legacyDocs = legacySnap.docs.map((d) => toSummary(d.id, d.data(), email));
     } catch (err) {
       console.warn("[workspaces] legacy ownerId query failed:", err);
     }
     return dedupeSummariesById([
-      ...memberSnap.docs.map((d) => toSummary(d.id, d.data(), uid)),
+      ...memberSnap.docs.map((d) => toSummary(d.id, d.data(), email)),
       ...legacyDocs,
     ]);
   },
 
   async create(name) {
-    const uid = requireUserId();
+    const email = requireUserEmail();
     const ref = await addDoc(workspacesCollection(), {
-      ownerId: uid,
+      ownerId: email,
       name,
       projects: [],
       people: [],
       teams: [],
-      members: { [uid]: { role: "owner", addedAt: Timestamp.now() } },
-      memberIds: [uid],
+      members: { [email]: { role: "owner", addedAt: Timestamp.now() } },
+      memberIds: [email],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

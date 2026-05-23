@@ -71,12 +71,12 @@ vi.mock("firebase/firestore", () => ({
   onSnapshot,
 }));
 
-let currentUid: string | null = "current-uid";
+let currentEmail: string | null = "current@apparat.no";
 vi.mock("./client", () => ({
   firestore: { name: "test-firestore" },
   firebaseAuth: {
     get currentUser() {
-      return currentUid ? { uid: currentUid } : null;
+      return currentEmail ? { uid: "current-firebase-uid", email: currentEmail } : null;
     },
   },
 }));
@@ -95,11 +95,11 @@ beforeEach(() => {
   arrayUnion.mockClear();
   arrayRemove.mockClear();
   deleteField.mockClear();
-  currentUid = "current-uid";
+  currentEmail = "current@apparat.no";
 });
 
 describe("firebaseWorkspaceService.create", () => {
-  test("seeds the creator as the sole owner in members + memberIds", async () => {
+  test("seeds the creator's email as the sole owner in members + memberIds", async () => {
     addDoc.mockResolvedValueOnce({ id: "ws1" });
 
     const id = await firebaseWorkspaceService.create("My WS");
@@ -107,11 +107,11 @@ describe("firebaseWorkspaceService.create", () => {
     expect(id).toBe("ws1");
     expect(addDoc).toHaveBeenCalledTimes(1);
     const payload = addDoc.mock.calls[0][1];
-    expect(payload.ownerId).toBe("current-uid");
+    expect(payload.ownerId).toBe("current@apparat.no");
     expect(payload.name).toBe("My WS");
-    expect(payload.memberIds).toEqual(["current-uid"]);
-    expect(payload.members["current-uid"].role).toBe("owner");
-    expect(payload.members["current-uid"].addedAt).toBeInstanceOf(Timestamp);
+    expect(payload.memberIds).toEqual(["current@apparat.no"]);
+    expect(payload.members["current@apparat.no"].role).toBe("owner");
+    expect(payload.members["current@apparat.no"].addedAt).toBeInstanceOf(Timestamp);
   });
 });
 
@@ -128,13 +128,13 @@ describe("firebaseWorkspaceService.listMine", () => {
             data: () => ({
               name: "Shared",
               updatedAt: ts2,
-              ownerId: "someone-else",
-              members: { "current-uid": { role: "editor" } },
+              ownerId: "someone-else@tv2.no",
+              members: { "current@apparat.no": { role: "editor" } },
             }),
           },
           {
             id: "legacy",
-            data: () => ({ name: "Legacy", updatedAt: ts1, ownerId: "current-uid" }),
+            data: () => ({ name: "Legacy", updatedAt: ts1, ownerId: "current@apparat.no" }),
           },
         ],
       }) // memberIds query
@@ -142,15 +142,15 @@ describe("firebaseWorkspaceService.listMine", () => {
         docs: [
           {
             id: "legacy",
-            data: () => ({ name: "Legacy", updatedAt: ts1, ownerId: "current-uid" }),
+            data: () => ({ name: "Legacy", updatedAt: ts1, ownerId: "current@apparat.no" }),
           },
           {
             id: "owned",
             data: () => ({
               name: "Owned",
               updatedAt: ts3,
-              ownerId: "current-uid",
-              members: { "current-uid": { role: "owner" } },
+              ownerId: "current@apparat.no",
+              members: { "current@apparat.no": { role: "owner" } },
             }),
           },
         ],
@@ -164,7 +164,7 @@ describe("firebaseWorkspaceService.listMine", () => {
     expect(result.map((r) => r.role)).toEqual(["owner", "editor", "owner"]);
   });
 
-  test("classifies a removed creator as viewer (members exists but uid not in it)", async () => {
+  test("classifies a removed creator as viewer (members exists but email not in it)", async () => {
     getDocs
       .mockResolvedValueOnce({ docs: [] }) // memberIds query — empty
       .mockResolvedValueOnce({
@@ -174,8 +174,8 @@ describe("firebaseWorkspaceService.listMine", () => {
             data: () => ({
               name: "Old workspace",
               updatedAt: new Timestamp(1_700_000_000),
-              ownerId: "current-uid",
-              members: { "someone-else": { role: "owner" } },
+              ownerId: "current@apparat.no",
+              members: { "someone-else@tv2.no": { role: "owner" } },
             }),
           },
         ],
@@ -185,15 +185,15 @@ describe("firebaseWorkspaceService.listMine", () => {
     expect(result).toEqual([expect.objectContaining({ id: "ws1", role: "viewer" })]);
   });
 
-  test("issues both queries with the current uid", async () => {
+  test("issues both queries with the current user's email", async () => {
     getDocs.mockResolvedValue({ docs: [] });
     await firebaseWorkspaceService.listMine();
-    expect(where).toHaveBeenCalledWith("memberIds", "array-contains", "current-uid");
-    expect(where).toHaveBeenCalledWith("ownerId", "==", "current-uid");
+    expect(where).toHaveBeenCalledWith("memberIds", "array-contains", "current@apparat.no");
+    expect(where).toHaveBeenCalledWith("ownerId", "==", "current@apparat.no");
   });
 
   test("throws when no user is signed in", async () => {
-    currentUid = null;
+    currentEmail = null;
     await expect(firebaseWorkspaceService.listMine()).rejects.toThrow(/no signed-in user/);
   });
 });
@@ -203,21 +203,21 @@ describe("firebaseWorkspaceService.addMember", () => {
     getDoc.mockResolvedValueOnce({
       exists: () => true,
       data: () => ({
-        ownerId: "owner-uid",
-        members: { "owner-uid": { role: "owner", addedAt: new Timestamp(1) } },
-        memberIds: ["owner-uid"],
+        ownerId: "owner@apparat.no",
+        members: { "owner@apparat.no": { role: "owner", addedAt: new Timestamp(1) } },
+        memberIds: ["owner@apparat.no"],
       }),
     });
     updateDoc.mockResolvedValueOnce(undefined);
 
-    await firebaseWorkspaceService.addMember("ws1", "new-uid", "editor");
+    await firebaseWorkspaceService.addMember("ws1", "new@tv2.no", "editor");
 
     const payload = updateDoc.mock.calls[0][1];
-    expect(payload["members.new-uid"]).toEqual({
+    expect(payload["members.new@tv2.no"]).toEqual({
       role: "editor",
       addedAt: expect.any(Timestamp),
     });
-    expect(payload.memberIds).toEqual({ kind: "arrayUnion", ids: ["new-uid"] });
+    expect(payload.memberIds).toEqual({ kind: "arrayUnion", ids: ["new@tv2.no"] });
     expect(payload.updatedAt).toBe("SERVER_TS");
     // Should NOT touch the existing members map
     expect(payload.members).toBeUndefined();
@@ -226,35 +226,35 @@ describe("firebaseWorkspaceService.addMember", () => {
   test("on a legacy doc, seeds members with the legacy owner + new member", async () => {
     getDoc.mockResolvedValueOnce({
       exists: () => true,
-      data: () => ({ ownerId: "legacy-owner", name: "Old WS" }),
+      data: () => ({ ownerId: "legacy@apparat.no", name: "Old WS" }),
     });
     updateDoc.mockResolvedValueOnce(undefined);
 
-    await firebaseWorkspaceService.addMember("ws1", "new-uid", "viewer");
+    await firebaseWorkspaceService.addMember("ws1", "new@tv2.no", "viewer");
 
     const payload = updateDoc.mock.calls[0][1];
-    expect(payload.members["legacy-owner"].role).toBe("owner");
-    expect(payload.members["new-uid"].role).toBe("viewer");
-    expect(payload.memberIds).toEqual(["legacy-owner", "new-uid"]);
+    expect(payload.members["legacy@apparat.no"].role).toBe("owner");
+    expect(payload.members["new@tv2.no"].role).toBe("viewer");
+    expect(payload.memberIds).toEqual(["legacy@apparat.no", "new@tv2.no"]);
     expect(payload.updatedAt).toBe("SERVER_TS");
   });
 
   test("on a doc with empty members object, also seeds (treats empty as legacy)", async () => {
     getDoc.mockResolvedValueOnce({
       exists: () => true,
-      data: () => ({ ownerId: "legacy-owner", members: {}, memberIds: [] }),
+      data: () => ({ ownerId: "legacy@apparat.no", members: {}, memberIds: [] }),
     });
     updateDoc.mockResolvedValueOnce(undefined);
 
-    await firebaseWorkspaceService.addMember("ws1", "new-uid", "editor");
+    await firebaseWorkspaceService.addMember("ws1", "new@tv2.no", "editor");
 
     const payload = updateDoc.mock.calls[0][1];
-    expect(payload.memberIds).toEqual(["legacy-owner", "new-uid"]);
+    expect(payload.memberIds).toEqual(["legacy@apparat.no", "new@tv2.no"]);
   });
 
   test("throws if the workspace doc does not exist", async () => {
     getDoc.mockResolvedValueOnce({ exists: () => false, data: () => undefined });
-    await expect(firebaseWorkspaceService.addMember("ws1", "new", "viewer")).rejects.toThrow(
+    await expect(firebaseWorkspaceService.addMember("ws1", "new@tv2.no", "viewer")).rejects.toThrow(
       /not found/,
     );
   });
@@ -263,20 +263,20 @@ describe("firebaseWorkspaceService.addMember", () => {
 describe("firebaseWorkspaceService.updateMemberRole", () => {
   test("uses a dotted path so other member fields are untouched", async () => {
     updateDoc.mockResolvedValueOnce(undefined);
-    await firebaseWorkspaceService.updateMemberRole("ws1", "u1", "editor");
+    await firebaseWorkspaceService.updateMemberRole("ws1", "user@tv2.no", "editor");
     const payload = updateDoc.mock.calls[0][1];
-    expect(payload["members.u1.role"]).toBe("editor");
+    expect(payload["members.user@tv2.no.role"]).toBe("editor");
     expect(payload.updatedAt).toBe("SERVER_TS");
   });
 });
 
 describe("firebaseWorkspaceService.removeMember", () => {
-  test("deletes the member entry and pulls the uid from memberIds", async () => {
+  test("deletes the member entry and pulls the email from memberIds", async () => {
     updateDoc.mockResolvedValueOnce(undefined);
-    await firebaseWorkspaceService.removeMember("ws1", "u1");
+    await firebaseWorkspaceService.removeMember("ws1", "user@tv2.no");
     const payload = updateDoc.mock.calls[0][1];
-    expect(payload["members.u1"]).toEqual({ kind: "deleteField" });
-    expect(payload.memberIds).toEqual({ kind: "arrayRemove", ids: ["u1"] });
+    expect(payload["members.user@tv2.no"]).toEqual({ kind: "deleteField" });
+    expect(payload.memberIds).toEqual({ kind: "arrayRemove", ids: ["user@tv2.no"] });
     expect(payload.updatedAt).toBe("SERVER_TS");
   });
 });

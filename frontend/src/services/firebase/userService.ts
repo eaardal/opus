@@ -19,8 +19,8 @@ function timestampToDate(value: unknown): Date {
 
 function toRegisteredUser(id: string, data: DocumentData): RegisteredUser {
   return {
-    uid: data.uid ?? id,
-    email: data.email ?? "",
+    uid: id, // document ID is the email — used as the stable cross-project identifier
+    email: data.email ?? id,
     displayName: data.displayName ?? null,
     photoURL: data.photoURL ?? null,
     updatedAt: timestampToDate(data.updatedAt),
@@ -32,11 +32,13 @@ export const firebaseUserService: UserService = {
     if (!user.email) {
       throw new Error("cannot register user without an email");
     }
-    await setDoc(doc(firestore, USERS_COLLECTION, user.uid), {
-      uid: user.uid,
+    // Document ID is the email so the identity is stable across Firebase projects.
+    // firebaseUid is stored for reference but is NOT used as an identifier anywhere.
+    await setDoc(doc(firestore, USERS_COLLECTION, user.email), {
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
+      firebaseUid: user.uid,
       updatedAt: serverTimestamp(),
     });
   },

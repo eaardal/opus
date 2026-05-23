@@ -50,24 +50,24 @@ beforeEach(() => {
 });
 
 describe("firebaseUserService.upsertOnSignIn", () => {
-  test("writes the user profile to users/{uid} with a server timestamp", async () => {
+  test("writes the user profile to users/{email} with a server timestamp", async () => {
     setDoc.mockResolvedValueOnce(undefined);
 
     await firebaseUserService.upsertOnSignIn({
-      uid: "u1",
+      uid: "firebase-uid-u1",
       email: "alice@apparat.no",
       displayName: "Alice",
       photoURL: "https://example.com/a.png",
     });
 
-    expect(doc).toHaveBeenCalledWith(expect.anything(), "users", "u1");
+    expect(doc).toHaveBeenCalledWith(expect.anything(), "users", "alice@apparat.no");
     expect(setDoc).toHaveBeenCalledWith(
-      { db: { name: "test-firestore" }, col: "users", id: "u1" },
+      { db: { name: "test-firestore" }, col: "users", id: "alice@apparat.no" },
       {
-        uid: "u1",
         email: "alice@apparat.no",
         displayName: "Alice",
         photoURL: "https://example.com/a.png",
+        firebaseUid: "firebase-uid-u1",
         updatedAt: "SERVER_TS",
       },
     );
@@ -77,17 +77,17 @@ describe("firebaseUserService.upsertOnSignIn", () => {
     setDoc.mockResolvedValueOnce(undefined);
 
     await firebaseUserService.upsertOnSignIn({
-      uid: "u2",
+      uid: "firebase-uid-u2",
       email: "b@tv2.no",
       displayName: null,
       photoURL: null,
     });
 
     expect(setDoc).toHaveBeenCalledWith(expect.anything(), {
-      uid: "u2",
       email: "b@tv2.no",
       displayName: null,
       photoURL: null,
+      firebaseUid: "firebase-uid-u2",
       updatedAt: "SERVER_TS",
     });
   });
@@ -95,7 +95,7 @@ describe("firebaseUserService.upsertOnSignIn", () => {
   test("throws when the auth user has no email", async () => {
     await expect(
       firebaseUserService.upsertOnSignIn({
-        uid: "u3",
+        uid: "firebase-uid-u3",
         email: null,
         displayName: "X",
         photoURL: null,
@@ -106,26 +106,26 @@ describe("firebaseUserService.upsertOnSignIn", () => {
 });
 
 describe("firebaseUserService.listAll", () => {
-  test("returns all users with timestamps converted to Date", async () => {
+  test("returns all users with document ID as uid and timestamps converted to Date", async () => {
     getDocs.mockResolvedValueOnce({
       docs: [
         {
-          id: "u1",
+          id: "alice@apparat.no",
           data: () => ({
-            uid: "u1",
             email: "alice@apparat.no",
             displayName: "Alice",
             photoURL: null,
+            firebaseUid: "firebase-uid-u1",
             updatedAt: new Timestamp(1_700_000_000),
           }),
         },
         {
-          id: "u2",
+          id: "bob@tv2.no",
           data: () => ({
-            uid: "u2",
             email: "bob@tv2.no",
             displayName: "Bob",
             photoURL: "https://example.com/b.png",
+            firebaseUid: "firebase-uid-u2",
             updatedAt: new Timestamp(1_700_000_500),
           }),
         },
@@ -137,13 +137,13 @@ describe("firebaseUserService.listAll", () => {
     expect(collection).toHaveBeenCalledWith(expect.anything(), "users");
     expect(users).toHaveLength(2);
     expect(users[0]).toEqual({
-      uid: "u1",
+      uid: "alice@apparat.no",
       email: "alice@apparat.no",
       displayName: "Alice",
       photoURL: null,
       updatedAt: new Date(1_700_000_000_000),
     });
-    expect(users[1].uid).toBe("u2");
+    expect(users[1].uid).toBe("bob@tv2.no");
     expect(users[1].updatedAt).toEqual(new Date(1_700_000_500_000));
   });
 
@@ -151,9 +151,8 @@ describe("firebaseUserService.listAll", () => {
     getDocs.mockResolvedValueOnce({
       docs: [
         {
-          id: "u1",
+          id: "alice@apparat.no",
           data: () => ({
-            uid: "u1",
             email: "alice@apparat.no",
             displayName: "Alice",
             photoURL: null,

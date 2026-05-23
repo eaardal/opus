@@ -133,3 +133,53 @@ echo ""
 echo "All distributions ready in dist/:"
 ls -lh dist/
 """
+
+# ── Firebase deploy ───────────────────────────────────────────────────────────
+#
+# Prerequisites: firebase CLI installed and authenticated (firebase login).
+# Projects are defined in .firebaserc:
+#   default    → domino-staging-dc209
+#   production → domino-34fce
+
+[tasks."firebase:deploy:rules:staging"]
+description = "Deploy Firestore rules to staging"
+run = "firebase deploy --only firestore:rules --project default"
+
+[tasks."firebase:deploy:rules:prod"]
+description = "Deploy Firestore rules to production"
+run = "firebase deploy --only firestore:rules --project production"
+
+[tasks."firebase:deploy:indexes:staging"]
+description = "Deploy Firestore indexes to staging"
+run = "firebase deploy --only firestore:indexes --project default"
+
+[tasks."firebase:deploy:indexes:prod"]
+description = "Deploy Firestore indexes to production"
+run = "firebase deploy --only firestore:indexes --project production"
+
+[tasks."firebase:deploy:firestore:staging"]
+description = "Deploy Firestore rules and indexes to staging"
+run = "firebase deploy --only firestore --project default"
+
+[tasks."firebase:deploy:firestore:prod"]
+description = "Deploy Firestore rules and indexes to production"
+run = "firebase deploy --only firestore --project production"
+
+# ── Firestore migrations ──────────────────────────────────────────────────────
+
+[tasks."firestore:migrate-users-to-email-keys"]
+description = "Migrate users/{uid} → users/{email} and update workspace member keys; requires FIREBASE_PROJECT_ID"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${FIREBASE_PROJECT_ID:-}" ]; then
+  echo "Error: FIREBASE_PROJECT_ID is required." >&2
+  echo "Usage: FIREBASE_PROJECT_ID=domino-staging-dc209 mise run firestore:migrate-users-to-email-keys" >&2
+  exit 1
+fi
+
+cd scripts/firestore
+npm install --silent
+FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID}" npx tsx migrate-users-to-email-keys.ts
+"""

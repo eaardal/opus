@@ -16,22 +16,21 @@ service cloud.firestore {
              );
     }
 
-    // Per-user profile docs, written on sign-in. Any allowed user can read the
-    // directory (owners need it to find people to invite to a workspace);
-    // writes are only permitted to one's own document and the email must
-    // match the auth token to keep the directory honest.
-    match /users/{userId} {
+    // Per-user profile docs, written on sign-in. Document ID is the user's
+    // email address — stable across Firebase projects. Any allowed user can
+    // read the directory; writes are only permitted to one's own document
+    // and the email must match the document ID to keep the directory honest.
+    match /users/{userEmail} {
       allow read: if isAllowedUser();
       allow create, update: if isAllowedUser()
-                            && request.auth.uid == userId
-                            && request.resource.data.uid == userId
+                            && request.auth.token.email == userEmail
                             && request.resource.data.email == request.auth.token.email;
       allow delete: if false;
     }
 
     match /workspaces/{workspaceId} {
       // Read predicates are written so each branch matches one of the queries
-      // listMine() runs (`memberIds array-contains uid` and `ownerId == uid`).
+      // listMine() runs (`memberIds array-contains email` and `ownerId == email`).
       // Firestore's query-time rule analysis must be able to map each clause
       // onto a query filter, otherwise it rejects the list with "Missing or
       // insufficient permissions" — so we keep predicates flat and avoid
@@ -42,22 +41,22 @@ service cloud.firestore {
       // only `ownerId` give the original creator owner-equivalent access
       // until the first invite triggers the lazy upgrade.
       function memberRole() {
-        return resource.data.members[request.auth.uid].role;
+        return resource.data.members[request.auth.token.email].role;
       }
       function isLegacyOwner() {
         return !('memberIds' in resource.data)
-            && resource.data.ownerId == request.auth.uid;
+            && resource.data.ownerId == request.auth.token.email;
       }
       function isOwner() {
         return isLegacyOwner()
             || ('memberIds' in resource.data
-                && request.auth.uid in resource.data.memberIds
+                && request.auth.token.email in resource.data.memberIds
                 && memberRole() == 'owner');
       }
       function canEditContent() {
         return isLegacyOwner()
             || ('memberIds' in resource.data
-                && request.auth.uid in resource.data.memberIds
+                && request.auth.token.email in resource.data.memberIds
                 && (memberRole() == 'owner' || memberRole() == 'editor'));
       }
       function editorAllowedKeys() {
@@ -72,25 +71,23 @@ service cloud.firestore {
 
       // Create: must claim self as owner in all three places.
       allow create: if isAllowedUser()
-                    && request.resource.data.ownerId == request.auth.uid
-                    && request.auth.uid in request.resource.data.memberIds
-                    && request.auth.uid in request.resource.data.members
-                    && request.resource.data.members[request.auth.uid].role == 'owner';
+                    && request.resource.data.ownerId == request.auth.token.email
+                    && request.auth.token.email in request.resource.data.memberIds
+                    && request.auth.token.email in request.resource.data.members
+                    && request.resource.data.members[request.auth.token.email].role == 'owner';
 
-      // Read: anyone whose uid is in memberIds OR who is named on ownerId.
+      // Read: anyone whose email is in memberIds OR who is named on ownerId.
       // The ownerId clause covers (a) legacy pre-roles workspaces and
       // (b) the original creator after they've been removed from members,
       // who can still browse the workspace they made. Editing/deleting in
       // case (b) is still gated on members below.
-      // Note: memberIds presence is checked first; without the guard,
-      // accessing a missing field can fail rule evaluation.
       allow read: if isAllowedUser() && (
-        ('memberIds' in resource.data && request.auth.uid in resource.data.memberIds)
-        || resource.data.ownerId == request.auth.uid
+        ('memberIds' in resource.data && request.auth.token.email in resource.data.memberIds)
+        || resource.data.ownerId == request.auth.token.email
       );
 
       // Update: editors → content fields; owners → content + members/memberIds.
-      // ownerId is frozen after create — transfer ownership via members.{uid}.role.
+      // ownerId is frozen after create — transfer ownership via members.{email}.role.
       allow update: if isAllowedUser() && (
         (canEditContent() && changedKeys().hasOnly(editorAllowedKeys()))
         || (isOwner() && changedKeys().hasOnly(ownerAllowedKeys()))

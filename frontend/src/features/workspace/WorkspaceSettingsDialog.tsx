@@ -27,7 +27,7 @@ export function WorkspaceSettingsDialog({
   onDeleted,
 }: WorkspaceSettingsDialogProps) {
   const auth = useAuthUser();
-  const currentUid = auth.status === "signedIn" ? auth.user.uid : null;
+  const currentUid = auth.status === "signedIn" ? auth.user.email : null;
   const [doc, setDoc] = useState<WorkspaceDocument | null>(null);
   const [name, setName] = useState(workspace.name);
   const [saving, setSaving] = useState(false);
