@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { Person, Team } from "../domain/teams/types";
-import type { ProjectSummary, WorkspaceDocument, WorkspaceId, WorkspaceService } from "../services/workspace.types";
+import type {
+  ProjectSummary,
+  WorkspaceDocument,
+  WorkspaceId,
+  WorkspaceService,
+} from "../services/workspace.types";
 
 export type WorkspaceLoadStatus = "loading" | "ready" | "missing" | "error";
 export type WorkspaceLoadError = "permission-denied" | "unknown";

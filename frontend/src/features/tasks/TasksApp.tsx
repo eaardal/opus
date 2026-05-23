@@ -31,7 +31,6 @@ import { useHistory, type CanvasState } from "../../hooks/useHistory";
 import { useDragSelection } from "../../hooks/useDragSelection";
 import { useGlobalKeyboardShortcuts } from "../../hooks/useGlobalKeyboardShortcuts";
 import { useResizableSidebar } from "../../hooks/useResizableSidebar";
-import type { PersonTaskQueue } from "../../domain/workspace/types";
 import type { Person } from "../../domain/teams/types";
 import { workspaceService } from "../../services/container";
 import { loadViewBox, saveViewBox } from "../../lib/viewBox";
@@ -83,7 +82,6 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [viewBox, setViewBox] = useState<ViewBox>(loadViewBox(projectId) ?? DEFAULT_VIEW_BOX);
-  const [taskQueues, setTaskQueues] = useState<PersonTaskQueue[]>([]);
 
   // Ref to detect whether an undo/redo just happened so we can batch-write.
   const pendingUndoRedoRef = useRef<CanvasState | null>(null);
@@ -94,6 +92,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   // without being listed as an effect dependency.
   const isDraggingRef = useRef(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: component is key-remounted on workspaceId/projectId change; subscription is intentionally bound once
   useEffect(() => {
     const unsub = workspaceService.subscribeProjectContent(
       workspaceId,
@@ -108,7 +107,6 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
             groups: content.groups,
           });
           setTheme(content.projectDoc.theme);
-          setTaskQueues(content.projectDoc.taskQueues);
           setLoadStatus("ready");
           return;
         }
@@ -125,7 +123,6 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
           groups: content.groups,
         });
         setTheme(content.projectDoc.theme);
-        setTaskQueues(content.projectDoc.taskQueues);
       },
     );
     return unsub;
@@ -303,7 +300,17 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         )
         .catch(console.error);
     }
-  }, [selectedNodes, selectedGroups, tasks, groups, connections, push, clearSelection, workspaceId, projectId]);
+  }, [
+    selectedNodes,
+    selectedGroups,
+    tasks,
+    groups,
+    connections,
+    push,
+    clearSelection,
+    workspaceId,
+    projectId,
+  ]);
 
   const handleCopy = useCallback(async () => {
     if (selectedNodes.size === 0 && selectedGroups.size === 0) return;
@@ -624,14 +631,6 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
       push({ tasks, connections: next, groups });
       workspaceService.removeConnection(workspaceId, projectId, { from, to }).catch(console.error);
     }
-  };
-
-  const handleToggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    workspaceService
-      .updateProjectMeta(workspaceId, projectId, { theme: newTheme })
-      .catch(console.error);
   };
 
   const registerTaskItemRef = useCallback((id: string, el: HTMLDivElement | null) => {

@@ -20,7 +20,6 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import type {
-  ProjectContent,
   ProjectDocument,
   ProjectSummary,
   Role,
@@ -29,7 +28,7 @@ import type {
   WorkspaceService,
   WorkspaceSummary,
 } from "../workspace.types";
-import type { Task, Group, Connection } from "../../domain/tasks/types";
+import type { Task, Group } from "../../domain/tasks/types";
 import type { Person, Team } from "../../domain/teams/types";
 import { firebaseAuth, firestore } from "./client";
 
@@ -204,7 +203,11 @@ export const firebaseWorkspaceService: WorkspaceService = {
   async listMine() {
     const email = requireUserEmail();
     const memberSnap = await getDocs(
-      query(workspacesCol(), where("memberIds", "array-contains", email), orderBy("updatedAt", "desc")),
+      query(
+        workspacesCol(),
+        where("memberIds", "array-contains", email),
+        orderBy("updatedAt", "desc"),
+      ),
     );
     let legacyDocs: WorkspaceSummary[] = [];
     try {
@@ -378,8 +381,8 @@ export const firebaseWorkspaceService: WorkspaceService = {
       getDocs(tasksCol(id, projectId)),
       getDocs(groupsCol(id, projectId)),
     ]);
-    taskSnap.docs.forEach((d) => batch.delete(d.ref));
-    groupSnap.docs.forEach((d) => batch.delete(d.ref));
+    for (const d of taskSnap.docs) batch.delete(d.ref);
+    for (const d of groupSnap.docs) batch.delete(d.ref);
     batch.delete(projectDoc(id, projectId));
     await batch.commit();
   },
@@ -403,8 +406,8 @@ export const firebaseWorkspaceService: WorkspaceService = {
 
   async deleteManyEntities(id, projectId, taskIds, groupIds, newConnections) {
     const batch = writeBatch(firestore);
-    taskIds.forEach((tid) => batch.delete(taskDoc(id, projectId, tid)));
-    groupIds.forEach((gid) => batch.delete(groupDoc(id, projectId, gid)));
+    for (const tid of taskIds) batch.delete(taskDoc(id, projectId, tid));
+    for (const gid of groupIds) batch.delete(groupDoc(id, projectId, gid));
     if (taskIds.length > 0) {
       batch.update(projectDoc(id, projectId), { connections: newConnections });
     }
@@ -439,10 +442,10 @@ export const firebaseWorkspaceService: WorkspaceService = {
 
   async syncProjectState(id, projectId, state, deletedTaskIds, deletedGroupIds) {
     const batch = writeBatch(firestore);
-    state.tasks.forEach((task) => batch.set(taskDoc(id, projectId, task.id), task));
-    state.groups.forEach((group) => batch.set(groupDoc(id, projectId, group.id), group));
-    deletedTaskIds.forEach((tid) => batch.delete(taskDoc(id, projectId, tid)));
-    deletedGroupIds.forEach((gid) => batch.delete(groupDoc(id, projectId, gid)));
+    for (const task of state.tasks) batch.set(taskDoc(id, projectId, task.id), task);
+    for (const group of state.groups) batch.set(groupDoc(id, projectId, group.id), group);
+    for (const tid of deletedTaskIds) batch.delete(taskDoc(id, projectId, tid));
+    for (const gid of deletedGroupIds) batch.delete(groupDoc(id, projectId, gid));
     batch.update(projectDoc(id, projectId), { connections: state.connections });
     await batch.commit();
   },

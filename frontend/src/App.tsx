@@ -122,10 +122,13 @@ function App() {
     await authService.signOut();
   }, []);
 
-  const handleSwitchProject = useCallback((newId: string) => {
-    setActiveProjectId(newId);
-    if (workspaceId) writeLastActiveProjectId(workspaceId, newId);
-  }, [workspaceId]);
+  const handleSwitchProject = useCallback(
+    (newId: string) => {
+      setActiveProjectId(newId);
+      if (workspaceId) writeLastActiveProjectId(workspaceId, newId);
+    },
+    [workspaceId],
+  );
 
   const handleAddProject = useCallback(async () => {
     if (!canEdit || !workspaceId) return;
@@ -358,7 +361,7 @@ function App() {
             <TaskMgtApp
               ref={taskMgtRef}
               key={`${workspaceLoadCount}-${activeProjectId}`}
-              workspaceId={workspaceId!}
+              workspaceId={workspaceId ?? ""}
               projectId={activeProjectId}
               projects={projects}
               activeProjectId={activeProjectId}
@@ -370,7 +373,7 @@ function App() {
           <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>
             <TeamMgt
               key={workspaceLoadCount}
-              workspaceId={workspaceId!}
+              workspaceId={workspaceId ?? ""}
               initialPeople={people}
               initialTeams={teams}
             />

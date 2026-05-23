@@ -1,6 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import type { WorkspaceDocument, ProjectSummary, WorkspaceService } from "../services/workspace.types";
+import type {
+  WorkspaceDocument,
+  ProjectSummary,
+  WorkspaceService,
+} from "../services/workspace.types";
 import type { Person, Team } from "../domain/teams/types";
 import { useWorkspaceLoader } from "./useWorkspaceLoader";
 
@@ -29,7 +33,11 @@ function makeService(): MockService {
     const list = map.get(id) ?? [];
     list.push(cb);
     map.set(id, list);
-    return () => map.set(id, (map.get(id) ?? []).filter((c) => c !== cb));
+    return () =>
+      map.set(
+        id,
+        (map.get(id) ?? []).filter((c) => c !== cb),
+      );
   }
 
   const fire =
