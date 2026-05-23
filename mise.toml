@@ -199,6 +199,28 @@ echo "To import into staging run:"
 echo "  IMPORT_PATH=${EXPORT_PATH} mise run firestore:import:staging"
 """
 
+[tasks."firestore:export:staging"]
+description = "Export staging Firestore to its GCS bucket; prints the export path"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+EXPORT_PATH="${STAGING_BUCKET}/firestore-exports/$(date -u +%Y%m%dT%H%M%SZ)"
+
+echo "Exporting staging Firestore..."
+echo "  Project : ${STAGING_PROJECT}"
+echo "  Path    : ${EXPORT_PATH}"
+echo ""
+
+gcloud firestore export "${EXPORT_PATH}" --project="${STAGING_PROJECT}"
+
+echo ""
+echo "Export complete: ${EXPORT_PATH}"
+echo ""
+echo "To import into staging run:"
+echo "  IMPORT_PATH=${EXPORT_PATH} mise run firestore:import:staging"
+"""
+
 [tasks."firestore:import:staging"]
 description = "Import a Firestore export into the staging instance; set IMPORT_PATH=gs://... to the export folder"
 run = """
