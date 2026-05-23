@@ -7,13 +7,14 @@
  * Within each project, tasks and groups become further subcollections.
  *
  * Run with:
- *   npx ts-node scripts/migrate-to-subcollections.ts
+ *   cd scripts/firestore && npm install
+ *   FIREBASE_PROJECT_ID=domino-staging-dc209 mise run firestore:migrate-to-subcollections
  *
  * Prerequisites:
  *   - GOOGLE_APPLICATION_CREDENTIALS env var pointing to a service-account key
  *     with Firestore read/write on the target project, OR run inside a GCP
- *     environment with default credentials.
- *   - npm i -D ts-node @types/node firebase-admin (if not already installed)
+ *     environment with default credentials (gcloud auth application-default login).
+ *   - FIREBASE_PROJECT_ID set to the target project ID.
  *
  * Safe to re-run: each project/person/team document is written with set()
  * (merge: false), so re-running on already-migrated data is idempotent as long
@@ -24,12 +25,13 @@
  * running, then deploy the new client code immediately after.
  */
 
-import * as admin from "firebase-admin";
+import { initializeApp, getApps } from "firebase-admin/app";
+import { getFirestore, type DocumentReference } from "firebase-admin/firestore";
 
 // ── Initialise ──────────────────────────────────────────────────────────────
 
-admin.initializeApp();
-const db = admin.firestore();
+if (getApps().length === 0) initializeApp();
+const db = getFirestore();
 
 // ── Legacy shape (pre-migration) ────────────────────────────────────────────
 
@@ -112,7 +114,7 @@ async function migrateWorkspace(workspaceId: string, data: LegacyWorkspace): Pro
     }
   };
 
-  const addOp = async (ref: admin.firestore.DocumentReference, value: object) => {
+  const addOp = async (ref: DocumentReference, value: object) => {
     if (opCount >= 450) await flush();
     batch.set(ref, value);
     opCount++;

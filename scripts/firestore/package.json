@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "migrate-users-to-email-keys": "tsx migrate-users-to-email-keys.ts"
+    "migrate-users-to-email-keys": "tsx migrate-users-to-email-keys.ts",
+    "migrate-to-subcollections": "tsx migrate-to-subcollections.ts"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"

@@ -484,6 +484,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   };
 
   const handleGroupMoveStart = useCallback(() => {
+    isDraggingRef.current = true;
     push(presentRef.current);
   }, [push]);
 
@@ -516,12 +517,22 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   );
 
   const handleGroupMoveEnd = useCallback(
-    (id: string) => {
-      const group = presentRef.current.groups.find((g) => g.id === id);
+    (id: string, movedTaskIds: ReadonlySet<string>) => {
+      isDraggingRef.current = false;
+      const state = presentRef.current;
+      const group = state.groups.find((g) => g.id === id);
       if (group) {
         workspaceService
           .updateGroup(workspaceId, projectId, id, { x: group.x, y: group.y })
           .catch(console.error);
+      }
+      for (const taskId of movedTaskIds) {
+        const task = state.tasks.find((t) => t.id === taskId);
+        if (task) {
+          workspaceService
+            .updateTask(workspaceId, projectId, taskId, { x: task.x, y: task.y })
+            .catch(console.error);
+        }
       }
     },
     [workspaceId, projectId],

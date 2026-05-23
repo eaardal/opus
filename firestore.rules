@@ -29,17 +29,11 @@ service cloud.firestore {
     }
 
     match /workspaces/{workspaceId} {
-      // Read predicates are written so each branch matches one of the queries
-      // listMine() runs (`memberIds array-contains email` and `ownerId == email`).
-      // Firestore's query-time rule analysis must be able to map each clause
-      // onto a query filter, otherwise it rejects the list with "Missing or
-      // insufficient permissions" — so we keep predicates flat and avoid
-      // helper-function indirection on the read rule.
+      // ── Workspace-root helpers ────────────────────────────────────────────────
+      // These operate on resource.data, which refers to the workspace document
+      // when evaluated in the root match block. Do NOT call from subcollection
+      // rules — use the ws* helpers below instead.
 
-      // For any operation that mutates state, treat workspaces with a
-      // `memberIds` array as fully role-managed; pre-roles workspaces with
-      // only `ownerId` give the original creator owner-equivalent access
-      // until the first invite triggers the lazy upgrade.
       function memberRole() {
         return resource.data.members[request.auth.token.email].role;
       }
@@ -59,14 +53,38 @@ service cloud.firestore {
                 && request.auth.token.email in resource.data.memberIds
                 && (memberRole() == 'owner' || memberRole() == 'editor'));
       }
-      function editorAllowedKeys() {
-        return ['projects', 'people', 'teams', 'name', 'updatedAt'];
-      }
-      function ownerAllowedKeys() {
-        return ['projects', 'people', 'teams', 'name', 'updatedAt', 'members', 'memberIds'];
-      }
       function changedKeys() {
         return request.resource.data.diff(resource.data).affectedKeys();
+      }
+      // projects/people/teams are subcollections — they are not fields on the
+      // workspace root document and must not appear in update payloads.
+      function editorAllowedKeys() {
+        return ['name', 'updatedAt'];
+      }
+      function ownerAllowedKeys() {
+        return ['name', 'updatedAt', 'members', 'memberIds'];
+      }
+
+      // ── Subcollection helpers ─────────────────────────────────────────────────
+      // In a subcollection match block, resource.data is the subcollection
+      // document, not the workspace. These helpers fetch the workspace via get()
+      // so subcollection rules can check workspace-level membership correctly.
+
+      function wsData() {
+        return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
+      }
+      function wsCanRead() {
+        let w = wsData();
+        return ('memberIds' in w && request.auth.token.email in w.memberIds)
+            || w.ownerId == request.auth.token.email;
+      }
+      function wsCanEdit() {
+        let w = wsData();
+        return (!('memberIds' in w) && w.ownerId == request.auth.token.email)
+            || ('memberIds' in w
+                && request.auth.token.email in w.memberIds
+                && (w.members[request.auth.token.email].role == 'owner'
+                    || w.members[request.auth.token.email].role == 'editor'));
       }
 
       // Create: must claim self as owner in all three places.
@@ -79,14 +97,13 @@ service cloud.firestore {
       // Read: anyone whose email is in memberIds OR who is named on ownerId.
       // The ownerId clause covers (a) legacy pre-roles workspaces and
       // (b) the original creator after they've been removed from members,
-      // who can still browse the workspace they made. Editing/deleting in
-      // case (b) is still gated on members below.
+      // who can still browse the workspace they made.
       allow read: if isAllowedUser() && (
         ('memberIds' in resource.data && request.auth.token.email in resource.data.memberIds)
         || resource.data.ownerId == request.auth.token.email
       );
 
-      // Update: editors → content fields; owners → content + members/memberIds.
+      // Update: editors → name/updatedAt; owners → name/updatedAt/members/memberIds.
       // ownerId is frozen after create — transfer ownership via members.{email}.role.
       allow update: if isAllowedUser() && (
         (canEditContent() && changedKeys().hasOnly(editorAllowedKeys()))
@@ -96,54 +113,34 @@ service cloud.firestore {
       // Delete: owners only.
       allow delete: if isAllowedUser() && isOwner();
 
-      // ── Projects subcollection ──────────────────────────────────────────────
+      // ── Projects subcollection ────────────────────────────────────────────────
       match /projects/{projectId} {
-        allow get, list: if isAllowedUser() && (
-          ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-            && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
-          || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
-        );
-        allow create, update, delete: if isAllowedUser() && canEditContent();
+        allow get, list: if isAllowedUser() && wsCanRead();
+        allow create, update, delete: if isAllowedUser() && wsCanEdit();
 
-        // ── Tasks subcollection ───────────────────────────────────────────────
+        // ── Tasks subcollection ────────────────────────────────────────────────
         match /tasks/{taskId} {
-          allow get, list: if isAllowedUser() && (
-            ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-              && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
-            || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
-          );
-          allow create, update, delete: if isAllowedUser() && canEditContent();
+          allow get, list: if isAllowedUser() && wsCanRead();
+          allow create, update, delete: if isAllowedUser() && wsCanEdit();
         }
 
-        // ── Groups subcollection ──────────────────────────────────────────────
+        // ── Groups subcollection ───────────────────────────────────────────────
         match /groups/{groupId} {
-          allow get, list: if isAllowedUser() && (
-            ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-              && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
-            || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
-          );
-          allow create, update, delete: if isAllowedUser() && canEditContent();
+          allow get, list: if isAllowedUser() && wsCanRead();
+          allow create, update, delete: if isAllowedUser() && wsCanEdit();
         }
       }
 
-      // ── People subcollection ────────────────────────────────────────────────
+      // ── People subcollection ──────────────────────────────────────────────────
       match /people/{personId} {
-        allow get, list: if isAllowedUser() && (
-          ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-            && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
-          || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
-        );
-        allow create, update, delete: if isAllowedUser() && canEditContent();
+        allow get, list: if isAllowedUser() && wsCanRead();
+        allow create, update, delete: if isAllowedUser() && wsCanEdit();
       }
 
-      // ── Teams subcollection ─────────────────────────────────────────────────
+      // ── Teams subcollection ───────────────────────────────────────────────────
       match /teams/{teamId} {
-        allow get, list: if isAllowedUser() && (
-          ('memberIds' in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-            && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds)
-          || get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid
-        );
-        allow create, update, delete: if isAllowedUser() && canEditContent();
+        allow get, list: if isAllowedUser() && wsCanRead();
+        allow create, update, delete: if isAllowedUser() && wsCanEdit();
       }
     }
 

@@ -55,7 +55,7 @@ function writeLastActiveProjectId(workspaceId: string, projectId: string): void 
 function App() {
   const { id: workspaceId, select } = useSelectedWorkspace();
   const auth = useAuthUser();
-  const currentUid = auth.status === "signedIn" ? auth.user.uid : null;
+  const currentEmail = auth.status === "signedIn" ? auth.user.email : null;
 
   const {
     status: loadStatus,
@@ -69,8 +69,8 @@ function App() {
   } = useWorkspaceLoader({ workspaceId, service: workspaceService });
 
   const role = useMemo(
-    () => (currentUid ? resolveRole(latestDoc, currentUid) : null),
-    [latestDoc, currentUid],
+    () => (currentEmail ? resolveRole(latestDoc, currentEmail) : null),
+    [latestDoc, currentEmail],
   );
   const canEdit = role === "owner" || role === "editor";
 
@@ -218,8 +218,10 @@ function App() {
               <ChevronsLeft size={16} />
             </button>
             <span className="app-bar-filename">
-              {workspaceName}
-              {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
+              <span className="app-bar-filename-row">
+                {workspaceName}
+                {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
+              </span>
             </span>
           </div>
           <nav className="app-bar-nav">

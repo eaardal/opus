@@ -73,7 +73,7 @@ interface CanvasProps {
   onGroupMove: (id: string, x: number, y: number) => void;
   onGroupMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
   onGroupMoveStart: () => void;
-  onGroupMoveEnd: (id: string) => void;
+  onGroupMoveEnd: (id: string, movedTaskIds: ReadonlySet<string>) => void;
   onGroupResize: (id: string, x: number, y: number, width: number, height: number) => void;
   onGroupResizeStart: () => void;
   onGroupResizeEnd: (id: string) => void;

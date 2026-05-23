@@ -7,12 +7,10 @@ go = "1.23"
 # produces a binary without baked-in credentials).
 [env]
 _.file = ".env.local"
-
-[vars]
-  PROD_PROJECT = "domino-34fce"
-  STAGING_PROJECT = "domino-staging-dc209"
-  PROD_BUCKET = "gs://domino-34fce.firebasestorage.app"
-  STAGING_BUCKET = "gs://domino-staging-dc209.firebasestorage.app"
+PROD_PROJECT = "domino-34fce"
+STAGING_PROJECT = "domino-staging-dc209"
+PROD_BUCKET = "gs://domino-34fce.firebasestorage.app"
+STAGING_BUCKET = "gs://domino-staging-dc209.firebasestorage.app"
 
 [tasks.generate]
 description = "Generate Wails JS bindings from Go types"
@@ -281,6 +279,24 @@ echo "Done. Production data is now live in staging (${STAGING_PROJECT})."
 """
 
 # ── Firestore migrations ──────────────────────────────────────────────────────
+
+[tasks."firestore:migrate-to-subcollections"]
+description = "Migrate flat workspace arrays (projects/people/teams) to Firestore subcollections; requires FIREBASE_PROJECT_ID"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${FIREBASE_PROJECT_ID:-}" ]; then
+  echo "Error: FIREBASE_PROJECT_ID is required." >&2
+  echo "Usage: FIREBASE_PROJECT_ID=domino-staging-dc209 mise run firestore:migrate-to-subcollections" >&2
+  exit 1
+fi
+
+cd scripts/firestore
+npm install --silent
+FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID}" GOOGLE_CLOUD_PROJECT="${FIREBASE_PROJECT_ID}" \
+  npx tsx migrate-to-subcollections.ts
+"""
 
 [tasks."firestore:migrate-users-to-email-keys"]
 description = "Migrate users/{uid} → users/{email} and update workspace member keys; requires FIREBASE_PROJECT_ID"

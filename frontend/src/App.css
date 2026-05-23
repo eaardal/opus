@@ -143,7 +143,6 @@
 }
 
 .app-bar-role-badge {
-  margin-left: 6px;
   padding: 1px 7px;
   border-radius: 999px;
   background: var(--menu-item-hover);
