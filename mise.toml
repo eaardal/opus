@@ -8,6 +8,12 @@ go = "1.23"
 [env]
 _.file = ".env.local"
 
+[vars]
+  PROD_PROJECT = "domino-34fce"
+  STAGING_PROJECT = "domino-staging-dc209"
+  PROD_BUCKET = "gs://domino-34fce.firebasestorage.app"
+  STAGING_BUCKET = "gs://domino-staging-dc209.firebasestorage.app"
+
 [tasks.generate]
 description = "Generate Wails JS bindings from Go types"
 run = "wails generate module"
@@ -135,35 +141,122 @@ ls -lh dist/
 """
 
 # ── Firebase deploy ───────────────────────────────────────────────────────────
-#
-# Prerequisites: firebase CLI installed and authenticated (firebase login).
-# Projects are defined in .firebaserc:
-#   default    → domino-staging-dc209
-#   production → domino-34fce
 
 [tasks."firebase:deploy:rules:staging"]
 description = "Deploy Firestore rules to staging"
-run = "firebase deploy --only firestore:rules --project default"
+run = "firebase deploy --only firestore:rules --project ${STAGING_PROJECT}"
 
 [tasks."firebase:deploy:rules:prod"]
 description = "Deploy Firestore rules to production"
-run = "firebase deploy --only firestore:rules --project production"
+run = "firebase deploy --only firestore:rules --project ${PROD_PROJECT}"
 
 [tasks."firebase:deploy:indexes:staging"]
 description = "Deploy Firestore indexes to staging"
-run = "firebase deploy --only firestore:indexes --project default"
+run = "firebase deploy --only firestore:indexes --project ${STAGING_PROJECT}"
 
 [tasks."firebase:deploy:indexes:prod"]
 description = "Deploy Firestore indexes to production"
-run = "firebase deploy --only firestore:indexes --project production"
+run = "firebase deploy --only firestore:indexes --project ${PROD_PROJECT}"
 
 [tasks."firebase:deploy:firestore:staging"]
 description = "Deploy Firestore rules and indexes to staging"
-run = "firebase deploy --only firestore --project default"
+run = "firebase deploy --only firestore --project ${STAGING_PROJECT}"
 
 [tasks."firebase:deploy:firestore:prod"]
 description = "Deploy Firestore rules and indexes to production"
-run = "firebase deploy --only firestore --project production"
+run = "firebase deploy --only firestore --project ${PROD_PROJECT}"
+
+# ── Firestore backup / restore ────────────────────────────────────────────────
+#
+# Prerequisites:
+#   - gcloud CLI authenticated: gcloud auth login
+#   - gcloud application-default credentials: gcloud auth application-default login
+#   - Both Firebase projects' default GCS buckets exist (created automatically
+#     by Firebase; buckets are named <project-id>.appspot.com)
+#
+# Override PROD_BUCKET or STAGING_BUCKET in .env.local if your project uses
+# the newer gs://<project-id>.firebasestorage.app format.
+
+[tasks."firestore:export:prod"]
+description = "Export production Firestore to its GCS bucket; prints the export path"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+EXPORT_PATH="${PROD_BUCKET}/firestore-exports/$(date -u +%Y%m%dT%H%M%SZ)"
+
+echo "Exporting production Firestore..."
+echo "  Project : ${PROD_PROJECT}"
+echo "  Path    : ${EXPORT_PATH}"
+echo ""
+
+gcloud firestore export "${EXPORT_PATH}" --project="${PROD_PROJECT}"
+
+echo ""
+echo "Export complete: ${EXPORT_PATH}"
+echo ""
+echo "To import into staging run:"
+echo "  IMPORT_PATH=${EXPORT_PATH} mise run firestore:import:staging"
+"""
+
+[tasks."firestore:import:staging"]
+description = "Import a Firestore export into the staging instance; set IMPORT_PATH=gs://... to the export folder"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+IMPORT_PATH="${IMPORT_PATH:-}"
+
+if [ -z "${IMPORT_PATH}" ]; then
+  echo "Error: IMPORT_PATH is required." >&2
+  echo "Usage: IMPORT_PATH=gs://.../firestore-exports/<timestamp> mise run firestore:import:staging" >&2
+  exit 1
+fi
+
+echo "Importing into staging Firestore..."
+echo "  Project     : ${STAGING_PROJECT}"
+echo "  Import path : ${IMPORT_PATH}"
+echo ""
+
+gcloud firestore import "${IMPORT_PATH}" --project="${STAGING_PROJECT}"
+
+echo ""
+echo "Import complete."
+"""
+
+[tasks."firestore:copy-prod-to-staging"]
+description = "Export production Firestore, copy it to the staging bucket, then import it into staging"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+PROD_EXPORT_PATH="${PROD_BUCKET}/firestore-exports/${TIMESTAMP}"
+STAGING_IMPORT_PATH="${STAGING_BUCKET}/firestore-exports/${TIMESTAMP}"
+
+echo "=== Step 1/3  Export production ==="
+echo "  Project : ${PROD_PROJECT}"
+echo "  Path    : ${PROD_EXPORT_PATH}"
+echo ""
+gcloud firestore export "${PROD_EXPORT_PATH}" --project="${PROD_PROJECT}"
+
+echo ""
+echo "=== Step 2/3  Copy export to staging bucket ==="
+echo "  From : ${PROD_EXPORT_PATH}"
+echo "  To   : ${STAGING_IMPORT_PATH}"
+echo ""
+gsutil -m cp -r "${PROD_EXPORT_PATH}" "${STAGING_BUCKET}/firestore-exports/"
+
+echo ""
+echo "=== Step 3/3  Import into staging ==="
+echo "  Project : ${STAGING_PROJECT}"
+echo "  Path    : ${STAGING_IMPORT_PATH}"
+echo ""
+gcloud firestore import "${STAGING_IMPORT_PATH}" --project="${STAGING_PROJECT}"
+
+echo ""
+echo "Done. Production data is now live in staging (${STAGING_PROJECT})."
+"""
 
 # ── Firestore migrations ──────────────────────────────────────────────────────
 
