@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Settings } from "lucide-react";
-import { authService, workspaceService } from "../../services/container";
+import { authService, userService, workspaceService } from "../../services/container";
 import type { WorkspaceSummary } from "../../services/workspace.types";
+import type { RegisteredUser } from "../../services/user.types";
 import { useSelectedWorkspace } from "./SelectedWorkspaceProvider";
 import { WorkspaceSettingsDialog } from "./WorkspaceSettingsDialog";
 import { useAuthUser } from "../auth/useAuthUser";
@@ -18,12 +19,19 @@ export function WorkspacePicker() {
   const auth = useAuthUser();
   const [state, setState] = useState<State>({ status: "loading" });
   const [settingsFor, setSettingsFor] = useState<WorkspaceSummary | null>(null);
+  const [userDirectory, setUserDirectory] = useState<Map<string, RegisteredUser>>(new Map());
 
   useEffect(() => {
     setState({ status: "loading" });
     return workspaceService.subscribeMine((workspaces) => {
       setState({ status: "ready", workspaces });
     });
+  }, []);
+
+  useEffect(() => {
+    userService.listAll().then((users) => {
+      setUserDirectory(new Map(users.map((u) => [u.uid, u])));
+    }).catch(console.error);
   }, []);
 
   const handleRenamed = useCallback((id: string, name: string) => {
@@ -58,6 +66,7 @@ export function WorkspacePicker() {
                 emptyMessage=""
                 onOpen={select}
                 onOpenSettings={setSettingsFor}
+                userDirectory={userDirectory}
               />
             )}
             <CreateWorkspaceRow
@@ -114,12 +123,14 @@ function WorkspaceSection({
   emptyMessage,
   onOpen,
   onOpenSettings,
+  userDirectory,
 }: {
   title: string;
   workspaces: WorkspaceSummary[];
   emptyMessage: string;
   onOpen: (id: string) => void;
   onOpenSettings: (workspace: WorkspaceSummary) => void;
+  userDirectory?: Map<string, RegisteredUser>;
 }) {
   return (
     <div className="workspace-picker-section">
@@ -134,6 +145,11 @@ function WorkspaceSection({
             <li key={w.id} className="workspace-picker-row">
               <button type="button" className="workspace-picker-item" onClick={() => onOpen(w.id)}>
                 <span className="workspace-picker-item-name">{w.name}</span>
+                {w.role !== "owner" && w.ownerEmail && (
+                  <span className="workspace-picker-item-owner">
+                    {ownerLine(w.ownerEmail, userDirectory)}
+                  </span>
+                )}
                 <span className="workspace-picker-item-meta">
                   {w.role !== "owner" && (
                     <span className="workspace-picker-role-badge">{roleLabel(w.role)}</span>
@@ -156,6 +172,12 @@ function WorkspaceSection({
       )}
     </div>
   );
+}
+
+function ownerLine(ownerEmail: string, directory?: Map<string, RegisteredUser>): string {
+  const user = directory?.get(ownerEmail);
+  if (user?.displayName) return `by ${user.displayName} · ${ownerEmail}`;
+  return `by ${ownerEmail}`;
 }
 
 function roleLabel(role: WorkspaceSummary["role"]): string {

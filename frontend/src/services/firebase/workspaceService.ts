@@ -114,6 +114,7 @@ function toSummary(id: string, data: DocumentData, email: string): WorkspaceSumm
     name: data.name ?? "Untitled",
     updatedAt: timestampToDate(data.updatedAt),
     role: roleForListEntry(data, email),
+    ownerEmail: (data.ownerId as string) ?? "",
   };
 }
 

@@ -201,6 +201,9 @@ describe("firebaseWorkspaceService.listMine", () => {
     // Sorted by updatedAt desc: owned (ts3) > shared (ts2) > legacy (ts1)
     expect(result.map((r) => r.id)).toEqual(["owned", "shared", "legacy"]);
     expect(result.map((r) => r.role)).toEqual(["owner", "editor", "owner"]);
+    expect(result.find((r) => r.id === "owned")?.ownerEmail).toBe("current@apparat.no");
+    expect(result.find((r) => r.id === "shared")?.ownerEmail).toBe("someone-else@tv2.no");
+    expect(result.find((r) => r.id === "legacy")?.ownerEmail).toBe("current@apparat.no");
   });
 
   test("classifies a removed creator as viewer (members exists but email not in it)", async () => {

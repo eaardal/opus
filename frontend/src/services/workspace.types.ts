@@ -17,6 +17,8 @@ export interface WorkspaceSummary {
   updatedAt: Date;
   /** The current user's role in this workspace, resolved at list time. */
   role: Role;
+  /** Email of the workspace owner. Used to display owner info on shared workspace items. */
+  ownerEmail: string;
 }
 
 /** Root workspace document — subcollections hold projects/people/teams. */

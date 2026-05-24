@@ -124,6 +124,15 @@
   font-weight: 500;
 }
 
+.workspace-picker-item-owner {
+  font-size: 11px;
+  color: var(--text-secondary, #a0a0a0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 8px;
+}
+
 .workspace-picker-item-meta {
   font-size: 11px;
   color: var(--text-secondary, #a0a0a0);
