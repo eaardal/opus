@@ -90,7 +90,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   test-firestore-rules:
-    name: Test Firestore Rules
+    name: Firestore Rules Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
