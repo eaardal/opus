@@ -2,6 +2,37 @@
   flex: 1;
   background: var(--bg-primary);
   position: relative;
+  /* Height of the bottom progress-bar panel. Kept in sync with .progress-bar-container
+     padding + content so the viewer banner can sit flush above it. */
+  --progress-bar-height: 26px;
+}
+
+.canvas-viewer-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--progress-bar-height);
+  border: 6px solid var(--color-pink);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.canvas-viewer-banner-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-pink);
+  color: var(--color-outer-space);
+  padding: 4px 14px;
+  padding-top: 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .canvas {

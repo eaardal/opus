@@ -26,6 +26,7 @@ import { fitViewBoxToContent } from "../../../domain/tasks/viewport";
 import { exportSvgElementAsPng } from "../../../domain/tasks/exportCanvasAsPng";
 import type { Connection, ViewBox } from "../../../domain/tasks/types";
 import { useCanvasPan } from "../../../hooks/useCanvasPan";
+import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
 
 interface SelectionRect {
   startX: number;
@@ -191,6 +192,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
+
+  const { role } = useWorkspaceRole();
+  const isViewerOnly = role === "viewer";
   const [isHelpPanelPinned, setIsHelpPanelPinned] = useState(false);
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const viewBoxInitialized = useRef(false);
@@ -391,6 +395,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
   return (
     <div className="canvas-container">
+      {isViewerOnly && (
+        <div className="canvas-viewer-banner" aria-hidden="true">
+          <span className="canvas-viewer-banner-badge">Viewer only</span>
+        </div>
+      )}
       <div className="canvas-toolbar">
         <button
           type="button"
