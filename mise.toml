@@ -12,6 +12,14 @@ STAGING_PROJECT = "domino-staging-dc209"
 PROD_BUCKET = "gs://domino-34fce.firebasestorage.app"
 STAGING_BUCKET = "gs://domino-staging-dc209.firebasestorage.app"
 
+[tasks."test:integration"]
+description = "Start the Firestore emulator, run integration tests, then stop the emulator"
+run = "cd test && npm install --silent && npm test"
+
+[tasks."test:rules"]
+description = "Start the Firestore emulator, run security-rules tests, then stop the emulator"
+run = "cd firestore-rules-tests && npm install --silent && npm run test:ci"
+
 [tasks.generate]
 description = "Generate Wails JS bindings from Go types"
 run = "wails generate module"

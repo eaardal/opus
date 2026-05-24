@@ -26,8 +26,13 @@ export function buildMemberRows(doc: WorkspaceDocument, users: RegisteredUser[])
     for (const [uid, info] of Object.entries(doc.members)) {
       entries.push({ uid, role: info.role });
     }
-  } else if (doc.ownerId) {
-    entries.push({ uid: doc.ownerId, role: "owner" });
+  } else {
+    // members map absent — synthesise from memberIds with ownerId pinned to "owner"
+    const uids = new Set<string>(doc.memberIds ?? []);
+    if (doc.ownerId) uids.add(doc.ownerId);
+    for (const uid of uids) {
+      entries.push({ uid, role: uid === doc.ownerId ? "owner" : "viewer" });
+    }
   }
 
   return entries

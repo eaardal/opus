@@ -201,8 +201,44 @@ function App() {
     );
   }
 
-  if (loadStatus !== "ready" || !activeProjectId) {
-    return <div className="app-loading">Loading workspace…</div>;
+  if (loadStatus !== "ready" || (projects.length > 0 && !activeProjectId)) {
+    return (
+      <div className="app-loading">
+        <div className="app-load-error">
+          <p className="app-load-error-title">Loading workspace…</p>
+          <div className="app-load-error-actions">
+            <button type="button" className="app-load-error-btn" onClick={() => select(null)}>
+              Back to workspaces
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="app-loading">
+        <div className="app-load-error">
+          <p className="app-load-error-title">No projects yet</p>
+          <p className="app-load-error-body">Create a project to get started.</p>
+          <div className="app-load-error-actions">
+            <button type="button" className="app-load-error-btn" onClick={() => select(null)}>
+              Back to workspaces
+            </button>
+            {canEdit && (
+              <button
+                type="button"
+                className="app-load-error-btn app-load-error-btn-primary"
+                onClick={() => void handleAddProject()}
+              >
+                Create project
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

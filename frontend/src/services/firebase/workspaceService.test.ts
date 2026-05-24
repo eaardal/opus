@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const {
   addDoc,
+  setDoc,
   getDoc,
   doc,
   getDocs,
@@ -13,6 +14,7 @@ const {
   where,
   orderBy,
   Timestamp,
+  FieldPath,
   arrayUnion,
   arrayRemove,
   deleteField,
@@ -27,8 +29,15 @@ const {
       return new FakeTimestamp(1_700_000_000);
     }
   }
+  class FakeFieldPath {
+    segments: string[];
+    constructor(...segments: string[]) {
+      this.segments = segments;
+    }
+  }
   return {
     addDoc: vi.fn(),
+    setDoc: vi.fn(),
     getDoc: vi.fn(),
     doc: vi.fn((db: unknown, col: string, id: string) => ({ db, col, id })),
     getDocs: vi.fn(),
@@ -45,6 +54,7 @@ const {
     })),
     orderBy: vi.fn((field: string, dir: string) => ({ kind: "orderBy", field, dir })),
     Timestamp: FakeTimestamp,
+    FieldPath: FakeFieldPath,
     arrayUnion: vi.fn((...ids: string[]) => ({ kind: "arrayUnion", ids })),
     arrayRemove: vi.fn((...ids: string[]) => ({ kind: "arrayRemove", ids })),
     deleteField: vi.fn(() => ({ kind: "deleteField" })),
@@ -54,6 +64,7 @@ const {
 
 vi.mock("firebase/firestore", () => ({
   addDoc,
+  setDoc,
   getDoc,
   doc,
   getDocs,
@@ -65,6 +76,7 @@ vi.mock("firebase/firestore", () => ({
   where,
   orderBy,
   Timestamp,
+  FieldPath,
   arrayUnion,
   arrayRemove,
   deleteField,
@@ -85,6 +97,7 @@ import { firebaseWorkspaceService } from "./workspaceService";
 
 beforeEach(() => {
   addDoc.mockReset();
+  setDoc.mockReset();
   getDoc.mockReset();
   getDocs.mockReset();
   updateDoc.mockReset();
@@ -112,6 +125,32 @@ describe("firebaseWorkspaceService.create", () => {
     expect(payload.memberIds).toEqual(["current@apparat.no"]);
     expect(payload.members["current@apparat.no"].role).toBe("owner");
     expect(payload.members["current@apparat.no"].addedAt).toBeInstanceOf(Timestamp);
+  });
+
+  test("does not write stale projects/people/teams array fields on the workspace doc", async () => {
+    addDoc.mockResolvedValueOnce({ id: "ws1" });
+
+    await firebaseWorkspaceService.create("My WS");
+
+    const payload = addDoc.mock.calls[0][1];
+    expect(payload).not.toHaveProperty("projects");
+    expect(payload).not.toHaveProperty("people");
+    expect(payload).not.toHaveProperty("teams");
+  });
+
+  test("creates a default project in the projects subcollection", async () => {
+    addDoc.mockResolvedValueOnce({ id: "ws1" });
+
+    await firebaseWorkspaceService.create("My WS");
+
+    expect(setDoc).toHaveBeenCalledTimes(1);
+    const projectPayload = setDoc.mock.calls[0][1];
+    expect(projectPayload.name).toBe("New Project");
+    expect(projectPayload.theme).toBe("dark");
+    expect(projectPayload.taskQueues).toEqual([]);
+    expect(projectPayload.connections).toEqual([]);
+    expect(typeof projectPayload.id).toBe("string");
+    expect(projectPayload.id).toHaveLength(36); // UUID format
   });
 });
 
@@ -199,7 +238,7 @@ describe("firebaseWorkspaceService.listMine", () => {
 });
 
 describe("firebaseWorkspaceService.addMember", () => {
-  test("when members already populated, adds via dotted path + arrayUnion", async () => {
+  test("when members already populated, adds via FieldPath so email dots are not misread as path separators", async () => {
     getDoc.mockResolvedValueOnce({
       exists: () => true,
       data: () => ({
@@ -212,15 +251,17 @@ describe("firebaseWorkspaceService.addMember", () => {
 
     await firebaseWorkspaceService.addMember("ws1", "new@tv2.no", "editor");
 
-    const payload = updateDoc.mock.calls[0][1];
-    expect(payload["members.new@tv2.no"]).toEqual({
-      role: "editor",
-      addedAt: expect.any(Timestamp),
-    });
-    expect(payload.memberIds).toEqual({ kind: "arrayUnion", ids: ["new@tv2.no"] });
-    expect(payload.updatedAt).toBe("SERVER_TS");
-    // Should NOT touch the existing members map
-    expect(payload.members).toBeUndefined();
+    // updateDoc must be called with FieldPath varargs, not a dotted-string object key,
+    // because "new@tv2.no" contains a dot that Firestore would otherwise split into nested paths.
+    const args = updateDoc.mock.calls[0];
+    const [, memberPath, memberEntry, memberIdsKey, memberIdsVal, updatedAtKey, updatedAtVal] = args;
+    expect(memberPath).toBeInstanceOf(FieldPath);
+    expect((memberPath as InstanceType<typeof FieldPath>).segments).toEqual(["members", "new@tv2.no"]);
+    expect(memberEntry).toEqual({ role: "editor", addedAt: expect.any(Timestamp) });
+    expect(memberIdsKey).toBe("memberIds");
+    expect(memberIdsVal).toEqual({ kind: "arrayUnion", ids: ["new@tv2.no"] });
+    expect(updatedAtKey).toBe("updatedAt");
+    expect(updatedAtVal).toBe("SERVER_TS");
   });
 
   test("on a legacy doc, seeds members with the legacy owner + new member", async () => {
@@ -261,22 +302,34 @@ describe("firebaseWorkspaceService.addMember", () => {
 });
 
 describe("firebaseWorkspaceService.updateMemberRole", () => {
-  test("uses a dotted path so other member fields are untouched", async () => {
+  test("uses FieldPath so email dots are not misread as Firestore path separators", async () => {
     updateDoc.mockResolvedValueOnce(undefined);
     await firebaseWorkspaceService.updateMemberRole("ws1", "user@tv2.no", "editor");
-    const payload = updateDoc.mock.calls[0][1];
-    expect(payload["members.user@tv2.no.role"]).toBe("editor");
-    expect(payload.updatedAt).toBe("SERVER_TS");
+    // updateDoc must be called with FieldPath varargs so "user@tv2.no" stays as a single key
+    // rather than being split into ["user@tv2", "no"] by Firestore's dotted-path parser.
+    const args = updateDoc.mock.calls[0];
+    const [, rolePath, roleValue, updatedAtKey, updatedAtVal] = args;
+    expect(rolePath).toBeInstanceOf(FieldPath);
+    expect((rolePath as InstanceType<typeof FieldPath>).segments).toEqual(["members", "user@tv2.no", "role"]);
+    expect(roleValue).toBe("editor");
+    expect(updatedAtKey).toBe("updatedAt");
+    expect(updatedAtVal).toBe("SERVER_TS");
   });
 });
 
 describe("firebaseWorkspaceService.removeMember", () => {
-  test("deletes the member entry and pulls the email from memberIds", async () => {
+  test("uses FieldPath so email dots are not misread as Firestore path separators", async () => {
     updateDoc.mockResolvedValueOnce(undefined);
     await firebaseWorkspaceService.removeMember("ws1", "user@tv2.no");
-    const payload = updateDoc.mock.calls[0][1];
-    expect(payload["members.user@tv2.no"]).toEqual({ kind: "deleteField" });
-    expect(payload.memberIds).toEqual({ kind: "arrayRemove", ids: ["user@tv2.no"] });
-    expect(payload.updatedAt).toBe("SERVER_TS");
+    // FieldPath ensures "user@tv2.no" is treated as a single key, not split on "."
+    const args = updateDoc.mock.calls[0];
+    const [, memberPath, memberVal, memberIdsKey, memberIdsVal, updatedAtKey, updatedAtVal] = args;
+    expect(memberPath).toBeInstanceOf(FieldPath);
+    expect((memberPath as InstanceType<typeof FieldPath>).segments).toEqual(["members", "user@tv2.no"]);
+    expect(memberVal).toEqual({ kind: "deleteField" });
+    expect(memberIdsKey).toBe("memberIds");
+    expect(memberIdsVal).toEqual({ kind: "arrayRemove", ids: ["user@tv2.no"] });
+    expect(updatedAtKey).toBe("updatedAt");
+    expect(updatedAtVal).toBe("SERVER_TS");
   });
 });

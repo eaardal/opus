@@ -4,6 +4,8 @@ import { authService, workspaceService } from "../../services/container";
 import type { WorkspaceSummary } from "../../services/workspace.types";
 import { useSelectedWorkspace } from "./SelectedWorkspaceProvider";
 import { WorkspaceSettingsDialog } from "./WorkspaceSettingsDialog";
+import { useAuthUser } from "../auth/useAuthUser";
+import { Avatar } from "../../ui/Avatar";
 import "./WorkspacePicker.css";
 
 type State =
@@ -13,42 +15,22 @@ type State =
 
 export function WorkspacePicker() {
   const { select } = useSelectedWorkspace();
+  const auth = useAuthUser();
   const [state, setState] = useState<State>({ status: "loading" });
   const [settingsFor, setSettingsFor] = useState<WorkspaceSummary | null>(null);
 
-  const reload = useCallback(async () => {
+  useEffect(() => {
     setState({ status: "loading" });
-    try {
-      const workspaces = await workspaceService.listMine();
+    return workspaceService.subscribeMine((workspaces) => {
       setState({ status: "ready", workspaces });
-    } catch (err) {
-      console.error("Failed to list workspaces:", err);
-      setState({
-        status: "error",
-        message: err instanceof Error ? err.message : String(err),
-      });
-    }
+    });
   }, []);
 
-  useEffect(() => {
-    reload();
-  }, [reload]);
-
   const handleRenamed = useCallback((id: string, name: string) => {
-    setState((prev) =>
-      prev.status === "ready"
-        ? { ...prev, workspaces: prev.workspaces.map((w) => (w.id === id ? { ...w, name } : w)) }
-        : prev,
-    );
     setSettingsFor((prev) => (prev && prev.id === id ? { ...prev, name } : prev));
   }, []);
 
-  const handleDeleted = useCallback((id: string) => {
-    setState((prev) =>
-      prev.status === "ready"
-        ? { ...prev, workspaces: prev.workspaces.filter((w) => w.id !== id) }
-        : prev,
-    );
+  const handleDeleted = useCallback((_id: string) => {
     setSettingsFor(null);
   }, []);
 
@@ -57,13 +39,6 @@ export function WorkspacePicker() {
       <div className="workspace-picker-card">
         <header className="workspace-picker-header">
           <h1 className="workspace-picker-title">Domino</h1>
-          <button
-            type="button"
-            className="workspace-picker-link"
-            onClick={() => authService.signOut()}
-          >
-            Sign out
-          </button>
         </header>
         {state.status === "loading" && <p className="workspace-picker-status">Loading…</p>}
         {state.status === "error" && <p className="workspace-picker-error">{state.message}</p>}
@@ -92,6 +67,33 @@ export function WorkspacePicker() {
             />
           </>
         )}
+        <footer className="workspace-picker-footer">
+          {auth.status === "signedIn" && (
+            <div className="workspace-picker-identity">
+              <Avatar
+                photoURL={auth.user.photoURL}
+                fallbackText={auth.user.displayName ?? auth.user.email ?? "?"}
+                className="workspace-picker-avatar"
+                fallbackClassName="workspace-picker-avatar-fallback"
+              />
+              <div className="workspace-picker-identity-text">
+                <span className="workspace-picker-identity-name">
+                  {auth.user.displayName ?? auth.user.email ?? "Signed in"}
+                </span>
+                {auth.user.email && (
+                  <span className="workspace-picker-identity-email">{auth.user.email}</span>
+                )}
+              </div>
+            </div>
+          )}
+          <button
+            type="button"
+            className="workspace-picker-link"
+            onClick={() => authService.signOut()}
+          >
+            Sign out
+          </button>
+        </footer>
       </div>
 
       {settingsFor && (

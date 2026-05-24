@@ -56,6 +56,7 @@ export interface WorkspaceService {
   // ── Workspace management ──────────────────────────────────────────────────
 
   listMine(): Promise<WorkspaceSummary[]>;
+  subscribeMine(callback: (workspaces: WorkspaceSummary[]) => void): () => void;
   create(name: string): Promise<WorkspaceId>;
   rename(id: WorkspaceId, name: string): Promise<void>;
   remove(id: WorkspaceId): Promise<void>;

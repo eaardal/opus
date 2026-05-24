@@ -220,9 +220,68 @@
   font-size: 12px;
   cursor: pointer;
   padding: 4px 6px;
+  flex-shrink: 0;
 }
 
 .workspace-picker-link:hover {
   color: var(--text-primary, #e6e6e6);
   text-decoration: underline;
+}
+
+.workspace-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--menu-border, #2a2f3a);
+}
+
+.workspace-picker-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.workspace-picker-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.workspace-picker-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent, #3b82f6);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.workspace-picker-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.workspace-picker-identity-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #e6e6e6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-picker-identity-email {
+  font-size: 11px;
+  color: var(--text-secondary, #a0a0a0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

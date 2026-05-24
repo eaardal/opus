@@ -6,6 +6,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  FieldPath,
   getDoc,
   getDocs,
   onSnapshot,
@@ -229,13 +230,18 @@ export const firebaseWorkspaceService: WorkspaceService = {
     const ref = await addDoc(workspacesCol(), {
       ownerId: email,
       name,
-      projects: [],
-      people: [],
-      teams: [],
       members: { [email]: { role: "owner", addedAt: Timestamp.now() } },
       memberIds: [email],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+    });
+    const defaultProjectId = crypto.randomUUID();
+    await setDoc(projectDoc(ref.id, defaultProjectId), {
+      id: defaultProjectId,
+      name: "New Project",
+      theme: "dark",
+      taskQueues: [],
+      connections: [],
     });
     return ref.id;
   },
@@ -244,6 +250,44 @@ export const firebaseWorkspaceService: WorkspaceService = {
     return onSnapshot(workspaceDoc(id), (snap) => {
       callback(snap.exists() ? toWorkspaceDocument(snap.data()) : null);
     });
+  },
+
+  subscribeMine(callback) {
+    const email = requireUserEmail();
+    let memberResults: WorkspaceSummary[] = [];
+    let legacyResults: WorkspaceSummary[] = [];
+
+    const fire = () => {
+      callback(dedupeSummariesById([...memberResults, ...legacyResults]));
+    };
+
+    const unsubMember = onSnapshot(
+      query(workspacesCol(), where("memberIds", "array-contains", email), orderBy("updatedAt", "desc")),
+      (snap) => {
+        memberResults = snap.docs.map((d) => toSummary(d.id, d.data(), email));
+        fire();
+      },
+      (err) => console.error("[workspaces] subscribeMine member query error:", err),
+    );
+
+    let unsubLegacy: (() => void) | undefined;
+    try {
+      unsubLegacy = onSnapshot(
+        query(workspacesCol(), where("ownerId", "==", email), orderBy("updatedAt", "desc")),
+        (snap) => {
+          legacyResults = snap.docs.map((d) => toSummary(d.id, d.data(), email));
+          fire();
+        },
+        (err) => console.warn("[workspaces] subscribeMine legacy query error:", err),
+      );
+    } catch (err) {
+      console.warn("[workspaces] subscribeMine legacy query setup failed:", err);
+    }
+
+    return () => {
+      unsubMember();
+      unsubLegacy?.();
+    };
   },
 
   async rename(id, name) {
@@ -262,11 +306,12 @@ export const firebaseWorkspaceService: WorkspaceService = {
       data.members && typeof data.members === "object" && Object.keys(data.members).length > 0;
     const newEntry = { role, addedAt: Timestamp.now() };
     if (hasMembers) {
-      await updateDoc(workspaceDoc(id), {
-        [`members.${uid}`]: newEntry,
-        memberIds: arrayUnion(uid),
-        updatedAt: serverTimestamp(),
-      });
+      await updateDoc(
+        workspaceDoc(id),
+        new FieldPath("members", uid), newEntry,
+        "memberIds", arrayUnion(uid),
+        "updatedAt", serverTimestamp(),
+      );
       return;
     }
     const ownerId = data.ownerId as string;
@@ -281,18 +326,20 @@ export const firebaseWorkspaceService: WorkspaceService = {
   },
 
   async updateMemberRole(id, uid, role) {
-    await updateDoc(workspaceDoc(id), {
-      [`members.${uid}.role`]: role,
-      updatedAt: serverTimestamp(),
-    });
+    await updateDoc(
+      workspaceDoc(id),
+      new FieldPath("members", uid, "role"), role,
+      "updatedAt", serverTimestamp(),
+    );
   },
 
   async removeMember(id, uid) {
-    await updateDoc(workspaceDoc(id), {
-      [`members.${uid}`]: deleteField(),
-      memberIds: arrayRemove(uid),
-      updatedAt: serverTimestamp(),
-    });
+    await updateDoc(
+      workspaceDoc(id),
+      new FieldPath("members", uid), deleteField(),
+      "memberIds", arrayRemove(uid),
+      "updatedAt", serverTimestamp(),
+    );
   },
 
   // ── Subscriptions ────────────────────────────────────────────────────────

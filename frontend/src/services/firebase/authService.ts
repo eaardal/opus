@@ -52,6 +52,7 @@ function registerUserIfAllowed(user: AuthUser | null): void {
 
 async function signInWeb(): Promise<void> {
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
   await signInWithPopup(firebaseAuth, provider);
 }
 

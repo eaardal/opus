@@ -44,7 +44,7 @@ describe("buildMemberRows", () => {
     expect(rows[0]).toMatchObject({ uid: "legacy-owner", role: "owner", displayName: "Legacy" });
   });
 
-  test("falls back to ownerId when members is an empty map", () => {
+  test("falls back to ownerId when members is an empty map and memberIds is also empty", () => {
     const doc = baseDoc({ ownerId: "legacy-owner", members: {}, memberIds: [] });
     const rows = buildMemberRows(doc, []);
     expect(rows).toEqual([
@@ -56,6 +56,36 @@ describe("buildMemberRows", () => {
         photoURL: null,
       },
     ]);
+  });
+
+  test("falls back to memberIds when members map is absent, ownerId gets owner role", () => {
+    const doc = baseDoc({
+      ownerId: "owner@tv2.no",
+      members: undefined,
+      memberIds: ["owner@tv2.no", "editor@tv2.no", "viewer@apparat.no"],
+    });
+    const rows = buildMemberRows(doc, [
+      user({ uid: "owner@tv2.no", email: "owner@tv2.no", displayName: "Owner" }),
+      user({ uid: "editor@tv2.no", email: "editor@tv2.no", displayName: "Editor" }),
+      user({ uid: "viewer@apparat.no", email: "viewer@apparat.no", displayName: "Viewer" }),
+    ]);
+    expect(rows).toHaveLength(3);
+    expect(rows.find((r) => r.uid === "owner@tv2.no")).toMatchObject({ role: "owner" });
+    expect(rows.find((r) => r.uid === "editor@tv2.no")).toMatchObject({ role: "viewer" });
+    expect(rows.find((r) => r.uid === "viewer@apparat.no")).toMatchObject({ role: "viewer" });
+  });
+
+  test("memberIds fallback includes ownerId even when absent from memberIds", () => {
+    const doc = baseDoc({
+      ownerId: "owner@tv2.no",
+      members: undefined,
+      memberIds: ["member@apparat.no"],
+    });
+    const rows = buildMemberRows(doc, []);
+    const uids = rows.map((r) => r.uid);
+    expect(uids).toContain("owner@tv2.no");
+    expect(uids).toContain("member@apparat.no");
+    expect(rows.find((r) => r.uid === "owner@tv2.no")?.role).toBe("owner");
   });
 
   test("ties within the same role break alphabetically by displayName then email", () => {
