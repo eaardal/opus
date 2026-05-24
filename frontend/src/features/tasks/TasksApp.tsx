@@ -69,6 +69,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const { canEdit } = useWorkspaceRole();
 
   const [loadStatus, setLoadStatus] = useState<"loading" | "ready">("loading");
+  // Ref so the once-bound subscribeProjectContent callback always reads the current value.
+  const loadStatusRef = useRef<"loading" | "ready">("loading");
+  loadStatusRef.current = loadStatus;
 
   const history = useHistory({ tasks: [], connections: [], groups: [] });
   const push: typeof history.push = canEdit ? history.push : () => {};
@@ -100,7 +103,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
       (content, hasPendingWrites) => {
         if (!content) return;
 
-        if (loadStatus === "loading") {
+        if (loadStatusRef.current === "loading") {
           history.reset({
             tasks: content.tasks,
             connections: content.projectDoc.connections,
@@ -115,7 +118,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         // TODO: also guard against mid-typing edge case (blur-on-write means
         // the user's in-progress text isn't in Firestore yet, so hasPendingWrites
         // won't cover it — accepted risk for now, see architecture session notes).
-        if (hasPendingWrites || isDraggingRef.current) return;
+        if (isDraggingRef.current) return;
 
         history.replace({
           tasks: content.tasks,
