@@ -345,10 +345,15 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         new Set(result.tasks.map((t) => t.id)),
         new Set(result.groups.map((g) => g.id)),
       );
+      Promise.all([
+        ...result.tasks.map((t) => workspaceService.addTask(workspaceId, projectId, t)),
+        ...result.groups.map((g) => workspaceService.addGroup(workspaceId, projectId, g)),
+        ...result.connections.map((c) => workspaceService.addConnection(workspaceId, projectId, c)),
+      ]).catch(console.error);
     } catch {
       console.warn("[canvas] Paste failed — clipboard may be empty or access denied");
     }
-  }, [tasks, connections, groups, viewBox, workspaceId, push, selectElements]);
+  }, [tasks, connections, groups, viewBox, workspaceId, projectId, push, selectElements]);
 
   const handleSelectAll = useCallback(() => {
     selectElements(new Set(tasks.map((t) => t.id)), new Set(groups.map((g) => g.id)));
@@ -368,7 +373,11 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
       groups: [...groups, ...result.groups],
     });
     selectElements(new Set(result.tasks.map((t) => t.id)), new Set(result.groups.map((g) => g.id)));
-  }, [selectedNodes, selectedGroups, tasks, groups, connections, push, selectElements]);
+    Promise.all([
+      ...result.tasks.map((t) => workspaceService.addTask(workspaceId, projectId, t)),
+      ...result.groups.map((g) => workspaceService.addGroup(workspaceId, projectId, g)),
+    ]).catch(console.error);
+  }, [selectedNodes, selectedGroups, tasks, groups, connections, push, selectElements, workspaceId, projectId]);
 
   const handleDuplicateTask = useCallback(
     (taskId: string) => {
@@ -384,8 +393,11 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         groups: [...groups, ...result.groups],
       });
       selectElements(new Set(result.tasks.map((t) => t.id)), new Set());
+      Promise.all(
+        result.tasks.map((t) => workspaceService.addTask(workspaceId, projectId, t)),
+      ).catch(console.error);
     },
-    [tasks, groups, connections, push, selectElements],
+    [tasks, groups, connections, push, selectElements, workspaceId, projectId],
   );
 
   const { shiftPressed } = useGlobalKeyboardShortcuts({
