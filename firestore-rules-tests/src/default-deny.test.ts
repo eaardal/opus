@@ -4,7 +4,7 @@ import {
 } from '@firebase/rules-unit-testing'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
-import { ALLOWED_EMAILS, OWNER_UID } from './data.js'
+import { ALLOWED_EMAILS, OWNER_EMAIL } from './data.js'
 import { createTestEnv } from './testEnv.js'
 
 let testEnv: RulesTestEnvironment
@@ -23,15 +23,15 @@ beforeEach(async () => {
 
 describe('default deny — unknown collections', () => {
   it('denies read from an unrecognised collection for an allowed user', async () => {
-    const ctx = testEnv.authenticatedContext(OWNER_UID, {
+    const ctx = testEnv.authenticatedContext(OWNER_EMAIL, {
       email: ALLOWED_EMAILS.tv2,
       email_verified: true,
     })
-    await assertFails(getDoc(doc(ctx.firestore(), `unknown/${OWNER_UID}`)))
+    await assertFails(getDoc(doc(ctx.firestore(), `unknown/${OWNER_EMAIL}`)))
   })
 
   it('denies write to an unrecognised collection for an allowed user', async () => {
-    const ctx = testEnv.authenticatedContext(OWNER_UID, {
+    const ctx = testEnv.authenticatedContext(OWNER_EMAIL, {
       email: ALLOWED_EMAILS.tv2,
       email_verified: true,
     })

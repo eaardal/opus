@@ -257,9 +257,13 @@ describe("firebaseWorkspaceService.addMember", () => {
     // updateDoc must be called with FieldPath varargs, not a dotted-string object key,
     // because "new@tv2.no" contains a dot that Firestore would otherwise split into nested paths.
     const args = updateDoc.mock.calls[0];
-    const [, memberPath, memberEntry, memberIdsKey, memberIdsVal, updatedAtKey, updatedAtVal] = args;
+    const [, memberPath, memberEntry, memberIdsKey, memberIdsVal, updatedAtKey, updatedAtVal] =
+      args;
     expect(memberPath).toBeInstanceOf(FieldPath);
-    expect((memberPath as InstanceType<typeof FieldPath>).segments).toEqual(["members", "new@tv2.no"]);
+    expect((memberPath as InstanceType<typeof FieldPath>).segments).toEqual([
+      "members",
+      "new@tv2.no",
+    ]);
     expect(memberEntry).toEqual({ role: "editor", addedAt: expect.any(Timestamp) });
     expect(memberIdsKey).toBe("memberIds");
     expect(memberIdsVal).toEqual({ kind: "arrayUnion", ids: ["new@tv2.no"] });
@@ -313,7 +317,11 @@ describe("firebaseWorkspaceService.updateMemberRole", () => {
     const args = updateDoc.mock.calls[0];
     const [, rolePath, roleValue, updatedAtKey, updatedAtVal] = args;
     expect(rolePath).toBeInstanceOf(FieldPath);
-    expect((rolePath as InstanceType<typeof FieldPath>).segments).toEqual(["members", "user@tv2.no", "role"]);
+    expect((rolePath as InstanceType<typeof FieldPath>).segments).toEqual([
+      "members",
+      "user@tv2.no",
+      "role",
+    ]);
     expect(roleValue).toBe("editor");
     expect(updatedAtKey).toBe("updatedAt");
     expect(updatedAtVal).toBe("SERVER_TS");
@@ -328,7 +336,10 @@ describe("firebaseWorkspaceService.removeMember", () => {
     const args = updateDoc.mock.calls[0];
     const [, memberPath, memberVal, memberIdsKey, memberIdsVal, updatedAtKey, updatedAtVal] = args;
     expect(memberPath).toBeInstanceOf(FieldPath);
-    expect((memberPath as InstanceType<typeof FieldPath>).segments).toEqual(["members", "user@tv2.no"]);
+    expect((memberPath as InstanceType<typeof FieldPath>).segments).toEqual([
+      "members",
+      "user@tv2.no",
+    ]);
     expect(memberVal).toEqual({ kind: "deleteField" });
     expect(memberIdsKey).toBe("memberIds");
     expect(memberIdsVal).toEqual({ kind: "arrayRemove", ids: ["user@tv2.no"] });

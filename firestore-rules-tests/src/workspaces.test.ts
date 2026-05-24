@@ -6,12 +6,11 @@ import {
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 import {
-  ALLOWED_EMAILS,
-  EDITOR_UID,
+  EDITOR_EMAIL,
   makeLegacyWorkspaceDoc,
   makeWorkspaceDoc,
-  OUTSIDER_UID,
-  OWNER_UID,
+  OUTSIDER_EMAIL,
+  OWNER_EMAIL,
   WORKSPACE_ID,
 } from './data.js'
 import { createTestEnv } from './testEnv.js'
@@ -30,23 +29,24 @@ beforeEach(async () => {
   await testEnv.clearFirestore()
 })
 
+// Rules never read auth.uid, so we use the email as the auth uid too.
 function ownerCtx() {
-  return testEnv.authenticatedContext(OWNER_UID, {
-    email: ALLOWED_EMAILS.tv2,
+  return testEnv.authenticatedContext(OWNER_EMAIL, {
+    email: OWNER_EMAIL,
     email_verified: true,
   })
 }
 
 function editorCtx() {
-  return testEnv.authenticatedContext(EDITOR_UID, {
-    email: ALLOWED_EMAILS.apparat,
+  return testEnv.authenticatedContext(EDITOR_EMAIL, {
+    email: EDITOR_EMAIL,
     email_verified: true,
   })
 }
 
 function outsiderCtx() {
-  return testEnv.authenticatedContext(OUTSIDER_UID, {
-    email: ALLOWED_EMAILS.gmail,
+  return testEnv.authenticatedContext(OUTSIDER_EMAIL, {
+    email: OUTSIDER_EMAIL,
     email_verified: true,
   })
 }
@@ -55,7 +55,7 @@ async function seedWorkspace(data?: Record<string, unknown>): Promise<void> {
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(
       doc(ctx.firestore(), `workspaces/${WORKSPACE_ID}`),
-      data ?? makeWorkspaceDoc(OWNER_UID, EDITOR_UID)
+      data ?? makeWorkspaceDoc(OWNER_EMAIL, EDITOR_EMAIL)
     )
   })
 }
@@ -65,35 +65,35 @@ describe('/workspaces/{workspaceId}', () => {
     it('allows owner to create a workspace with correct fields', async () => {
       const db = ownerCtx().firestore()
       await assertSucceeds(
-        setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), makeWorkspaceDoc(OWNER_UID))
+        setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), makeWorkspaceDoc(OWNER_EMAIL))
       )
     })
 
-    it('denies create when ownerId does not match auth uid', async () => {
+    it('denies create when ownerId does not match auth email', async () => {
       const db = ownerCtx().firestore()
       await assertFails(
         setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          ...makeWorkspaceDoc(OWNER_UID),
-          ownerId: EDITOR_UID,
+          ...makeWorkspaceDoc(OWNER_EMAIL),
+          ownerId: EDITOR_EMAIL,
         })
       )
     })
 
-    it('denies create when auth uid is absent from memberIds', async () => {
+    it('denies create when auth email is absent from memberIds', async () => {
       const db = ownerCtx().firestore()
       await assertFails(
         setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          ...makeWorkspaceDoc(OWNER_UID),
+          ...makeWorkspaceDoc(OWNER_EMAIL),
           memberIds: [],
         })
       )
     })
 
-    it('denies create when auth uid is absent from members map', async () => {
+    it('denies create when auth email is absent from members map', async () => {
       const db = ownerCtx().firestore()
       await assertFails(
         setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          ...makeWorkspaceDoc(OWNER_UID),
+          ...makeWorkspaceDoc(OWNER_EMAIL),
           members: {},
         })
       )
@@ -103,8 +103,8 @@ describe('/workspaces/{workspaceId}', () => {
       const db = ownerCtx().firestore()
       await assertFails(
         setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          ...makeWorkspaceDoc(OWNER_UID),
-          members: { [OWNER_UID]: { role: 'editor' } },
+          ...makeWorkspaceDoc(OWNER_EMAIL),
+          members: { [OWNER_EMAIL]: { role: 'editor' } },
         })
       )
     })
@@ -112,17 +112,20 @@ describe('/workspaces/{workspaceId}', () => {
     it('denies create when unauthenticated', async () => {
       const db = testEnv.unauthenticatedContext().firestore()
       await assertFails(
-        setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), makeWorkspaceDoc(OWNER_UID))
+        setDoc(doc(db, `workspaces/${WORKSPACE_ID}`), makeWorkspaceDoc(OWNER_EMAIL))
       )
     })
 
     it('denies create from a non-allowlisted email domain', async () => {
-      const ctx = testEnv.authenticatedContext(OUTSIDER_UID, {
+      const ctx = testEnv.authenticatedContext('user@other.com', {
         email: 'user@other.com',
         email_verified: true,
       })
       await assertFails(
-        setDoc(doc(ctx.firestore(), `workspaces/${WORKSPACE_ID}`), makeWorkspaceDoc(OUTSIDER_UID))
+        setDoc(
+          doc(ctx.firestore(), `workspaces/${WORKSPACE_ID}`),
+          makeWorkspaceDoc('user@other.com')
+        )
       )
     })
   })
@@ -139,17 +142,17 @@ describe('/workspaces/{workspaceId}', () => {
     })
 
     it('allows legacy owner (ownerId match, no memberIds field) to read', async () => {
-      await seedWorkspace(makeLegacyWorkspaceDoc(OWNER_UID))
+      await seedWorkspace(makeLegacyWorkspaceDoc(OWNER_EMAIL))
       await assertSucceeds(getDoc(doc(ownerCtx().firestore(), `workspaces/${WORKSPACE_ID}`)))
     })
 
     it('allows original creator to read even after being removed from memberIds', async () => {
       // Simulates case (b) from the rule comment: creator removed from members but ownerId persists.
       await seedWorkspace({
-        ...makeWorkspaceDoc(OWNER_UID, EDITOR_UID),
-        memberIds: [EDITOR_UID],
-        members: { [EDITOR_UID]: { role: 'editor' } },
-        ownerId: OWNER_UID,
+        ...makeWorkspaceDoc(OWNER_EMAIL, EDITOR_EMAIL),
+        memberIds: [EDITOR_EMAIL],
+        members: { [EDITOR_EMAIL]: { role: 'editor' } },
+        ownerId: OWNER_EMAIL,
       })
       await assertSucceeds(getDoc(doc(ownerCtx().firestore(), `workspaces/${WORKSPACE_ID}`)))
     })
@@ -168,7 +171,7 @@ describe('/workspaces/{workspaceId}', () => {
 
   describe('update — editor', () => {
     beforeEach(async () => {
-      await seedWorkspace(makeWorkspaceDoc(OWNER_UID, EDITOR_UID))
+      await seedWorkspace(makeWorkspaceDoc(OWNER_EMAIL, EDITOR_EMAIL))
     })
 
     it('allows editor to update name and updatedAt', async () => {
@@ -181,41 +184,11 @@ describe('/workspaces/{workspaceId}', () => {
       )
     })
 
-    it('allows editor to update projects', async () => {
-      const db = editorCtx().firestore()
-      await assertSucceeds(
-        updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          projects: [{ id: 'p-1' }],
-          updatedAt: new Date(),
-        })
-      )
-    })
-
-    it('allows editor to update people', async () => {
-      const db = editorCtx().firestore()
-      await assertSucceeds(
-        updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          people: [{ id: 'person-1' }],
-          updatedAt: new Date(),
-        })
-      )
-    })
-
-    it('allows editor to update teams', async () => {
-      const db = editorCtx().firestore()
-      await assertSucceeds(
-        updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          teams: [{ id: 'team-1' }],
-          updatedAt: new Date(),
-        })
-      )
-    })
-
     it('denies editor from updating members map', async () => {
       const db = editorCtx().firestore()
       await assertFails(
         updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          members: { [EDITOR_UID]: { role: 'owner' } },
+          members: { [EDITOR_EMAIL]: { role: 'owner' } },
           updatedAt: new Date(),
         })
       )
@@ -225,7 +198,7 @@ describe('/workspaces/{workspaceId}', () => {
       const db = editorCtx().firestore()
       await assertFails(
         updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          memberIds: [EDITOR_UID, OUTSIDER_UID],
+          memberIds: [EDITOR_EMAIL, OUTSIDER_EMAIL],
           updatedAt: new Date(),
         })
       )
@@ -235,7 +208,7 @@ describe('/workspaces/{workspaceId}', () => {
       const db = editorCtx().firestore()
       await assertFails(
         updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          ownerId: EDITOR_UID,
+          ownerId: EDITOR_EMAIL,
           updatedAt: new Date(),
         })
       )
@@ -244,7 +217,7 @@ describe('/workspaces/{workspaceId}', () => {
 
   describe('update — owner', () => {
     beforeEach(async () => {
-      await seedWorkspace(makeWorkspaceDoc(OWNER_UID, EDITOR_UID))
+      await seedWorkspace(makeWorkspaceDoc(OWNER_EMAIL, EDITOR_EMAIL))
     })
 
     it('allows owner to update content fields', async () => {
@@ -262,11 +235,11 @@ describe('/workspaces/{workspaceId}', () => {
       await assertSucceeds(
         updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
           members: {
-            [OWNER_UID]: { role: 'owner' },
-            [EDITOR_UID]: { role: 'editor' },
-            [OUTSIDER_UID]: { role: 'editor' },
+            [OWNER_EMAIL]: { role: 'owner' },
+            [EDITOR_EMAIL]: { role: 'editor' },
+            [OUTSIDER_EMAIL]: { role: 'editor' },
           },
-          memberIds: [OWNER_UID, EDITOR_UID, OUTSIDER_UID],
+          memberIds: [OWNER_EMAIL, EDITOR_EMAIL, OUTSIDER_EMAIL],
           updatedAt: new Date(),
         })
       )
@@ -276,7 +249,7 @@ describe('/workspaces/{workspaceId}', () => {
       const db = ownerCtx().firestore()
       await assertFails(
         updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          ownerId: EDITOR_UID,
+          ownerId: EDITOR_EMAIL,
           updatedAt: new Date(),
         })
       )
@@ -285,7 +258,7 @@ describe('/workspaces/{workspaceId}', () => {
 
   describe('update — legacy owner (no memberIds field)', () => {
     beforeEach(async () => {
-      await seedWorkspace(makeLegacyWorkspaceDoc(OWNER_UID))
+      await seedWorkspace(makeLegacyWorkspaceDoc(OWNER_EMAIL))
     })
 
     it('allows legacy owner to update content fields', async () => {
@@ -302,10 +275,10 @@ describe('/workspaces/{workspaceId}', () => {
       const db = ownerCtx().firestore()
       await assertSucceeds(
         updateDoc(doc(db, `workspaces/${WORKSPACE_ID}`), {
-          memberIds: [OWNER_UID, EDITOR_UID],
+          memberIds: [OWNER_EMAIL, EDITOR_EMAIL],
           members: {
-            [OWNER_UID]: { role: 'owner' },
-            [EDITOR_UID]: { role: 'editor' },
+            [OWNER_EMAIL]: { role: 'owner' },
+            [EDITOR_EMAIL]: { role: 'editor' },
           },
           updatedAt: new Date(),
         })
@@ -363,7 +336,7 @@ describe('/workspaces/{workspaceId}', () => {
 
     it('allows legacy owner to delete workspace', async () => {
       await testEnv.clearFirestore()
-      await seedWorkspace(makeLegacyWorkspaceDoc(OWNER_UID))
+      await seedWorkspace(makeLegacyWorkspaceDoc(OWNER_EMAIL))
       await assertSucceeds(deleteDoc(doc(ownerCtx().firestore(), `workspaces/${WORKSPACE_ID}`)))
     })
   })

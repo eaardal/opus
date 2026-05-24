@@ -271,7 +271,11 @@ export const firebaseWorkspaceService: WorkspaceService = {
     };
 
     const unsubMember = onSnapshot(
-      query(workspacesCol(), where("memberIds", "array-contains", email), orderBy("updatedAt", "desc")),
+      query(
+        workspacesCol(),
+        where("memberIds", "array-contains", email),
+        orderBy("updatedAt", "desc"),
+      ),
       (snap) => {
         memberResults = snap.docs.map((d) => toSummary(d.id, d.data(), email));
         fire();
@@ -317,9 +321,12 @@ export const firebaseWorkspaceService: WorkspaceService = {
     if (hasMembers) {
       await updateDoc(
         workspaceDoc(id),
-        new FieldPath("members", uid), newEntry,
-        "memberIds", arrayUnion(uid),
-        "updatedAt", serverTimestamp(),
+        new FieldPath("members", uid),
+        newEntry,
+        "memberIds",
+        arrayUnion(uid),
+        "updatedAt",
+        serverTimestamp(),
       );
       return;
     }
@@ -337,17 +344,22 @@ export const firebaseWorkspaceService: WorkspaceService = {
   async updateMemberRole(id, uid, role) {
     await updateDoc(
       workspaceDoc(id),
-      new FieldPath("members", uid, "role"), role,
-      "updatedAt", serverTimestamp(),
+      new FieldPath("members", uid, "role"),
+      role,
+      "updatedAt",
+      serverTimestamp(),
     );
   },
 
   async removeMember(id, uid) {
     await updateDoc(
       workspaceDoc(id),
-      new FieldPath("members", uid), deleteField(),
-      "memberIds", arrayRemove(uid),
-      "updatedAt", serverTimestamp(),
+      new FieldPath("members", uid),
+      deleteField(),
+      "memberIds",
+      arrayRemove(uid),
+      "updatedAt",
+      serverTimestamp(),
     );
   },
 

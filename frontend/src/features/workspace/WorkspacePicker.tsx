@@ -29,9 +29,12 @@ export function WorkspacePicker() {
   }, []);
 
   useEffect(() => {
-    userService.listAll().then((users) => {
-      setUserDirectory(new Map(users.map((u) => [u.uid, u])));
-    }).catch(console.error);
+    userService
+      .listAll()
+      .then((users) => {
+        setUserDirectory(new Map(users.map((u) => [u.uid, u])));
+      })
+      .catch(console.error);
   }, []);
 
   const handleRenamed = useCallback((id: string, name: string) => {
