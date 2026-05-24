@@ -5,7 +5,7 @@
   --color-ash-gray: #b0c4b1;
   --color-outer-space: #4a5759;
 
-  --accent-primary: var(--color-ash-gray);
-  --accent-primary-hover: color-mix(in srgb, var(--color-ash-gray) 80%, var(--color-outer-space));
+  --accent-primary: #c6c7e0;
+  --accent-primary-hover: color-mix(in srgb, #c6c7e0 80%, #718af4);
   --accent-primary-text: var(--color-outer-space);
 }

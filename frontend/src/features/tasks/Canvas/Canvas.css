@@ -13,7 +13,7 @@
   left: 0;
   right: 0;
   bottom: var(--progress-bar-height);
-  border: 6px solid var(--color-pink);
+  border: 6px solid #cac9d3;
   pointer-events: none;
   z-index: 5;
 }
@@ -23,7 +23,7 @@
   top: 0;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--color-pink);
+  background: #cac9d3;
   color: var(--color-outer-space);
   padding: 4px 14px;
   padding-top: 8px;
