@@ -1,12 +1,11 @@
-import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import "./TasksApp.css";
-import { confirm } from "../../ui/ConfirmModal";
-import { Sidebar } from "./Sidebar/Sidebar";
-import type { Group, Task, TaskStatus } from "../../domain/tasks/types";
-import { Canvas, type CanvasHandle } from "./Canvas/Canvas";
-import type { ViewBox } from "../../domain/tasks/types";
-import { zoomViewBoxToGroup } from "../../domain/tasks/viewport";
-import { useWorkspaceRole } from "../workspace/WorkspaceRoleContext";
+import {
+  applyPaste,
+  deserializeClipboard,
+  duplicateElements,
+  serializeSelection,
+} from "../../domain/tasks/clipboard";
 import {
   addGroup as addGroupOp,
   addTask as addTaskOp,
@@ -20,21 +19,21 @@ import {
   updateGroup as updateGroupOp,
   updateTask as updateTaskOp,
 } from "../../domain/tasks/operations";
-import {
-  applyPaste,
-  deserializeClipboard,
-  duplicateElements,
-  serializeSelection,
-} from "../../domain/tasks/clipboard";
-import { getCategories, getStatuses } from "./theme";
-import { useHistory, type CanvasState } from "../../hooks/useHistory";
+import type { Group, Task, TaskStatus, ViewBox } from "../../domain/tasks/types";
+import { zoomViewBoxToGroup } from "../../domain/tasks/viewport";
+import type { Person } from "../../domain/teams/types";
 import { useDragSelection } from "../../hooks/useDragSelection";
 import { useGlobalKeyboardShortcuts } from "../../hooks/useGlobalKeyboardShortcuts";
+import { type HistoryStep, useHistory } from "../../hooks/useHistory";
 import { useResizableSidebar } from "../../hooks/useResizableSidebar";
-import type { Person } from "../../domain/teams/types";
-import { workspaceService } from "../../services/container";
 import { loadViewBox, saveViewBox } from "../../lib/viewBox";
+import { workspaceService } from "../../services/container";
 import type { ProjectSummary } from "../../services/workspace.types";
+import { confirm } from "../../ui/ConfirmModal";
+import { useWorkspaceRole } from "../workspace/WorkspaceRoleContext";
+import { Canvas, type CanvasHandle } from "./Canvas/Canvas";
+import { Sidebar } from "./Sidebar/Sidebar";
+import { getCategories, getStatuses } from "./theme";
 
 const DEFAULT_VIEW_BOX: ViewBox = { x: 0, y: 0, width: 1200, height: 800 };
 
@@ -76,18 +75,15 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const history = useHistory({ tasks: [], connections: [], groups: [] });
   const push: typeof history.push = canEdit ? history.push : () => {};
   const replace: typeof history.replace = canEdit ? history.replace : () => {};
-  const undo: typeof history.undo = canEdit ? history.undo : () => {};
-  const redo: typeof history.redo = canEdit ? history.redo : () => {};
-  const { present, canUndo, canRedo } = history;
+  const undo: typeof history.undo = canEdit ? history.undo : () => null;
+  const redo: typeof history.redo = canEdit ? history.redo : () => null;
+  const { present, canUndo, canRedo, reconcileRemote, reset: resetHistory } = history;
   const { tasks, connections, groups } = present;
   const presentRef = useRef(present);
   presentRef.current = present;
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [viewBox, setViewBox] = useState<ViewBox>(loadViewBox(projectId) ?? DEFAULT_VIEW_BOX);
-
-  // Ref to detect whether an undo/redo just happened so we can batch-write.
-  const pendingUndoRedoRef = useRef<CanvasState | null>(null);
 
   // ── Remote reconciliation ──────────────────────────────────────────────────
 
@@ -97,37 +93,32 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: component is key-remounted on workspaceId/projectId change; subscription is intentionally bound once
   useEffect(() => {
-    const unsub = workspaceService.subscribeProjectContent(
-      workspaceId,
-      projectId,
-      (content, hasPendingWrites) => {
-        if (!content) return;
+    const unsub = workspaceService.subscribeProjectContent(workspaceId, projectId, (content) => {
+      if (!content) return;
 
-        if (loadStatusRef.current === "loading") {
-          history.reset({
-            tasks: content.tasks,
-            connections: content.projectDoc.connections,
-            groups: content.groups,
-          });
-          setTheme(content.projectDoc.theme);
-          setLoadStatus("ready");
-          return;
-        }
-
-        // Remote update from another client — apply only when safe.
-        // TODO: also guard against mid-typing edge case (blur-on-write means
-        // the user's in-progress text isn't in Firestore yet, so hasPendingWrites
-        // won't cover it — accepted risk for now, see architecture session notes).
-        if (isDraggingRef.current) return;
-
-        history.replace({
+      if (loadStatusRef.current === "loading") {
+        resetHistory({
           tasks: content.tasks,
           connections: content.projectDoc.connections,
           groups: content.groups,
         });
         setTheme(content.projectDoc.theme);
-      },
-    );
+        setLoadStatus("ready");
+        return;
+      }
+
+      if (isDraggingRef.current) return;
+
+      // reconcileRemote updates the live view without touching historical
+      // entries, so an in-flight remote echo cannot corrupt the slot that
+      // a pending undo/redo is about to navigate to.
+      reconcileRemote({
+        tasks: content.tasks,
+        connections: content.projectDoc.connections,
+        groups: content.groups,
+      });
+      setTheme(content.projectDoc.theme);
+    });
     return unsub;
     // workspaceId and projectId are stable for the lifetime of this component
     // (key-based remount on change), so we intentionally exclude them here.
@@ -136,33 +127,30 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
 
   // ── Undo / redo Firestore batch sync ──────────────────────────────────────
 
+  const syncHistoryStep = useCallback(
+    (step: HistoryStep) => {
+      const deletedTaskIds = step.before.tasks
+        .filter((t) => !step.after.tasks.some((nt) => nt.id === t.id))
+        .map((t) => t.id);
+      const deletedGroupIds = step.before.groups
+        .filter((g) => !step.after.groups.some((ng) => ng.id === g.id))
+        .map((g) => g.id);
+      workspaceService
+        .syncProjectState(workspaceId, projectId, step.after, deletedTaskIds, deletedGroupIds)
+        .catch(console.error);
+    },
+    [workspaceId, projectId],
+  );
+
   const wrappedUndo = useCallback(() => {
-    pendingUndoRedoRef.current = presentRef.current;
-    undo();
-  }, [undo]);
+    const step = undo();
+    if (step) syncHistoryStep(step);
+  }, [undo, syncHistoryStep]);
 
   const wrappedRedo = useCallback(() => {
-    pendingUndoRedoRef.current = presentRef.current;
-    redo();
-  }, [redo]);
-
-  useEffect(() => {
-    if (!pendingUndoRedoRef.current) return;
-    const before = pendingUndoRedoRef.current;
-    pendingUndoRedoRef.current = null;
-    const after = present;
-
-    const deletedTaskIds = before.tasks
-      .filter((t) => !after.tasks.some((nt) => nt.id === t.id))
-      .map((t) => t.id);
-    const deletedGroupIds = before.groups
-      .filter((g) => !after.groups.some((ng) => ng.id === g.id))
-      .map((g) => g.id);
-
-    workspaceService
-      .syncProjectState(workspaceId, projectId, after, deletedTaskIds, deletedGroupIds)
-      .catch(console.error);
-  }, [present, workspaceId, projectId]);
+    const step = redo();
+    if (step) syncHistoryStep(step);
+  }, [redo, syncHistoryStep]);
 
   // ── ViewBox persistence (localStorage) ────────────────────────────────────
 
@@ -380,7 +368,17 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
       ...result.tasks.map((t) => workspaceService.addTask(workspaceId, projectId, t)),
       ...result.groups.map((g) => workspaceService.addGroup(workspaceId, projectId, g)),
     ]).catch(console.error);
-  }, [selectedNodes, selectedGroups, tasks, groups, connections, push, selectElements, workspaceId, projectId]);
+  }, [
+    selectedNodes,
+    selectedGroups,
+    tasks,
+    groups,
+    connections,
+    push,
+    selectElements,
+    workspaceId,
+    projectId,
+  ]);
 
   const handleDuplicateTask = useCallback(
     (taskId: string) => {

@@ -158,15 +158,23 @@ function toProjectDocument(data: DocumentData): ProjectDocument {
 }
 
 function toTask(data: DocumentData): Task {
-  return {
+  // Omit optional fields entirely when absent. Firestore's SDK rejects writes
+  // that contain explicit `undefined` values, so any task that round-trips
+  // through a full-document `set` (batched undo/redo sync) must not carry one.
+  const task: Task = {
     id: data.id,
     text: data.text ?? "",
     x: data.x ?? 0,
     y: data.y ?? 0,
     status: data.status ?? "pending",
-    category: data.category ?? undefined,
-    assignedPersonIds: Array.isArray(data.assignedPersonIds) ? data.assignedPersonIds : undefined,
   };
+  if (data.category != null && data.category !== "") {
+    task.category = data.category;
+  }
+  if (Array.isArray(data.assignedPersonIds)) {
+    task.assignedPersonIds = data.assignedPersonIds;
+  }
+  return task;
 }
 
 function toGroup(data: DocumentData): Group {
@@ -359,30 +367,23 @@ export const firebaseWorkspaceService: WorkspaceService = {
     let projectDocData: ProjectDocument | null = null;
     let tasks: Task[] | null = null;
     let groups: Group[] | null = null;
-    const pendingWrites = { project: false, tasks: false, groups: false };
-
-    const hasPendingWrites = () =>
-      pendingWrites.project || pendingWrites.tasks || pendingWrites.groups;
 
     const fire = () => {
       if (!projectDocData || tasks === null || groups === null) return;
-      callback({ projectDoc: projectDocData, tasks, groups }, hasPendingWrites());
+      callback({ projectDoc: projectDocData, tasks, groups });
     };
 
     const unsubProject = onSnapshot(projectDoc(id, projectId), (snap) => {
-      pendingWrites.project = snap.metadata.hasPendingWrites;
       projectDocData = snap.exists() ? toProjectDocument({ ...snap.data(), id: snap.id }) : null;
       fire();
     });
 
     const unsubTasks = onSnapshot(tasksCol(id, projectId), (snap) => {
-      pendingWrites.tasks = snap.metadata.hasPendingWrites;
       tasks = snap.docs.map((d) => toTask(d.data()));
       fire();
     });
 
     const unsubGroups = onSnapshot(groupsCol(id, projectId), (snap) => {
-      pendingWrites.groups = snap.metadata.hasPendingWrites;
       groups = snap.docs.map((d) => toGroup(d.data()));
       fire();
     });

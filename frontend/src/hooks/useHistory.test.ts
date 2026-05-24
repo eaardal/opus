@@ -47,17 +47,64 @@ describe("useHistory", () => {
     expect(result.current.present).toEqual(a);
   });
 
+  test("undo returns the before/after step it just took", () => {
+    const { result } = renderHook(() => useHistory(initial));
+    const a: TaskGraphState = { tasks: [t("a")], connections: [], groups: [] };
+    const b: TaskGraphState = { tasks: [t("a"), t("b")], connections: [], groups: [] };
+    act(() => result.current.push(a));
+    act(() => result.current.push(b));
+
+    let step: ReturnType<typeof result.current.undo> = null;
+    act(() => {
+      step = result.current.undo();
+    });
+
+    expect(step).toEqual({ before: b, after: a });
+  });
+
+  test("undo returns null when there is nothing to undo", () => {
+    const { result } = renderHook(() => useHistory(initial));
+    let step: ReturnType<typeof result.current.undo> = { before: initial, after: initial };
+    act(() => {
+      step = result.current.undo();
+    });
+    expect(step).toBeNull();
+  });
+
+  test("redo returns the before/after step it just took", () => {
+    const { result } = renderHook(() => useHistory(initial));
+    const a: TaskGraphState = { tasks: [t("a")], connections: [], groups: [] };
+    act(() => result.current.push(a));
+    act(() => result.current.undo());
+
+    let step: ReturnType<typeof result.current.redo> = null;
+    act(() => {
+      step = result.current.redo();
+    });
+
+    expect(step).toEqual({ before: initial, after: a });
+  });
+
+  test("redo returns null when there is nothing to redo", () => {
+    const { result } = renderHook(() => useHistory(initial));
+    let step: ReturnType<typeof result.current.redo> = { before: initial, after: initial };
+    act(() => {
+      step = result.current.redo();
+    });
+    expect(step).toBeNull();
+  });
+
   test("pushing after undo discards the redo branch", () => {
     const { result } = renderHook(() => useHistory(initial));
     const a: TaskGraphState = { tasks: [t("a")], connections: [], groups: [] };
     const b: TaskGraphState = { tasks: [t("b")], connections: [], groups: [] };
-    const c: TaskGraphState = { tasks: [t("c")], connections: [], groups: [] };
+    const cState: TaskGraphState = { tasks: [t("c")], connections: [], groups: [] };
     act(() => result.current.push(a));
     act(() => result.current.push(b));
     act(() => result.current.undo()); // present = a, redo back to b
-    act(() => result.current.push(c)); // overwrites b with c
+    act(() => result.current.push(cState)); // overwrites b with c
 
-    expect(result.current.present).toEqual(c);
+    expect(result.current.present).toEqual(cState);
     expect(result.current.canRedo).toBe(false); // b is gone
   });
 
@@ -71,6 +118,55 @@ describe("useHistory", () => {
     // Undo goes back to initial — the in-place edit was a single history step.
     act(() => result.current.undo());
     expect(result.current.present).toEqual(initial);
+  });
+
+  test("reconcileRemote updates the visible state when the user is at the head", () => {
+    const { result } = renderHook(() => useHistory(initial));
+    const remote: TaskGraphState = { tasks: [t("from-remote")], connections: [], groups: [] };
+    act(() => result.current.reconcileRemote(remote));
+    expect(result.current.present).toEqual(remote);
+  });
+
+  test("reconcileRemote does NOT corrupt the undo target while the user is viewing history", () => {
+    const { result } = renderHook(() => useHistory(initial));
+    const a: TaskGraphState = { tasks: [t("a")], connections: [], groups: [] };
+    const b: TaskGraphState = { tasks: [t("a"), t("b")], connections: [], groups: [] };
+    act(() => result.current.push(a));
+    act(() => result.current.push(b));
+
+    // User undoes — they are now viewing `a`, with `b` available as the redo target.
+    act(() => result.current.undo());
+    expect(result.current.present).toEqual(a);
+
+    // A remote echo of the original `b` write arrives mid-undo. Under the old
+    // design this would overwrite the slot the user is currently viewing.
+    act(() => result.current.reconcileRemote(b));
+
+    // The historical view the user undid to must remain intact.
+    expect(result.current.present).toEqual(a);
+    // And redo must still take us back to the original `b`, not the remote echo.
+    let step: ReturnType<typeof result.current.redo> = null;
+    act(() => {
+      step = result.current.redo();
+    });
+    expect(step).toEqual({ before: a, after: b });
+  });
+
+  test("redo back to the head reflects the redone state immediately, not the stale live", () => {
+    const { result } = renderHook(() => useHistory(initial));
+    const a: TaskGraphState = { tasks: [t("a")], connections: [], groups: [] };
+    const b: TaskGraphState = { tasks: [t("a"), t("b")], connections: [], groups: [] };
+    act(() => result.current.push(a));
+    act(() => result.current.push(b));
+    act(() => result.current.undo()); // present = a
+
+    // A remote update (e.g. the echo of the undo's own sync) arrives,
+    // setting live to `a`.
+    act(() => result.current.reconcileRemote(a));
+
+    // The user redoes — they expect to see `b`, not the stale live `a`.
+    act(() => result.current.redo());
+    expect(result.current.present).toEqual(b);
   });
 
   test("reset wipes history and uses the given state as the new baseline", () => {

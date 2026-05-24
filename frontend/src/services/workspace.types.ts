@@ -77,13 +77,11 @@ export interface WorkspaceService {
   /**
    * Aggregates three Firestore listeners (project doc + tasks + groups) and
    * fires whenever any of them updates. Fires only after all three have data.
-   * `hasPendingWrites` is true if any sub-listener has uncommitted writes —
-   * callers use this to skip remote reconciliation of their own writes.
    */
   subscribeProjectContent(
     id: WorkspaceId,
     projectId: string,
-    callback: (content: ProjectContent | null, hasPendingWrites: boolean) => void,
+    callback: (content: ProjectContent | null) => void,
   ): () => void;
 
   /** Live list of people in the workspace. */
