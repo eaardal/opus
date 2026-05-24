@@ -655,10 +655,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             <table className="help-table">
               <tbody>
                 <tr>
-                  <td className="help-key">Cmd/Ctrl + S</td>
-                  <td>Save</td>
-                </tr>
-                <tr>
                   <td className="help-key">Cmd/Ctrl + Z</td>
                   <td>Undo</td>
                 </tr>
@@ -750,10 +746,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             </div>
             <table className="help-table">
               <tbody>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + S</td>
-                  <td>Save</td>
-                </tr>
                 <tr>
                   <td className="help-key">Cmd/Ctrl + Z</td>
                   <td>Undo</td>
