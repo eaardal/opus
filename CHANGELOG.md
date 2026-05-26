@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.5.0] - 2026-05-25
+
+### Added
+
+- Viewer-only indicator around canvas so it's easier to understand why you can't edit or move things
+- Owner info shown in workspaces that are shared with you
+
+### Fixed
+
+- Undo/redo and Firestore sync issues
+- Bugs around duplicating tasks and groups
+- Copy & paste and duplicate logic
+- Creating a new workspace now also creates an initial project
+
+### Changed
+
+**Real-time updates and removed the need for saving**
+
+- The storage layer has been totally re-written to better leverage Firestore as a real-time database:
+  - Changes, movements and edits on the canvas and tasks should be instantly visible to all users seeing the canvas
+  - Save functionality has been removed since all changes are automatically saved immediately
+  - Undo/redo and Duplicate Task functionality in particular has some minor bugs yet
+  - Might be other issues due to this major change - please report!
+
+**Other changes**
+
+- Button colors updated
+- Dark mode theme removed (light mode only going forward)
+
 ## [0.4.0] - 2026-05-22
 
 ### Added
