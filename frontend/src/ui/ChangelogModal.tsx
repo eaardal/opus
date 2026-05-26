@@ -46,8 +46,8 @@ export function ChangelogModal({ lastSeenVersion, onClose }: Props) {
                 {entry.sections.map((s) => (
                   <div key={s.name} className="changelog-section">
                     <span className="changelog-section-name">{s.name}</span>
-                    {s.subsections.map((sub, subIndex) => (
-                      <div key={subIndex} className="changelog-subsection">
+                    {s.subsections.map((sub) => (
+                      <div key={sub.heading ?? ""} className="changelog-subsection">
                         {sub.heading !== null && (
                           <span className="changelog-subsection-heading">{sub.heading}</span>
                         )}
