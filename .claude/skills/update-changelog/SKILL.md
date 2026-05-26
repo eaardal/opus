@@ -63,18 +63,32 @@ Show the user the complete draft entry in Keep a Changelog format:
 ## [X.Y.Z] - YYYY-MM-DD
 
 ### Added
-- ...
+- Top-level bullet
+  - Sub-bullet indented with 2 spaces
+- Another bullet
 
 ### Fixed
 - ...
 
 ### Changed
+
+#### Optional subheading for a group of related changes
+- ...
+
+#### Another optional subheading
 - ...
 ```
 
+The format supports:
+- Plain bullet lists (most common)
+- Sub-bullets indented with exactly 2 spaces (`  - text`)
+- `####` subheadings within a section to group related changes
+
+Use subheadings only when a section has distinctly different groups of changes. Use sub-bullets when a top-level item needs clarification or detail points.
+
 Then ask:
 
-> "Does this look right? Reply **yes** to write it, or give me your edits (add/remove/reword bullets, change the version) and I'll revise before writing."
+> "Does this look right? Reply **yes** to write it, or give me your edits (add/remove/reword bullets, change the version, add subheadings or sub-bullets) and I'll revise before writing."
 
 Wait for the user's response. If they provide changes, apply them and show the revised draft again before proceeding. Repeat until the user confirms with "yes" or equivalent.
 

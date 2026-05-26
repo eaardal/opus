@@ -16,7 +16,7 @@
 
 ### Changed
 
-**Real-time updates and removed the need for saving**
+#### Real-time editing
 
 - The storage layer has been totally re-written to better leverage Firestore as a real-time database:
   - Changes, movements and edits on the canvas and tasks should be instantly visible to all users seeing the canvas
@@ -24,7 +24,7 @@
   - Undo/redo and Duplicate Task functionality in particular has some minor bugs yet
   - Might be other issues due to this major change - please report!
 
-**Other changes**
+#### Other changes
 
 - Button colors updated
 - Dark mode theme removed (light mode only going forward)

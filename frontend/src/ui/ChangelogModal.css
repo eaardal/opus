@@ -124,3 +124,25 @@
   line-height: 1.55;
   padding-block: 1px;
 }
+
+.changelog-subsection-heading {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+.changelog-subitems {
+  margin: 2px 0 0;
+  padding-left: 16px;
+  list-style: circle;
+}
+
+.changelog-subitems li {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding-block: 1px;
+}

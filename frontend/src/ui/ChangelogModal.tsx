@@ -46,11 +46,27 @@ export function ChangelogModal({ lastSeenVersion, onClose }: Props) {
                 {entry.sections.map((s) => (
                   <div key={s.name} className="changelog-section">
                     <span className="changelog-section-name">{s.name}</span>
-                    <ul className="changelog-items">
-                      {s.items.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
+                    {s.subsections.map((sub, subIndex) => (
+                      <div key={subIndex} className="changelog-subsection">
+                        {sub.heading !== null && (
+                          <span className="changelog-subsection-heading">{sub.heading}</span>
+                        )}
+                        <ul className="changelog-items">
+                          {sub.items.map((item) => (
+                            <li key={item.text}>
+                              {item.text}
+                              {item.subitems.length > 0 && (
+                                <ul className="changelog-subitems">
+                                  {item.subitems.map((subitem) => (
+                                    <li key={subitem}>{subitem}</li>
+                                  ))}
+                                </ul>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
