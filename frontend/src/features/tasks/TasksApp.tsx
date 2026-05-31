@@ -18,12 +18,7 @@ import {
   updateGroup as updateGroupOp,
   updateTask as updateTaskOp,
 } from "../../domain/tasks/operations";
-import {
-  backfillTracking,
-  needsBackfill,
-  recordAssignment,
-  recordStatusChange,
-} from "../../domain/tasks/timeline";
+import { backfillUpdate, recordAssignment, recordStatusChange } from "../../domain/tasks/timeline";
 import type { Group, Task, TaskStatus, ViewBox } from "../../domain/tasks/types";
 import { zoomViewBoxToGroup } from "../../domain/tasks/viewport";
 import type { Person } from "../../domain/teams/types";
@@ -131,29 +126,27 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   }, []);
 
   // ── Backfill in-progress tracking for tasks created before this feature ──────
-  // An existing in_progress task gets an interval starting now; assigned people
-  // without an assignment time are stamped now. Runs once after tasks load (this
-  // component remounts on project change, so the guard resets per project).
-  const backfilledRef = useRef(false);
+  // Any in_progress task missing an open interval (or assigned person missing an
+  // assignment time) gets one written starting "now" — so it shows up in the
+  // timeline without the user toggling its status. Persist-only: the live
+  // subscription echoes the change back into local state, which avoids racing
+  // the reconcile. The id set stops us re-writing a task before its echo
+  // arrives, which would keep resetting its start time.
+  const backfilledIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!canEdit || backfilledRef.current || tasks.length === 0) return;
-    backfilledRef.current = true;
-    if (!tasks.some(needsBackfill)) return;
-
+    if (!canEdit) return;
     const now = Date.now();
-    const filledTasks = tasks.map((t) => (needsBackfill(t) ? backfillTracking(t, now) : t));
-    replace({ tasks: filledTasks, connections, groups });
-    for (const filled of filledTasks) {
-      const original = tasks.find((t) => t.id === filled.id);
-      if (original === filled) continue; // unchanged tasks keep their reference
-      workspaceService
-        .updateTask(workspaceId, projectId, filled.id, {
-          inProgressIntervals: filled.inProgressIntervals ?? [],
-          assignedAt: filled.assignedAt ?? {},
-        })
-        .catch(console.error);
+    for (const task of tasks) {
+      if (backfilledIdsRef.current.has(task.id)) continue;
+      const update = backfillUpdate(task, now);
+      if (!update) continue;
+      backfilledIdsRef.current.add(task.id);
+      workspaceService.updateTask(workspaceId, projectId, task.id, update).catch((err) => {
+        backfilledIdsRef.current.delete(task.id); // allow a retry on a later update
+        console.error(err);
+      });
     }
-  }, [tasks, connections, groups, canEdit, workspaceId, projectId, replace]);
+  }, [tasks, canEdit, workspaceId, projectId]);
 
   // ── Undo / redo Firestore batch sync ──────────────────────────────────────
 

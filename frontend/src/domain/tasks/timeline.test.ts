@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   backfillTracking,
+  backfillUpdate,
   needsBackfill,
   personInProgressMs,
   recordAssignment,
@@ -181,6 +182,40 @@ describe("needsBackfill / backfillTracking", () => {
     const t = task({ status: "pending" });
     expect(needsBackfill(t)).toBe(false);
     expect(backfillTracking(t, 1000).inProgressIntervals ?? []).toEqual([]);
+  });
+});
+
+describe("backfillUpdate (persist payload)", () => {
+  test("returns an opening interval for an in_progress task with none", () => {
+    expect(backfillUpdate(task({ status: "in_progress" }), 1000)).toEqual({
+      inProgressIntervals: [{ start: 1000, end: null }],
+    });
+  });
+
+  test("returns assignment times for assigned people who lack them", () => {
+    const result = backfillUpdate(task({ status: "pending", assignedPersonIds: ["alice"] }), 1000);
+    expect(result).toEqual({ assignedAt: { alice: 1000 } });
+  });
+
+  test("fills both fields when a task needs both", () => {
+    const result = backfillUpdate(
+      task({ status: "in_progress", assignedPersonIds: ["alice"] }),
+      1000,
+    );
+    expect(result).toEqual({
+      inProgressIntervals: [{ start: 1000, end: null }],
+      assignedAt: { alice: 1000 },
+    });
+  });
+
+  test("returns null when nothing needs backfilling", () => {
+    const t = task({
+      status: "in_progress",
+      inProgressIntervals: [{ start: 1, end: null }],
+      assignedPersonIds: ["alice"],
+      assignedAt: { alice: 1 },
+    });
+    expect(backfillUpdate(t, 1000)).toBeNull();
   });
 });
 

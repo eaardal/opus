@@ -98,6 +98,27 @@ export function backfillTracking(task: Task, now: number): Task {
   return next;
 }
 
+/**
+ * The Firestore field changes needed to backfill a task's tracking, or null if
+ * none are needed. Returns only the fields that actually change, so the write
+ * doesn't touch unrelated data.
+ */
+export function backfillUpdate(
+  task: Task,
+  now: number,
+): Pick<Task, "inProgressIntervals" | "assignedAt"> | null {
+  if (!needsBackfill(task)) return null;
+  const filled = backfillTracking(task, now);
+  const update: Pick<Task, "inProgressIntervals" | "assignedAt"> = {};
+  if (filled.inProgressIntervals !== task.inProgressIntervals) {
+    update.inProgressIntervals = filled.inProgressIntervals ?? [];
+  }
+  if (filled.assignedAt !== task.assignedAt) {
+    update.assignedAt = filled.assignedAt ?? {};
+  }
+  return update;
+}
+
 /** Tasks that have ever been in_progress (have at least one interval). */
 export function tasksWithInProgressHistory(tasks: Task[]): Task[] {
   return tasks.filter((t) => (t.inProgressIntervals ?? []).length > 0);
