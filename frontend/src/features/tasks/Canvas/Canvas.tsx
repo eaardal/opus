@@ -98,6 +98,7 @@ interface CanvasProps {
   onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onDeleteSelected: () => void;
+  onCopySelected: () => void;
   onUpdateTaskText: (id: string, text: string) => void;
   onCreateTaskAt: (x: number, y: number) => void;
   onCreateGroupAt: (x: number, y: number) => void;
@@ -164,6 +165,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onCopyTask,
     onDeleteTask,
     onDeleteSelected,
+    onCopySelected,
     onUpdateTaskText,
     onCreateTaskAt,
     onCreateGroupAt,
@@ -1031,6 +1033,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           }}
           onContextMenu={(e) => e.preventDefault()}
         >
+          <button
+            className="menu-item"
+            onClick={() => {
+              setMultiSelectionContextMenu(null);
+              onCopySelected();
+            }}
+          >
+            Copy {selectedNodes.size + selectedGroups.size} items
+          </button>
           <button
             className="menu-item delete-item"
             onClick={() => {
