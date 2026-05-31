@@ -1,4 +1,12 @@
-import { useRef, useCallback, forwardRef, useImperativeHandle, useState, useEffect } from "react";
+import {
+  useRef,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import "./Canvas.css";
 import {
   Maximize,
@@ -18,15 +26,22 @@ import { ProgressBar } from "./ProgressBar";
 import { type CategoryConfig, type StatusConfig, getConnector, getGroupBox } from "../theme";
 import { GroupRect } from "./GroupRect";
 import type { Person } from "../../../domain/teams/types";
+import { PresentationBar } from "./PresentationBar";
+import { peopleWithAssignedTasks, tasksAssignedToPerson } from "../../../domain/tasks/assignments";
 import { TaskContextMenu } from "../TaskContextMenu";
 import { TaskQueuePanel } from "../TaskQueuePanel/TaskQueuePanel";
 import { SettingsDialog, type AppSettings, loadSettings } from "../SettingsDialog";
 import { toSvgCoords as toSvgCoordsPure } from "../../../lib/svgCoords";
-import { fitViewBoxToContent } from "../../../domain/tasks/viewport";
+import { centerViewBoxOnPoint, fitViewBoxToContent } from "../../../domain/tasks/viewport";
 import { exportSvgElementAsPng } from "../../../domain/tasks/exportCanvasAsPng";
 import type { Connection, ViewBox } from "../../../domain/tasks/types";
 import { useCanvasPan } from "../../../hooks/useCanvasPan";
 import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
+
+// Width (in canvas units) of the viewport when presentation mode focuses a task.
+// Semi-close: the task is comfortably visible with surrounding context, not
+// filling the whole viewport. Tasks render ~60 units wide.
+const PRESENTATION_VIEW_WIDTH = 600;
 
 interface SelectionRect {
   startX: number;
@@ -433,6 +448,65 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onViewBoxChange({ x: 0, y: 0, width: rect.width, height: rect.height });
   }, [onViewBoxChange]);
 
+  // ── Presentation mode: step the viewport through one person's tasks ──────────
+  const [presentationPersonId, setPresentationPersonId] = useState<string | null>(null);
+  const [presentationIndex, setPresentationIndex] = useState(0);
+
+  const assignedPeople = useMemo(() => peopleWithAssignedTasks(people, tasks), [people, tasks]);
+  const presentationTasks = useMemo(
+    () => (presentationPersonId ? tasksAssignedToPerson(tasks, presentationPersonId) : []),
+    [tasks, presentationPersonId],
+  );
+
+  const focusTaskInView = useCallback(
+    (task: Task) => {
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      onViewBoxChange(
+        centerViewBoxOnPoint(
+          { x: task.x, y: task.y },
+          { width: rect.width, height: rect.height },
+          PRESENTATION_VIEW_WIDTH,
+        ),
+      );
+    },
+    [onViewBoxChange],
+  );
+
+  const handleSelectPresentationPerson = useCallback(
+    (personId: string) => {
+      if (personId === presentationPersonId) {
+        setPresentationPersonId(null);
+        return;
+      }
+      const personTasks = tasksAssignedToPerson(tasks, personId);
+      setPresentationPersonId(personId);
+      setPresentationIndex(0);
+      if (personTasks.length > 0) focusTaskInView(personTasks[0]);
+    },
+    [presentationPersonId, tasks, focusTaskInView],
+  );
+
+  const handleAdvancePresentation = useCallback(() => {
+    if (presentationTasks.length === 0) return;
+    const nextIndex = (presentationIndex + 1) % presentationTasks.length;
+    setPresentationIndex(nextIndex);
+    focusTaskInView(presentationTasks[nextIndex]);
+  }, [presentationTasks, presentationIndex, focusTaskInView]);
+
+  // Keep the selection valid as assignments change: drop a person who no longer
+  // has tasks, and clamp the carousel index into range.
+  useEffect(() => {
+    if (presentationPersonId === null) return;
+    if (presentationTasks.length === 0) {
+      setPresentationPersonId(null);
+      setPresentationIndex(0);
+    } else if (presentationIndex >= presentationTasks.length) {
+      setPresentationIndex(presentationTasks.length - 1);
+    }
+  }, [presentationPersonId, presentationTasks, presentationIndex]);
+
   return (
     <div className="canvas-container">
       {isViewerOnly && (
@@ -503,6 +577,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <Focus size={16} />
         </button>
       </div>
+      <PresentationBar
+        people={assignedPeople}
+        selectedPersonId={presentationPersonId}
+        currentIndex={presentationIndex}
+        taskCount={presentationTasks.length}
+        onSelectPerson={handleSelectPresentationPerson}
+        onAdvance={handleAdvancePresentation}
+      />
       {isTaskQueueOpen && (
         <TaskQueuePanel
           tasks={tasks}

@@ -3,36 +3,7 @@ import "./TaskContextMenu.css";
 import type { Task, TaskStatus } from "../../domain/tasks/types";
 import type { CategoryConfig, StatusConfig } from "./theme";
 import type { Person } from "../../domain/teams/types";
-import { avatarColor as personAvatarColor } from "../../lib/avatar";
-
-function PersonAvatar({ person, size }: { person: Person; size: number }) {
-  const initials = person.name.trim() ? person.name.trim()[0].toUpperCase() : "?";
-  const style: React.CSSProperties = {
-    width: size,
-    height: size,
-    borderRadius: "50%",
-    flexShrink: 0,
-    objectFit: "cover" as const,
-  };
-  return person.picture ? (
-    <img style={style} src={person.picture} alt={person.name} />
-  ) : (
-    <span
-      style={{
-        ...style,
-        background: personAvatarColor(person.id),
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: size * 0.45,
-        fontWeight: 600,
-        color: "#fff",
-      }}
-    >
-      {initials}
-    </span>
-  );
-}
+import { PersonAvatar } from "./PersonAvatar";
 
 interface TaskContextMenuProps {
   task: Task;

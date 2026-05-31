@@ -91,6 +91,22 @@ export function zoomViewBoxAtPoint(args: {
   return { x: newX, y: newY, width: newWidth, height: newHeight };
 }
 
+/**
+ * Center a viewBox of a fixed width on a single point, preserving the screen
+ * aspect ratio. Used by presentation mode to focus a task at a consistent zoom
+ * regardless of where the task sits on the canvas.
+ */
+export function centerViewBoxOnPoint(
+  point: TaskPosition,
+  screen: Bounds,
+  viewWidth: number,
+): ViewBox {
+  const aspect = screen.width > 0 ? screen.height / screen.width : 1;
+  const width = viewWidth;
+  const height = viewWidth * aspect;
+  return { x: point.x - width / 2, y: point.y - height / 2, width, height };
+}
+
 /** Center a viewBox on a group with padding around it, preserving screen aspect. */
 export function zoomViewBoxToGroup(group: GroupBounds, screen: Bounds, padding: number): ViewBox {
   const contentW = group.width + padding * 2;

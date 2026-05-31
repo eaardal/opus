@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { fitViewBoxToContent, zoomViewBoxAtPoint, zoomViewBoxToGroup } from "./viewport";
+import {
+  centerViewBoxOnPoint,
+  fitViewBoxToContent,
+  zoomViewBoxAtPoint,
+  zoomViewBoxToGroup,
+} from "./viewport";
 
 describe("fitViewBoxToContent", () => {
   const screen = { width: 800, height: 600 };
@@ -131,6 +136,26 @@ describe("zoomViewBoxAtPoint", () => {
     });
     expect(result.width).toBeCloseTo(5000, 5);
     expect(result.height).toBeCloseTo(4000, 5);
+  });
+});
+
+describe("centerViewBoxOnPoint", () => {
+  test("centers a viewBox of the given width on the point, preserving screen aspect", () => {
+    // screen 800×600 → aspect 0.75; viewWidth 600 → height 450.
+    const result = centerViewBoxOnPoint({ x: 100, y: 100 }, { width: 800, height: 600 }, 600);
+    expect(result.width).toBeCloseTo(600, 5);
+    expect(result.height).toBeCloseTo(450, 5);
+    // The point sits at the centre of the resulting viewBox.
+    expect(result.x + result.width / 2).toBeCloseTo(100, 5);
+    expect(result.y + result.height / 2).toBeCloseTo(100, 5);
+  });
+
+  test("falls back to a square viewBox when the screen has no width", () => {
+    const result = centerViewBoxOnPoint({ x: 0, y: 0 }, { width: 0, height: 0 }, 500);
+    expect(result.width).toBeCloseTo(500, 5);
+    expect(result.height).toBeCloseTo(500, 5);
+    expect(result.x).toBeCloseTo(-250, 5);
+    expect(result.y).toBeCloseTo(-250, 5);
   });
 });
 
