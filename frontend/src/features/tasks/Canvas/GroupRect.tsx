@@ -35,6 +35,9 @@ interface GroupRectProps {
   statuses: Record<TaskStatus, StatusConfig>;
   groupBox: GroupBoxConfig;
   isSelected: boolean;
+  /** Whether this group's title editor is open. Controlled by the canvas so
+      editing can be opened on group creation. */
+  isEditing: boolean;
   panMode: boolean;
   canvasLocked?: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
@@ -46,6 +49,7 @@ interface GroupRectProps {
   onResizeStart: () => void;
   onResizeEnd: (id: string) => void;
   onTitleChange: (id: string, title: string) => void;
+  onEditingChange: (editing: boolean) => void;
   onZoomTo: (id: string) => void;
   onToggleLock: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, groupId: string) => void;
@@ -58,6 +62,7 @@ export function GroupRect({
   statuses,
   groupBox,
   isSelected,
+  isEditing,
   panMode,
   canvasLocked = false,
   onMouseDown: onGroupMouseDown,
@@ -69,6 +74,7 @@ export function GroupRect({
   onResizeStart,
   onResizeEnd,
   onTitleChange,
+  onEditingChange,
   onZoomTo,
   onToggleLock,
   onContextMenu: onGroupContextMenu,
@@ -87,24 +93,34 @@ export function GroupRect({
   const inProgressTasks = containedTasks.filter((t) => t.status === "in_progress");
   const allDone = containedTasks.length > 0 && doneTasks.length === containedTasks.length;
 
-  const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(group.title);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (editing && inputRef.current) {
+    if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
-  }, [editing]);
+  }, [isEditing]);
+
+  const startEdit = () => {
+    if (isEditing) return;
+    setEditValue(group.title);
+    onEditingChange(true);
+  };
 
   const commitTitle = () => {
-    setEditing(false);
+    onEditingChange(false);
     onTitleChange(group.id, editValue);
   };
 
+  const cancelEdit = () => {
+    setEditValue(group.title);
+    onEditingChange(false);
+  };
+
   const handleBodyMouseDown = (e: React.MouseEvent) => {
-    if (editing) return;
+    if (isEditing) return;
     if (panMode || e.button === 1) return;
     if (canvasLocked) return;
     if (group.locked && !e.shiftKey) return;
@@ -223,7 +239,7 @@ export function GroupRect({
         onMouseDown={handleBodyMouseDown}
         style={allDone ? { fill: groupBox.allDoneFill, stroke: groupBox.allDoneStroke } : undefined}
       />
-      {editing ? (
+      {isEditing ? (
         <foreignObject x="8" y="6" width={group.width - 16} height="24">
           <input
             ref={inputRef}
@@ -233,10 +249,7 @@ export function GroupRect({
             onBlur={commitTitle}
             onKeyDown={(e) => {
               if (e.key === "Enter") commitTitle();
-              if (e.key === "Escape") {
-                setEditValue(group.title);
-                setEditing(false);
-              }
+              if (e.key === "Escape") cancelEdit();
             }}
           />
         </foreignObject>
@@ -247,8 +260,7 @@ export function GroupRect({
           y="20"
           onDoubleClick={(e) => {
             if (group.locked && !e.shiftKey) return;
-            setEditValue(group.title);
-            setEditing(true);
+            startEdit();
           }}
           onMouseDown={handleBodyMouseDown}
         >

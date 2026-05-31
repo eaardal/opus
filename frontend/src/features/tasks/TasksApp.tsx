@@ -173,6 +173,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   // The task whose inline title editor is open on the canvas. Set when a task
   // is created via the canvas so the user can type its title immediately.
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  // The group whose title editor is open on the canvas. Set when a group is
+  // created via the canvas so the user can type its title immediately.
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
 
   const canvasRef = useRef<CanvasHandle>(null);
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -449,6 +452,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const addGroupAt = (x: number, y: number) => {
     const newGroup = buildNewGroup(x, y);
     push({ tasks, connections, groups: addGroupOp(groups, newGroup) });
+    setEditingGroupId(newGroup.id);
     workspaceService.addGroup(workspaceId, projectId, newGroup).catch(console.error);
   };
 
@@ -731,6 +735,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onRemoveConnection={handleRemoveConnection}
         groups={groups}
         selectedGroups={selectedGroups}
+        editingGroupId={editingGroupId}
         onGroupMouseDown={handleGroupMouseDown}
         onGroupMove={moveGroup}
         onGroupMoveWithTasks={moveGroupAndTasks}
@@ -740,6 +745,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onGroupResizeStart={handleGroupResizeStart}
         onGroupResizeEnd={handleGroupResizeEnd}
         onGroupTitleChange={updateGroupTitle}
+        onEditingGroupChange={setEditingGroupId}
         onGroupZoomTo={zoomToGroup}
         onGroupToggleLock={toggleGroupLock}
         onGroupDelete={deleteGroup}

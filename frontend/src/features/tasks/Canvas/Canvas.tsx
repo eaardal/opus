@@ -72,6 +72,7 @@ interface CanvasProps {
   onRemoveConnection: (e: React.MouseEvent, from: string, to: string) => void;
   groups: Group[];
   selectedGroups: Set<string>;
+  editingGroupId: string | null;
   onGroupMouseDown: (e: React.MouseEvent, groupId: string) => void;
   onGroupMove: (id: string, x: number, y: number) => void;
   onGroupMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
@@ -81,6 +82,7 @@ interface CanvasProps {
   onGroupResizeStart: () => void;
   onGroupResizeEnd: (id: string) => void;
   onGroupTitleChange: (id: string, title: string) => void;
+  onEditingGroupChange: (id: string | null) => void;
   onGroupZoomTo: (id: string) => void;
   onGroupToggleLock: (id: string) => void;
   onGroupDelete: (id: string) => void;
@@ -128,6 +130,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onRemoveConnection,
     groups,
     selectedGroups,
+    editingGroupId,
     onGroupMouseDown,
     onGroupMove,
     onGroupMoveWithTasks,
@@ -137,6 +140,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onGroupResizeStart,
     onGroupResizeEnd,
     onGroupTitleChange,
+    onEditingGroupChange,
     onGroupZoomTo,
     onGroupToggleLock,
     onGroupDelete,
@@ -526,6 +530,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             statuses={statuses}
             groupBox={groupBox}
             isSelected={selectedGroups.has(group.id)}
+            isEditing={editingGroupId === group.id}
             panMode={panMode}
             canvasLocked={canvasLocked}
             onMouseDown={onGroupMouseDown}
@@ -537,6 +542,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             onResizeStart={onGroupResizeStart}
             onResizeEnd={onGroupResizeEnd}
             onTitleChange={onGroupTitleChange}
+            onEditingChange={(editing) => onEditingGroupChange(editing ? group.id : null)}
             onZoomTo={onGroupZoomTo}
             onToggleLock={onGroupToggleLock}
             onContextMenu={(e, id) => {
