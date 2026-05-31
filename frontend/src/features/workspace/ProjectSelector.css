@@ -5,6 +5,7 @@
   padding: 10px 10px 8px;
   background: var(--bg-tertiary);
   border-radius: 10px;
+  min-width: 200px;
   width: 100%;
 }
 
@@ -39,6 +40,7 @@
     background 0.1s,
     border-color 0.1s;
   min-width: 0;
+  overflow: hidden;
 }
 
 .project-selector-btn:hover {
@@ -63,7 +65,7 @@
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  min-width: 100%;
+  width: 100%;
   background: var(--menu-bg);
   border: 1px solid var(--menu-border);
   border-radius: 6px;
