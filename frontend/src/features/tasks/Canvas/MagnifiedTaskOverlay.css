@@ -1,0 +1,15 @@
+.magnifier-overlay {
+  position: absolute;
+  z-index: 11;
+  pointer-events: none;
+  background: var(--bg-primary);
+  border-radius: 14px;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.35),
+    0 0 0 1px var(--menu-border);
+  overflow: hidden;
+}
+
+.magnifier-svg {
+  display: block;
+}

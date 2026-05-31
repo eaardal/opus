@@ -19,6 +19,7 @@ import {
   Pin,
   Lock,
   LockOpen,
+  ZoomIn,
 } from "lucide-react";
 import type { Task, Group, TaskStatus } from "../../../domain/tasks/types";
 import { Connector, PendingConnector } from "./Connector";
@@ -33,6 +34,7 @@ import { peopleWithAssignedTasks, tasksAssignedToPerson } from "../../../domain/
 import { TaskContextMenu } from "../TaskContextMenu";
 import { TaskQueuePanel } from "../TaskQueuePanel/TaskQueuePanel";
 import { TimelinePanel } from "../TimelinePanel/TimelinePanel";
+import { MagnifiedTaskOverlay } from "./MagnifiedTaskOverlay";
 import { SettingsDialog, type AppSettings, loadSettings } from "../SettingsDialog";
 import { toSvgCoords as toSvgCoordsPure } from "../../../lib/svgCoords";
 import { centerViewBoxOnPoint, fitViewBoxToContent } from "../../../domain/tasks/viewport";
@@ -206,6 +208,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const multiSelectionContextMenuRef = useRef<HTMLDivElement>(null);
   const [canvasLocked, setCanvasLocked] = useState(false);
+  // Magnifier: enlarges the hovered task in a read-only overlay. The toolbar
+  // toggle makes it always-on; otherwise it activates while Alt/Option is held.
+  const [magnifyEnabled, setMagnifyEnabled] = useState(false);
+  const [altHeld, setAltHeld] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
@@ -250,6 +256,25 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onViewBoxChange,
     scrollToPan: settings.scrollToPan,
   });
+
+  // Track Alt/Option for the hold-to-magnify gesture.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Alt") setAltHeld(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Alt") setAltHeld(false);
+    };
+    const onBlur = () => setAltHeld(false);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, []);
 
   // Initialize viewBox dimensions from container size if not yet set
   useEffect(() => {
@@ -551,6 +576,28 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     }
   }, [presentationPersonId, assignedPeople, presentationTasks, presentationIndex]);
 
+  // ── Magnifier: the hovered task, enlarged in a read-only overlay ─────────────
+  const magnifierTask =
+    (magnifyEnabled || altHeld) &&
+    hoveredNode !== null &&
+    hoveredNode !== editingNodeId &&
+    draggingNode === null &&
+    connecting === null &&
+    !panMode
+      ? tasks.find((t) => t.id === hoveredNode)
+      : undefined;
+
+  let magnifier: { task: Task; index: number; left: number; top: number } | null = null;
+  if (magnifierTask && svgRef.current && viewBox.width > 0 && viewBox.height > 0) {
+    const rect = svgRef.current.getBoundingClientRect();
+    magnifier = {
+      task: magnifierTask,
+      index: tasks.indexOf(magnifierTask),
+      left: ((magnifierTask.x - viewBox.x) / viewBox.width) * rect.width,
+      top: ((magnifierTask.y - viewBox.y) / viewBox.height) * rect.height,
+    };
+  }
+
   return (
     <div className="canvas-container">
       {isViewerOnly && (
@@ -621,6 +668,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         </button>
         <button
           type="button"
+          className={`canvas-toolbar-btn canvas-magnify-btn ${magnifyEnabled ? "active" : ""}`}
+          onClick={() => setMagnifyEnabled((v) => !v)}
+          aria-label={magnifyEnabled ? "Turn off magnifier" : "Turn on magnifier"}
+          data-tooltip={magnifyEnabled ? "Magnifier on — hover a task" : "Magnifier (or hold Alt)"}
+        >
+          <ZoomIn size={16} />
+        </button>
+        <button
+          type="button"
           className="canvas-toolbar-btn"
           onClick={fitToScreen}
           aria-label="Fit to screen"
@@ -676,6 +732,21 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           highlightedTaskId={highlightedTaskId}
           onHighlightTask={onHighlightTask}
           onClose={() => setIsTimelineOpen(false)}
+        />
+      )}
+      {magnifier && (
+        <MagnifiedTaskOverlay
+          task={magnifier.task}
+          index={magnifier.index}
+          categories={categories}
+          statuses={statuses}
+          assignedPersons={
+            (magnifier.task.assignedPersonIds
+              ?.map((id) => people.find((p) => p.id === id))
+              .filter(Boolean) as Person[]) ?? []
+          }
+          left={magnifier.left}
+          top={magnifier.top}
         />
       )}
       {showSettings && (

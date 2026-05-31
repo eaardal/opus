@@ -124,6 +124,10 @@
   border: 3px solid orange;
 }
 
+.canvas-magnify-btn.active {
+  border: 3px solid #3aa6b9;
+}
+
 .canvas-toolbar-btn[data-tooltip] {
   position: relative;
 }

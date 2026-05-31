@@ -18,6 +18,9 @@ interface TaskNodeProps {
       so editing survives hover changes and can be opened on task creation. */
   isEditing: boolean;
   assignedPersons?: Person[];
+  /** Prefix for internal SVG ids so a duplicate render (e.g. the magnifier
+      overlay) doesn't collide with this node's clip-path ids. */
+  idPrefix?: string;
   onMouseDown: (e: React.MouseEvent) => void;
   onClick: () => void;
   onMouseEnter: () => void;
@@ -37,6 +40,7 @@ export function TaskNode({
   isSelected,
   isEditing,
   assignedPersons = [],
+  idPrefix = "",
   onMouseDown,
   onClick,
   onMouseEnter,
@@ -271,7 +275,7 @@ export function TaskNode({
                     <>
                       <defs>
                         {assignedPersons.map((person, i) => (
-                          <clipPath key={person.id} id={`clip-ta-${task.id}-${i}`}>
+                          <clipPath key={person.id} id={`clip-ta-${idPrefix}${task.id}-${i}`}>
                             <circle cx={cx} cy={firstAvatarY + i * AVATAR_STEP} r={AVATAR_R} />
                           </clipPath>
                         ))}
@@ -291,7 +295,7 @@ export function TaskNode({
                                 y={cy - AVATAR_R}
                                 width={AVATAR_R * 2}
                                 height={AVATAR_R * 2}
-                                clipPath={`url(#clip-ta-${task.id}-${i})`}
+                                clipPath={`url(#clip-ta-${idPrefix}${task.id}-${i})`}
                                 preserveAspectRatio="xMidYMid slice"
                               />
                             ) : (
@@ -301,7 +305,7 @@ export function TaskNode({
                                   cy={cy}
                                   r={AVATAR_R}
                                   fill={avatarColor(person.id)}
-                                  clipPath={`url(#clip-ta-${task.id}-${i})`}
+                                  clipPath={`url(#clip-ta-${idPrefix}${task.id}-${i})`}
                                 />
                                 <text
                                   x={cx}

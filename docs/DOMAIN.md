@@ -27,6 +27,7 @@ independent of how the code is written.
 | **Viewport** | The visible window onto the canvas — what the user currently sees after panning and zooming. |
 | **Presentation mode** | A guided tour of one person's tasks. The user picks a person, then steps the viewport from one of that person's tasks to the next, in sequence-number order, looping back to the start after the last. See below. |
 | **Canvas lock** | A toggle that freezes the canvas so elements cannot be moved or edited. While locked, the canvas shows a coloured border. |
+| **Magnifier** | A read-only way to enlarge a task for closer reading: hovering a task while holding Alt/Option (or with the magnifier toolbar toggle on) shows an enlarged copy of it floating over the canvas. It never changes the task — it's purely a viewing aid. |
 | **Viewer** | A read-only participant in a workspace. A viewer sees a "Viewer only" border and cannot edit. |
 
 ---
