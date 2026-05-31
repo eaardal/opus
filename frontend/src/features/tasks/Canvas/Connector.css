@@ -3,6 +3,17 @@
   transition: stroke 0.2s;
 }
 
+/* The wide click target only intercepts events while shift is held, so it can't
+   block normal canvas interactions the rest of the time. */
+.connection-hitbox {
+  pointer-events: none;
+}
+
+.connection-group.shift-active .connection-hitbox {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
 .connection-group.shift-active {
   cursor: pointer;
 }

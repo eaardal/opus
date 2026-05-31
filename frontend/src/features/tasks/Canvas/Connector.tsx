@@ -14,6 +14,9 @@ const MAX_TOOLTIP_WIDTH = 170;
 const CHAR_WIDTH = 8;
 const LINE_HEIGHT = 16;
 const TOOLTIP_V_PADDING = 8;
+// Width of the invisible click target along a connection. Much wider than the
+// drawn line so the connection is easy to hit while shift-clicking to remove it.
+const CONNECTION_HITBOX_WIDTH = 18;
 
 // Mirrors wrapLines logic from TaskNode to get accurate tooltip dimensions
 function tooltipBounds(task: Task): { cx: number; cy: number; hw: number; hh: number } | null {
@@ -89,6 +92,14 @@ export function Connector({ fromTask, toTask, shiftPressed, connector, onRemove 
 
   return (
     <g className={`connection-group ${shiftPressed ? "shift-active" : ""}`}>
+      <path
+        d={path}
+        stroke="transparent"
+        strokeWidth={CONNECTION_HITBOX_WIDTH}
+        fill="none"
+        className="connection-hitbox"
+        onClick={onRemove}
+      />
       <path
         d={path}
         stroke={connector.color}
