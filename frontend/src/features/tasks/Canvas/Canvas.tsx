@@ -14,6 +14,7 @@ import {
   Undo2,
   Redo2,
   LayoutList,
+  GanttChart,
   HelpCircle,
   Pin,
   Lock,
@@ -31,6 +32,7 @@ import type { StatusFilter } from "./StatusFilterSelect";
 import { peopleWithAssignedTasks, tasksAssignedToPerson } from "../../../domain/tasks/assignments";
 import { TaskContextMenu } from "../TaskContextMenu";
 import { TaskQueuePanel } from "../TaskQueuePanel/TaskQueuePanel";
+import { TimelinePanel } from "../TimelinePanel/TimelinePanel";
 import { SettingsDialog, type AppSettings, loadSettings } from "../SettingsDialog";
 import { toSvgCoords as toSvgCoordsPure } from "../../../lib/svgCoords";
 import { centerViewBoxOnPoint, fitViewBoxToContent } from "../../../domain/tasks/viewport";
@@ -207,6 +209,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [nodeContextMenu, setNodeContextMenu] = useState<{
     taskId: string;
     x: number;
@@ -564,12 +567,29 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         <button
           type="button"
           className={`canvas-toolbar-btn ${isTaskQueueOpen ? "active" : ""}`}
-          onClick={() => setIsTaskQueueOpen((prev) => !prev)}
+          onClick={() => {
+            setIsTaskQueueOpen((prev) => !prev);
+            setIsTimelineOpen(false);
+          }}
           aria-label="Task Queue"
           data-tooltip="Task Queue"
         >
           <LayoutList size={16} />
         </button>
+        {settings.showTimelinePanel && (
+          <button
+            type="button"
+            className={`canvas-toolbar-btn ${isTimelineOpen ? "active" : ""}`}
+            onClick={() => {
+              setIsTimelineOpen((prev) => !prev);
+              setIsTaskQueueOpen(false);
+            }}
+            aria-label="Timeline"
+            data-tooltip="Timeline"
+          >
+            <GanttChart size={16} />
+          </button>
+        )}
         <button
           type="button"
           className="canvas-toolbar-btn"
@@ -618,17 +638,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <Focus size={16} />
         </button>
       </div>
-      <PresentationBar
-        people={assignedPeople}
-        statuses={statuses}
-        selectedPersonId={presentationPersonId}
-        statusFilter={presentationStatus}
-        currentIndex={presentationIndex}
-        taskCount={presentationTasks.length}
-        onSelectPerson={handleSelectPresentationPerson}
-        onSelectStatus={handleSelectPresentationStatus}
-        onAdvance={handleAdvancePresentation}
-      />
+      {settings.showPresentationBar && (
+        <PresentationBar
+          people={assignedPeople}
+          statuses={statuses}
+          selectedPersonId={presentationPersonId}
+          statusFilter={presentationStatus}
+          currentIndex={presentationIndex}
+          taskCount={presentationTasks.length}
+          onSelectPerson={handleSelectPresentationPerson}
+          onSelectStatus={handleSelectPresentationStatus}
+          onAdvance={handleAdvancePresentation}
+        />
+      )}
       {isTaskQueueOpen && (
         <TaskQueuePanel
           tasks={tasks}
@@ -644,6 +666,16 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           onSetTaskStatus={onSetTaskStatus}
           onHighlightTask={onHighlightTask}
           onClose={() => setIsTaskQueueOpen(false)}
+        />
+      )}
+      {settings.showTimelinePanel && isTimelineOpen && (
+        <TimelinePanel
+          tasks={tasks}
+          people={people}
+          statuses={statuses}
+          highlightedTaskId={highlightedTaskId}
+          onHighlightTask={onHighlightTask}
+          onClose={() => setIsTimelineOpen(false)}
         />
       )}
       {showSettings && (

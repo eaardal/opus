@@ -9,7 +9,6 @@ import {
 import {
   addGroup as addGroupOp,
   addTask as addTaskOp,
-  assignPersonInProgress,
   deleteEntities,
   deleteGroup as deleteGroupOp,
   deleteTaskCascading,
@@ -19,6 +18,12 @@ import {
   updateGroup as updateGroupOp,
   updateTask as updateTaskOp,
 } from "../../domain/tasks/operations";
+import {
+  backfillTracking,
+  needsBackfill,
+  recordAssignment,
+  recordStatusChange,
+} from "../../domain/tasks/timeline";
 import type { Group, Task, TaskStatus, ViewBox } from "../../domain/tasks/types";
 import { zoomViewBoxToGroup } from "../../domain/tasks/viewport";
 import type { Person } from "../../domain/teams/types";
@@ -124,6 +129,31 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     // (key-based remount on change), so we intentionally exclude them here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Backfill in-progress tracking for tasks created before this feature ──────
+  // An existing in_progress task gets an interval starting now; assigned people
+  // without an assignment time are stamped now. Runs once after tasks load (this
+  // component remounts on project change, so the guard resets per project).
+  const backfilledRef = useRef(false);
+  useEffect(() => {
+    if (!canEdit || backfilledRef.current || tasks.length === 0) return;
+    backfilledRef.current = true;
+    if (!tasks.some(needsBackfill)) return;
+
+    const now = Date.now();
+    const filledTasks = tasks.map((t) => (needsBackfill(t) ? backfillTracking(t, now) : t));
+    replace({ tasks: filledTasks, connections, groups });
+    for (const filled of filledTasks) {
+      const original = tasks.find((t) => t.id === filled.id);
+      if (original === filled) continue; // unchanged tasks keep their reference
+      workspaceService
+        .updateTask(workspaceId, projectId, filled.id, {
+          inProgressIntervals: filled.inProgressIntervals ?? [],
+          assignedAt: filled.assignedAt ?? {},
+        })
+        .catch(console.error);
+    }
+  }, [tasks, connections, groups, canEdit, workspaceId, projectId, replace]);
 
   // ── Undo / redo Firestore batch sync ──────────────────────────────────────
 
@@ -541,9 +571,19 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   };
 
   const setTaskStatus = (id: string, status: TaskStatus) => {
-    push({ tasks: updateTaskOp(tasks, id, { status }), connections, groups });
+    const now = Date.now();
+    const nextTasks = tasks.map((t) => (t.id === id ? recordStatusChange(t, status, now) : t));
+    push({ tasks: nextTasks, connections, groups });
     setOpenMenuId(null);
-    workspaceService.updateTask(workspaceId, projectId, id, { status }).catch(console.error);
+    const updated = nextTasks.find((t) => t.id === id);
+    if (updated) {
+      workspaceService
+        .updateTask(workspaceId, projectId, id, {
+          status: updated.status,
+          inProgressIntervals: updated.inProgressIntervals ?? [],
+        })
+        .catch(console.error);
+    }
   };
 
   const deleteTask = async (id: string) => {
@@ -675,25 +715,37 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   };
 
   const assignPeople = (taskId: string, personIds: string[]) => {
-    push({
-      tasks: updateTaskOp(tasks, taskId, { assignedPersonIds: personIds }),
-      connections,
-      groups,
-    });
-    workspaceService
-      .updateTask(workspaceId, projectId, taskId, { assignedPersonIds: personIds })
-      .catch(console.error);
-  };
-
-  const assignPersonAndSetInProgress = (taskId: string, personId: string) => {
-    const nextTasks = assignPersonInProgress(tasks, taskId, personId);
+    const now = Date.now();
+    const nextTasks = tasks.map((t) => (t.id === taskId ? recordAssignment(t, personIds, now) : t));
     push({ tasks: nextTasks, connections, groups });
     const updated = nextTasks.find((t) => t.id === taskId);
     if (updated) {
       workspaceService
         .updateTask(workspaceId, projectId, taskId, {
-          assignedPersonIds: updated.assignedPersonIds,
+          assignedPersonIds: updated.assignedPersonIds ?? [],
+          assignedAt: updated.assignedAt ?? {},
+        })
+        .catch(console.error);
+    }
+  };
+
+  const assignPersonAndSetInProgress = (taskId: string, personId: string) => {
+    const now = Date.now();
+    const nextTasks = tasks.map((t) => {
+      if (t.id !== taskId) return t;
+      const existing = t.assignedPersonIds ?? [];
+      const personIds = existing.includes(personId) ? existing : [...existing, personId];
+      return recordStatusChange(recordAssignment(t, personIds, now), "in_progress", now);
+    });
+    push({ tasks: nextTasks, connections, groups });
+    const updated = nextTasks.find((t) => t.id === taskId);
+    if (updated) {
+      workspaceService
+        .updateTask(workspaceId, projectId, taskId, {
+          assignedPersonIds: updated.assignedPersonIds ?? [],
+          assignedAt: updated.assignedAt ?? {},
           status: updated.status,
+          inProgressIntervals: updated.inProgressIntervals ?? [],
         })
         .catch(console.error);
     }

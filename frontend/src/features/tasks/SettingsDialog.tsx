@@ -3,11 +3,15 @@ import "./SettingsDialog.css";
 export interface AppSettings {
   showBlockedBySection: boolean;
   scrollToPan: boolean;
+  showPresentationBar: boolean;
+  showTimelinePanel: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   showBlockedBySection: true,
   scrollToPan: true,
+  showPresentationBar: true,
+  showTimelinePanel: true,
 };
 
 const STORAGE_KEY = "app-settings";
@@ -83,6 +87,22 @@ export function SettingsDialog({ settings, onChange, onClose }: SettingsDialogPr
             description="Two-finger scroll and mouse wheel pan the canvas. Hold Ctrl to zoom."
             checked={settings.scrollToPan}
             onChange={(v) => set({ scrollToPan: v })}
+          />
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">Panels</div>
+          <ToggleRow
+            label="Show Presentation bar"
+            description="The row of people under the toolbar for stepping through a person's tasks"
+            checked={settings.showPresentationBar}
+            onChange={(v) => set({ showPresentationBar: v })}
+          />
+          <ToggleRow
+            label="Show Timeline panel"
+            description="Track how long tasks have been In Progress, with a graphical timeline"
+            checked={settings.showTimelinePanel}
+            onChange={(v) => set({ showTimelinePanel: v })}
           />
         </div>
 

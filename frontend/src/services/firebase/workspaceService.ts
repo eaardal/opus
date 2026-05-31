@@ -174,6 +174,29 @@ function toTask(data: DocumentData): Task {
   if (Array.isArray(data.assignedPersonIds)) {
     task.assignedPersonIds = data.assignedPersonIds;
   }
+  if (Array.isArray(data.inProgressIntervals)) {
+    const validStatuses = ["pending", "in_progress", "completed", "archived"];
+    const intervals: NonNullable<Task["inProgressIntervals"]> = [];
+    for (const iv of data.inProgressIntervals) {
+      if (!iv || typeof iv.start !== "number") continue;
+      const interval: NonNullable<Task["inProgressIntervals"]>[number] = {
+        start: iv.start,
+        end: typeof iv.end === "number" ? iv.end : null,
+      };
+      if (typeof iv.endStatus === "string" && validStatuses.includes(iv.endStatus)) {
+        interval.endStatus = iv.endStatus as Task["status"];
+      }
+      intervals.push(interval);
+    }
+    if (intervals.length > 0) task.inProgressIntervals = intervals;
+  }
+  if (data.assignedAt != null && typeof data.assignedAt === "object") {
+    const assignedAt: Record<string, number> = {};
+    for (const [personId, value] of Object.entries(data.assignedAt)) {
+      if (typeof value === "number") assignedAt[personId] = value;
+    }
+    if (Object.keys(assignedAt).length > 0) task.assignedAt = assignedAt;
+  }
   return task;
 }
 

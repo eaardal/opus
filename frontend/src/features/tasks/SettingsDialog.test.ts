@@ -20,7 +20,7 @@ describe("loadSettings", () => {
     // non-default value. Any future-added fields will fall through to defaults.
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ showBlockedBySection: false }));
     const result = loadSettings();
-    expect(result).toEqual({ showBlockedBySection: false, scrollToPan: true });
+    expect(result).toEqual({ ...DEFAULT_SETTINGS, showBlockedBySection: false });
   });
 
   test("returns the defaults when the stored JSON is malformed", () => {
@@ -36,15 +36,17 @@ describe("loadSettings", () => {
 
 describe("saveSettings", () => {
   test("writes a JSON-encoded settings object to localStorage", () => {
-    saveSettings({ showBlockedBySection: false, scrollToPan: true });
+    const settings = { ...DEFAULT_SETTINGS, showBlockedBySection: false };
+    saveSettings(settings);
     const raw = localStorage.getItem(STORAGE_KEY);
     expect(raw).toBeTruthy();
-    expect(JSON.parse(raw as string)).toEqual({ showBlockedBySection: false, scrollToPan: true });
+    expect(JSON.parse(raw as string)).toEqual(settings);
   });
 
   test("save then load round-trips the same object", () => {
-    saveSettings({ showBlockedBySection: false, scrollToPan: false });
-    expect(loadSettings()).toEqual({ showBlockedBySection: false, scrollToPan: false });
+    const settings = { ...DEFAULT_SETTINGS, showBlockedBySection: false, scrollToPan: false };
+    saveSettings(settings);
+    expect(loadSettings()).toEqual(settings);
   });
 });
 

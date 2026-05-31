@@ -21,7 +21,9 @@ independent of how the code is written.
 | **Connection** | A directed link drawn from one task to another, expressing a relationship or flow between them. |
 | **Person** | A member of the workspace who can be assigned to tasks. A person has a name and an optional avatar picture. |
 | **Team** | A named collection of people within the workspace. |
-| **Assignment** | The relationship between a person and a task they are responsible for. A task may be assigned to several people; a person may be assigned many tasks. A person's avatars are shown on the tasks they are assigned to. |
+| **Assignment** | The relationship between a person and a task they are responsible for. A task may be assigned to several people; a person may be assigned many tasks. A person's avatars are shown on the tasks they are assigned to. Each assignment records *when* the person was assigned, used for per-person time tracking. |
+| **In Progress interval** | A single span of time a task spent in the *in progress* status — from when it entered to when it left. A task accumulates one interval each time it is moved into *in progress*, so a task that goes in and out several times has several intervals. The newest interval stays open while the task is currently in progress. Each interval also remembers the status the task moved to when it ended (e.g. completed, pending). |
+| **Timeline Panel** | An overlay (like the Task Queue) that lists every task that has ever been in progress, showing how long each has spent in that status — overall and per assigned person — and draws a zoomable/pannable graphical timeline of every In Progress interval. See below. |
 | **Viewport** | The visible window onto the canvas — what the user currently sees after panning and zooming. |
 | **Presentation mode** | A guided tour of one person's tasks. The user picks a person, then steps the viewport from one of that person's tasks to the next, in sequence-number order, looping back to the start after the last. See below. |
 | **Canvas lock** | A toggle that freezes the canvas so elements cannot be moved or edited. While locked, the canvas shows a coloured border. |
@@ -58,3 +60,43 @@ canvas.
 
 This is a read-only, navigational concept — it never changes tasks, only what
 the viewport is looking at.
+
+---
+
+## In Progress time tracking & the Timeline Panel
+
+The app records how long work actually spends in progress, so a team can see
+where time is going.
+
+- Every time a task **enters** the *in progress* status, a new **In Progress
+  interval** begins; when it **leaves**, that interval ends. A task that bounces
+  between *in progress* and *pending* therefore has several intervals. This
+  history is stored and kept up to date live.
+- The **overall** in-progress time of a task is the sum of all its intervals
+  (the current open interval counts up to "now").
+- The **per-person** in-progress time is the overlap between the task's
+  intervals and the window since that person was **assigned** — i.e. the time
+  the task was in progress *while they were on it*. (This is why each assignment
+  records when the person was assigned.) A person assigned after all the work
+  was done shows zero; a person assigned partway through is credited only from
+  that point.
+- **Backfill:** tasks that were already in progress, or already assigned, before
+  this tracking existed have no history. They simply **start counting from now**
+  the first time the project is opened after the feature ships.
+
+The **Timeline Panel** presents this:
+
+- It lists **every task that has ever been in progress** — including ones now
+  completed or moved back to pending — not only those in progress right now.
+- Each task shows its overall in-progress duration and a per-person breakdown,
+  using a compact `7d 3h 2m` format that ticks live.
+- A **graphical timeline** plots time along the X axis and draws each task's
+  In Progress intervals as boxes (an open, ongoing interval is drawn striped up
+  to "now", marked by a live "now" line). The time axis can be **zoomed and
+  panned** to inspect any period.
+- At every point a task **entered or left** In Progress, a **marker line** shows
+  the emoji of the status it changed to — so the sequence reads at a glance
+  (e.g. *In Progress → Completed → In Progress*).
+
+Durations are measured from stored timestamps, so they reflect real elapsed
+time and continue counting while no one is looking.
