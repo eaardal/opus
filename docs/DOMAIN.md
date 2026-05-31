@@ -97,6 +97,10 @@ The **Timeline Panel** presents this:
 - At every point a task **entered or left** In Progress, a **marker line** shows
   the emoji of the status it changed to — so the sequence reads at a glance
   (e.g. *In Progress → Completed → In Progress*).
+- Beneath each task bar, a thin **per-person sub-segment** shows the slice of
+  that In Progress time each assigned person was on the task (the same overlap
+  used for their per-person total). Hovering any segment shows its exact
+  start/end timestamps (an open, ongoing segment shows `<now>` as its end).
 
 Durations are measured from stored timestamps, so they reflect real elapsed
 time and continue counting while no one is looking.

@@ -19,6 +19,7 @@ import {
 } from "../../../lib/timelineScale";
 import { wheelZoomFactor } from "../../../domain/tasks/viewport";
 import { formatDurationShort } from "../../../lib/time";
+import { avatarColor } from "../../../lib/avatar";
 import { useNow } from "../../../hooks/useNow";
 import { PersonAvatar } from "../PersonAvatar";
 
@@ -28,6 +29,17 @@ const MAX_TICKS = 8;
 const MIN_SPAN_MS = 60_000;
 const DAY_MS = 86_400_000;
 const ZOOM_IN_FACTOR = 0.7;
+// A person's assignment sub-segment hangs below the task bar's centre, one
+// thin lane per assigned person.
+const PERSON_LANE_OFFSET_PX = 12;
+const PERSON_LANE_STEP_PX = 5;
+
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+
+/** Full date + time for tooltips, e.g. "3 Apr 2025, 14:30:05". */
+function formatTimestamp(ms: number): string {
+  return new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" });
+}
 
 interface TimelinePanelProps {
   tasks: Task[];
@@ -272,21 +284,50 @@ export function TimelinePanel({
                         />
                       ))}
                       {(task.inProgressIntervals ?? []).map((interval) => {
-                        const startFrac = timeToFraction(interval.start, range);
-                        const endFrac = timeToFraction(interval.end ?? now, range);
-                        const left = Math.max(0, Math.min(1, startFrac));
-                        const right = Math.max(0, Math.min(1, endFrac));
+                        const left = clamp01(timeToFraction(interval.start, range));
+                        const right = clamp01(timeToFraction(interval.end ?? now, range));
                         const width = Math.max(0, right - left);
                         const ongoing = interval.end === null;
-                        const durationMs = (interval.end ?? now) - interval.start;
+                        const endText = ongoing ? "<now>" : formatTimestamp(interval.end as number);
                         return (
                           <div
                             key={interval.start}
                             className={`tl-block ${ongoing ? "ongoing" : ""}`}
                             style={{ left: `${left * 100}%`, width: `${width * 100}%` }}
-                            title={formatDurationShort(durationMs)}
+                            title={`${formatTimestamp(interval.start)} → ${endText}`}
                           />
                         );
+                      })}
+                      {assignedIds.flatMap((personId, personIndex) => {
+                        const assignedAt = task.assignedAt?.[personId];
+                        if (assignedAt === undefined) return [];
+                        const person = personById.get(personId);
+                        const name = person?.name || "(unnamed)";
+                        const top = `calc(50% + ${PERSON_LANE_OFFSET_PX + personIndex * PERSON_LANE_STEP_PX}px)`;
+                        return (task.inProgressIntervals ?? []).map((interval) => {
+                          const segStart = Math.max(interval.start, assignedAt);
+                          const segEnd = interval.end ?? now;
+                          if (segEnd <= segStart) return null;
+                          const left = clamp01(timeToFraction(segStart, range));
+                          const right = clamp01(timeToFraction(segEnd, range));
+                          const width = right - left;
+                          if (width <= 0) return null;
+                          const endText =
+                            interval.end === null ? "<now>" : formatTimestamp(interval.end);
+                          return (
+                            <span
+                              key={`${personId}-${interval.start}`}
+                              className="tl-person-seg"
+                              style={{
+                                left: `${left * 100}%`,
+                                width: `${width * 100}%`,
+                                top,
+                                background: avatarColor(personId),
+                              }}
+                              title={`${name}: ${formatTimestamp(segStart)} → ${endText}`}
+                            />
+                          );
+                        });
                       })}
                       {(task.inProgressIntervals ?? [])
                         .flatMap((interval, i) => {

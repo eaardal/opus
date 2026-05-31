@@ -251,6 +251,16 @@
   );
 }
 
+.tl-person-seg {
+  position: absolute;
+  height: 3px;
+  min-width: 1px;
+  border-radius: 2px;
+  opacity: 0.85;
+  pointer-events: auto;
+  cursor: default;
+}
+
 .tl-marker {
   position: absolute;
   top: 0;
