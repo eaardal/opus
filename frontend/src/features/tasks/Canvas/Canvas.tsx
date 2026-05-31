@@ -955,6 +955,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 onDuplicateTask(task.id);
                 setNodeContextMenu(null);
               }}
+              onEditTitle={() => {
+                onEditingNodeChange(task.id);
+                setNodeContextMenu(null);
+              }}
               onDelete={() => {
                 onDeleteTask(task.id);
                 setNodeContextMenu(null);
