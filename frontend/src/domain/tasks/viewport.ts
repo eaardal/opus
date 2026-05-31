@@ -107,6 +107,19 @@ export function centerViewBoxOnPoint(
   return { x: point.x - width / 2, y: point.y - height / 2, width, height };
 }
 
+/**
+ * Linearly interpolate between two viewBoxes. `t` runs 0→1 (start→end). Used to
+ * animate the viewport smoothly from one position/zoom to another.
+ */
+export function lerpViewBox(from: ViewBox, to: ViewBox, t: number): ViewBox {
+  return {
+    x: from.x + (to.x - from.x) * t,
+    y: from.y + (to.y - from.y) * t,
+    width: from.width + (to.width - from.width) * t,
+    height: from.height + (to.height - from.height) * t,
+  };
+}
+
 /** Center a viewBox on a group with padding around it, preserving screen aspect. */
 export function zoomViewBoxToGroup(group: GroupBounds, screen: Bounds, padding: number): ViewBox {
   const contentW = group.width + padding * 2;

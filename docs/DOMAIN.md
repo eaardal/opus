@@ -41,10 +41,18 @@ canvas.
   viewport to that person's **first task** (by sequence number).
 - A **play button** advances to that person's **next task** on each click. After
   the last task it loops back to the first.
-- The **carousel** covers **all of the person's assigned tasks regardless of
-  status** — pending, in progress, completed, and archived are all included.
+- Moving between tasks uses a **smooth animated glide** rather than an instant
+  jump, so the audience stays oriented. Touching the canvas (panning or zooming)
+  during a glide hands control straight back to the user.
+- A **status filter** decides which of the person's tasks the carousel includes.
+  It defaults to **In Progress** (so a presentation starts on what the person is
+  actively working on) and offers each status plus an **All** option (which
+  includes every status). Changing the filter restarts the carousel at the first
+  matching task. The people list itself is unaffected — it always shows everyone
+  with at least one assigned task, even if they have none in the chosen status.
 - A small **position label** (e.g. `1/5`) shows which task in the sequence is
-  currently in view and how many tasks the carousel contains.
+  currently in view and how many tasks the carousel contains. It reads `0/0` when
+  the selected person has no tasks in the chosen status.
 - The focus zoom is **semi-close**: the task is comfortably visible with
   surrounding context, rather than filling the whole viewport.
 

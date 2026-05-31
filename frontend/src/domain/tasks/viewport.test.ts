@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   centerViewBoxOnPoint,
   fitViewBoxToContent,
+  lerpViewBox,
   zoomViewBoxAtPoint,
   zoomViewBoxToGroup,
 } from "./viewport";
@@ -156,6 +157,23 @@ describe("centerViewBoxOnPoint", () => {
     expect(result.height).toBeCloseTo(500, 5);
     expect(result.x).toBeCloseTo(-250, 5);
     expect(result.y).toBeCloseTo(-250, 5);
+  });
+});
+
+describe("lerpViewBox", () => {
+  const from = { x: 0, y: 0, width: 100, height: 100 };
+  const to = { x: 100, y: 200, width: 300, height: 400 };
+
+  test("returns the start viewBox at t=0", () => {
+    expect(lerpViewBox(from, to, 0)).toEqual(from);
+  });
+
+  test("returns the end viewBox at t=1", () => {
+    expect(lerpViewBox(from, to, 1)).toEqual(to);
+  });
+
+  test("interpolates each field linearly at t=0.5", () => {
+    expect(lerpViewBox(from, to, 0.5)).toEqual({ x: 50, y: 100, width: 200, height: 250 });
   });
 });
 
