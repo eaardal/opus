@@ -400,6 +400,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <span className="canvas-viewer-banner-badge">Viewer only</span>
         </div>
       )}
+      {canvasLocked && !isViewerOnly && (
+        <div className="canvas-locked-banner" aria-hidden="true">
+          <span className="canvas-locked-banner-badge">Canvas locked</span>
+        </div>
+      )}
       <div className="canvas-toolbar">
         <button
           type="button"
