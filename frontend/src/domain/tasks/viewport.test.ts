@@ -3,6 +3,7 @@ import {
   centerViewBoxOnPoint,
   fitViewBoxToContent,
   lerpViewBox,
+  wheelZoomFactor,
   zoomViewBoxAtPoint,
   zoomViewBoxToGroup,
 } from "./viewport";
@@ -137,6 +138,57 @@ describe("zoomViewBoxAtPoint", () => {
     });
     expect(result.width).toBeCloseTo(5000, 5);
     expect(result.height).toBeCloseTo(4000, 5);
+  });
+});
+
+describe("wheelZoomFactor", () => {
+  test("returns 1 for no scroll", () => {
+    expect(wheelZoomFactor(0)).toBeCloseTo(1, 10);
+  });
+
+  test("is below 1 when zooming in (negative delta) and above 1 when zooming out", () => {
+    expect(wheelZoomFactor(-10)).toBeLessThan(1);
+    expect(wheelZoomFactor(10)).toBeGreaterThan(1);
+  });
+
+  test("stays strictly positive even for extreme deltas", () => {
+    // The old linear `1 + delta * k` went negative here and snapped the zoom to
+    // a limit — the reported jump/reset. exp() can never do that.
+    expect(wheelZoomFactor(-100000)).toBeGreaterThan(0);
+    expect(wheelZoomFactor(100000)).toBeGreaterThan(0);
+  });
+
+  test("clamps the per-event step so aggressive scrolling can't overshoot", () => {
+    // Beyond the clamp, a bigger delta makes no further difference.
+    expect(wheelZoomFactor(-100)).toBeCloseTo(wheelZoomFactor(-100000), 10);
+    expect(wheelZoomFactor(100)).toBeCloseTo(wheelZoomFactor(100000), 10);
+    // A single event never changes zoom by more than ~25%.
+    expect(wheelZoomFactor(-100000)).toBeGreaterThan(0.75);
+    expect(wheelZoomFactor(100000)).toBeLessThan(1.35);
+  });
+
+  test("normalizes line-mode deltas so mice that report lines still zoom", () => {
+    // deltaMode 1 (lines) carries small numbers; treated as pixels it would
+    // barely zoom. A line delta should move more than the same pixel delta.
+    expect(wheelZoomFactor(-3, 1)).toBeLessThan(wheelZoomFactor(-3, 0));
+  });
+});
+
+describe("wheelZoomFactor + zoomViewBoxAtPoint (regression: no reset at max zoom)", () => {
+  test("an aggressive zoom-in at max zoom stays at max instead of resetting", () => {
+    const screen = { width: 1000, height: 800 };
+    // Already at max zoom (5×): viewBox.width = 1000 / 5 = 200.
+    const viewBox = { x: 0, y: 0, width: 200, height: 160 };
+    const result = zoomViewBoxAtPoint({
+      viewBox,
+      screen,
+      mouseFracX: 0.5,
+      mouseFracY: 0.5,
+      zoomFactor: wheelZoomFactor(-100), // a hard mouse-wheel flick inward
+      minZoom: 0.2,
+      maxZoom: 5,
+    });
+    expect(screen.width / result.width).toBeCloseTo(5, 5);
   });
 });
 

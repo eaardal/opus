@@ -66,6 +66,34 @@ export function fitViewBoxToContent(
   return { x: cx - fitW / 2, y: cy - fitH / 2, width: fitW, height: fitH };
 }
 
+// Wheel-zoom tuning. The factor is `exp(delta * sensitivity)` so it is always
+// positive — a linear `1 + delta * k` goes zero/negative for the large deltas a
+// mouse wheel emits, which used to snap the zoom to a limit (the "jump/reset").
+// The delta is clamped first so one aggressive notch can't overshoot, and the
+// canvas zooms less than a raw wheel flick would suggest.
+const ZOOM_WHEEL_SENSITIVITY = 0.0075;
+const MAX_WHEEL_DELTA_PX = 24;
+const WHEEL_LINE_HEIGHT_PX = 16;
+const WHEEL_PAGE_HEIGHT_PX = 400;
+
+/**
+ * Convert a wheel event's `deltaY` (and `deltaMode`) into a positive, bounded
+ * zoom factor for `zoomViewBoxAtPoint`. Negative delta (scroll up) → factor < 1
+ * (zoom in); positive → factor > 1 (zoom out). `deltaMode` matches the DOM:
+ * 0 = pixels, 1 = lines, 2 = pages — normalized so mice that report lines or
+ * pages still zoom consistently.
+ */
+export function wheelZoomFactor(deltaY: number, deltaMode = 0): number {
+  const pixels =
+    deltaMode === 1
+      ? deltaY * WHEEL_LINE_HEIGHT_PX
+      : deltaMode === 2
+        ? deltaY * WHEEL_PAGE_HEIGHT_PX
+        : deltaY;
+  const clamped = Math.max(-MAX_WHEEL_DELTA_PX, Math.min(MAX_WHEEL_DELTA_PX, pixels));
+  return Math.exp(clamped * ZOOM_WHEEL_SENSITIVITY);
+}
+
 /**
  * Compute the new viewBox after a zoom gesture anchored at a screen-relative
  * point. `mouseFracX` and `mouseFracY` are 0..1 (left→right, top→bottom).

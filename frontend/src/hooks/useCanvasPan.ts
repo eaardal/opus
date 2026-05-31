@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
-import { zoomViewBoxAtPoint } from "../domain/tasks/viewport";
+import { wheelZoomFactor, zoomViewBoxAtPoint } from "../domain/tasks/viewport";
 import type { ViewBox } from "../domain/tasks/types";
 
 interface PanningState {
@@ -31,7 +31,6 @@ export interface UseCanvasPanResult {
   tryEndPan: (e: React.MouseEvent) => boolean;
 }
 
-const ZOOM_SENSITIVITY_TRACKPAD = 0.02;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 5;
 const TOUCH_PAN_FINGERS = 3;
@@ -104,7 +103,7 @@ export function useCanvasPan({
             screen: { width: rect.width, height: rect.height },
             mouseFracX: (e.clientX - rect.left) / rect.width,
             mouseFracY: (e.clientY - rect.top) / rect.height,
-            zoomFactor: 1 + e.deltaY * ZOOM_SENSITIVITY_TRACKPAD,
+            zoomFactor: wheelZoomFactor(e.deltaY, e.deltaMode),
             minZoom: MIN_ZOOM,
             maxZoom: MAX_ZOOM,
           }),
