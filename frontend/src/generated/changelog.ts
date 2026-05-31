@@ -24,185 +24,282 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "0.5.0",
-    date: "2026-05-25",
-    sections: [
+    "version": "0.6.0",
+    "date": "2026-05-31",
+    "sections": [
       {
-        name: "Added",
-        subsections: [
+        "name": "Added",
+        "subsections": [
           {
-            heading: null,
-            items: [
+            "heading": null,
+            "items": [
               {
-                text: "Viewer-only indicator around canvas so it's easier to understand why you can't edit or move things",
-                subitems: [],
+                "text": "Timeline panel showing a task's status duration as a timeline. Use via top-left actionbar on the canvas.",
+                "subitems": [
+                  "Separate timeline segments for each person assigned to the task, with richer segment tooltips"
+                ]
               },
               {
-                text: "Owner info shown in workspaces that are shared with you",
-                subitems: [],
+                "text": "Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas",
+                "subitems": [
+                  "Status selector in the presentation bar"
+                ]
               },
-            ],
-          },
-        ],
+              {
+                "text": "Magnifying glass: hold Option/Alt and hover a task to view an enlarged copy of it",
+                "subitems": []
+              },
+              {
+                "text": "Copy \u0026 paste options in the canvas context menus",
+                "subitems": [
+                  "\"Copy X items\" option in the multi-select context menu"
+                ]
+              },
+              {
+                "text": "\"Edit title\" option in a task's right-click context menu",
+                "subitems": []
+              },
+              {
+                "text": "\"Canvas locked\" border and indicator around the canvas when it's locked",
+                "subitems": []
+              }
+            ]
+          }
+        ]
       },
       {
-        name: "Fixed",
-        subsections: [
+        "name": "Fixed",
+        "subsections": [
           {
-            heading: null,
-            items: [
+            "heading": null,
+            "items": [
               {
-                text: "Undo/redo and Firestore sync issues",
-                subitems: [],
+                "text": "Zoom no longer \"jumps\" when zooming quickly with an external mouse's scrollwheel. Smoother zoom overall.",
+                "subitems": []
               },
               {
-                text: "Bugs around duplicating tasks and groups",
-                subitems: [],
+                "text": "No longer losing edit mode when a task node lost hover state while editing its title",
+                "subitems": []
               },
               {
-                text: "Copy \u0026 paste and duplicate logic",
-                subitems: [],
+                "text": "How group titles are displayed in the magnifying glass panel",
+                "subitems": []
               },
               {
-                text: "Creating a new workspace now also creates an initial project",
-                subitems: [],
+                "text": "Timeline kickstart logic",
+                "subitems": []
               },
-            ],
-          },
-        ],
+              {
+                "text": "Width allocation for the project selector dropdown",
+                "subitems": []
+              }
+            ]
+          }
+        ]
       },
       {
-        name: "Changed",
-        subsections: [
+        "name": "Changed",
+        "subsections": [
           {
-            heading: "Real-time editing",
-            items: [
+            "heading": null,
+            "items": [
               {
-                text: "The storage layer has been totally re-written to better leverage Firestore as a real-time database:",
-                subitems: [
+                "text": "New tasks and new groups now start in edit mode so you can set a title right away",
+                "subitems": [
+                  "Double-clicking a task's node on the canvas enters edit mode even if it has no title yet",
+                  "Larger input field when editing a task's title on the canvas"
+                ]
+              },
+              {
+                "text": "Larger hitbox for removing a connection between nodes, making it easier to click",
+                "subitems": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "0.5.0",
+    "date": "2026-05-25",
+    "sections": [
+      {
+        "name": "Added",
+        "subsections": [
+          {
+            "heading": null,
+            "items": [
+              {
+                "text": "Viewer-only indicator around canvas so it's easier to understand why you can't edit or move things",
+                "subitems": []
+              },
+              {
+                "text": "Owner info shown in workspaces that are shared with you",
+                "subitems": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Fixed",
+        "subsections": [
+          {
+            "heading": null,
+            "items": [
+              {
+                "text": "Undo/redo and Firestore sync issues",
+                "subitems": []
+              },
+              {
+                "text": "Bugs around duplicating tasks and groups",
+                "subitems": []
+              },
+              {
+                "text": "Copy \u0026 paste and duplicate logic",
+                "subitems": []
+              },
+              {
+                "text": "Creating a new workspace now also creates an initial project",
+                "subitems": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Changed",
+        "subsections": [
+          {
+            "heading": "Real-time editing",
+            "items": [
+              {
+                "text": "The storage layer has been totally re-written to better leverage Firestore as a real-time database:",
+                "subitems": [
                   "Changes, movements and edits on the canvas and tasks should be instantly visible to all users seeing the canvas",
                   "Save functionality has been removed since all changes are automatically saved immediately",
                   "Undo/redo and Duplicate Task functionality in particular has some minor bugs yet",
-                  "Might be other issues due to this major change - please report!",
-                ],
-              },
-            ],
+                  "Might be other issues due to this major change - please report!"
+                ]
+              }
+            ]
           },
           {
-            heading: "Other changes",
-            items: [
+            "heading": "Other changes",
+            "items": [
               {
-                text: "Button colors updated",
-                subitems: [],
+                "text": "Button colors updated",
+                "subitems": []
               },
               {
-                text: "Dark mode theme removed (light mode only going forward)",
-                subitems: [],
-              },
-            ],
-          },
-        ],
-      },
-    ],
+                "text": "Dark mode theme removed (light mode only going forward)",
+                "subitems": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
   },
   {
-    version: "0.4.0",
-    date: "2026-05-22",
-    sections: [
+    "version": "0.4.0",
+    "date": "2026-05-22",
+    "sections": [
       {
-        name: "Added",
-        subsections: [
+        "name": "Added",
+        "subsections": [
           {
-            heading: null,
-            items: [
+            "heading": null,
+            "items": [
               {
-                text: "Lock/unlock button (top right in canvas) to prevent all canvas elements from being moved",
-                subitems: [],
+                "text": "Lock/unlock button (top right in canvas) to prevent all canvas elements from being moved",
+                "subitems": []
               },
               {
-                text: "Pan canvas with scroll gesture (two fingers on laptop touchpad, scrollwheel on external mouse), with option to disable in Settings",
-                subitems: [],
+                "text": "Pan canvas with scroll gesture (two fingers on laptop touchpad, scrollwheel on external mouse), with option to disable in Settings",
+                "subitems": []
               },
               {
-                text: "Moving a group also moves its content; hold Shift to move the group independently",
-                subitems: [],
+                "text": "Moving a group also moves its content; hold Shift to move the group independently",
+                "subitems": []
               },
               {
-                text: "New right-click context menu when multiple canvas nodes are selected",
-                subitems: [],
+                "text": "New right-click context menu when multiple canvas nodes are selected",
+                "subitems": []
               },
               {
-                text: "Duplicate tasks or groups with Cmd+D",
-                subitems: [],
+                "text": "Duplicate tasks or groups with Cmd+D",
+                "subitems": []
               },
               {
-                text: "Duplicate option in the task right-click context menu",
-                subitems: [],
+                "text": "Duplicate option in the task right-click context menu",
+                "subitems": []
               },
               {
-                text: "Help button in the bottom right corner of the canvas with a keyboard shortcuts reference",
-                subitems: [],
+                "text": "Help button in the bottom right corner of the canvas with a keyboard shortcuts reference",
+                "subitems": []
               },
               {
-                text: "Copy and paste tasks and groups (Cmd+C / Cmd+V). Can be copied in the same canvas or across projects or workspaces.",
-                subitems: [
-                  "Pasted elements are automatically selected after pasting so they can be moved into place",
-                ],
+                "text": "Copy and paste tasks and groups (Cmd+C / Cmd+V). Can be copied in the same canvas or across projects or workspaces.",
+                "subitems": [
+                  "Pasted elements are automatically selected after pasting so they can be moved into place"
+                ]
               },
               {
-                text: "Select multiple elements by choosing each by Cmd+clicking them",
-                subitems: [],
+                "text": "Select multiple elements by choosing each by Cmd+clicking them",
+                "subitems": []
               },
               {
-                text: "Select all elements on the canvas with Cmd+A",
-                subitems: [],
-              },
-            ],
-          },
-        ],
+                "text": "Select all elements on the canvas with Cmd+A",
+                "subitems": []
+              }
+            ]
+          }
+        ]
       },
       {
-        name: "Fixed",
-        subsections: [
+        "name": "Fixed",
+        "subsections": [
           {
-            heading: null,
-            items: [
+            "heading": null,
+            "items": [
               {
-                text: "Permission denied errors now show an error screen with actionable options instead of an infinite loader",
-                subitems: [],
+                "text": "Permission denied errors now show an error screen with actionable options instead of an infinite loader",
+                "subitems": []
               },
               {
-                text: "Last active project is now selected by defeault when re-opening the app",
-                subitems: [],
-              },
-            ],
-          },
-        ],
-      },
-    ],
+                "text": "Last active project is now selected by defeault when re-opening the app",
+                "subitems": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
   },
   {
-    version: "0.3.0",
-    date: "2026-04-17",
-    sections: [
+    "version": "0.3.0",
+    "date": "2026-04-17",
+    "sections": [
       {
-        name: "Added",
-        subsections: [
+        "name": "Added",
+        "subsections": [
           {
-            heading: null,
-            items: [
+            "heading": null,
+            "items": [
               {
-                text: "Workspace roles: Owner, Editor, Viewer",
-                subitems: [],
+                "text": "Workspace roles: Owner, Editor, Viewer",
+                "subitems": []
               },
               {
-                text: "User avatar and account info in the top bar",
-                subitems: [],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
+                "text": "User avatar and account info in the top bar",
+                "subitems": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 ];

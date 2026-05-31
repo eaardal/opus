@@ -153,6 +153,27 @@
   letter-spacing: 0.05em;
 }
 
+/* Backend-environment indicator: amber for staging, an unmistakable red when a
+   build is talking to the production Firebase backend. */
+.app-bar-env-badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.app-bar-env-badge[data-env="staging"] {
+  background: color-mix(in srgb, var(--unsaved-color) 15%, transparent);
+  color: var(--unsaved-color);
+}
+
+.app-bar-env-badge[data-env="production"] {
+  background: var(--delete-bg);
+  color: var(--delete-color);
+}
+
 .app-bar-nav {
   display: flex;
   gap: 4px;

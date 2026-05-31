@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import "./App.css";
 import { ChevronsLeft, Menu } from "lucide-react";
 import { authService, workspaceService } from "./services/container";
+import { environmentBadge } from "./services/environment";
 import { useSelectedWorkspace } from "./features/workspace/SelectedWorkspaceProvider";
 import { useAuthUser } from "./features/auth/useAuthUser";
 import { confirm } from "./ui/ConfirmModal";
@@ -275,6 +276,15 @@ function App() {
             </button>
           </nav>
           <div className="app-bar-right">
+            {environmentBadge && (
+              <span
+                className="app-bar-env-badge"
+                data-env={environmentBadge}
+                title={`Connected to the ${environmentBadge} Firebase backend`}
+              >
+                {environmentBadge}
+              </span>
+            )}
             {auth.status === "signedIn" && (
               <div className="app-bar-identity" title={auth.user.email ?? undefined}>
                 <Avatar

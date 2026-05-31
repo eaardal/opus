@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.6.0] - 2026-05-31
+
+### Added
+
+- Timeline panel showing a task's status duration as a timeline. Use via top-left actionbar on the canvas.
+  - Separate timeline segments for each person assigned to the task, with richer segment tooltips
+- Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas
+  - Status selector in the presentation bar
+- Magnifying glass: hold Option/Alt and hover a task to view an enlarged copy of it
+- Copy & paste options in the canvas context menus
+  - "Copy X items" option in the multi-select context menu
+- "Edit title" option in a task's right-click context menu
+- "Canvas locked" border and indicator around the canvas when it's locked
+
+### Fixed
+
+- Zoom no longer "jumps" when zooming quickly with an external mouse's scrollwheel. Smoother zoom overall.
+- No longer losing edit mode when a task node lost hover state while editing its title
+- How group titles are displayed in the magnifying glass panel
+- Timeline kickstart logic
+- Width allocation for the project selector dropdown
+
+### Changed
+
+- New tasks and new groups now start in edit mode so you can set a title right away
+  - Double-clicking a task's node on the canvas enters edit mode even if it has no title yet
+  - Larger input field when editing a task's title on the canvas
+- Larger hitbox for removing a connection between nodes, making it easier to click
+
 ## [0.5.0] - 2026-05-25
 
 ### Added
