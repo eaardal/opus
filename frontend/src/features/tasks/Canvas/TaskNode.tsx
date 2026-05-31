@@ -56,8 +56,16 @@ export function TaskNode({
   }, [isEditing]);
 
   const startEdit = () => {
+    if (isEditing) return;
     setEditValue(task.text);
     onEditingChange(true);
+  };
+
+  // Double-clicking the node shape (or its title) enters title edit mode.
+  // stopPropagation keeps the canvas from also handling the event.
+  const handleStartEditDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    startEdit();
   };
 
   const commitEdit = () => {
@@ -146,6 +154,7 @@ export function TaskNode({
           style={nodeStyle}
           onMouseDown={onMouseDown}
           onClick={onClick}
+          onDoubleClick={handleStartEditDoubleClick}
           onContextMenu={onContextMenu}
         />
       ) : shape === "triangle" ? (
@@ -155,6 +164,7 @@ export function TaskNode({
           style={nodeStyle}
           onMouseDown={onMouseDown}
           onClick={onClick}
+          onDoubleClick={handleStartEditDoubleClick}
           onContextMenu={onContextMenu}
         />
       ) : (
@@ -164,6 +174,7 @@ export function TaskNode({
           style={nodeStyle}
           onMouseDown={onMouseDown}
           onClick={onClick}
+          onDoubleClick={handleStartEditDoubleClick}
           onContextMenu={onContextMenu}
         />
       )}
@@ -183,7 +194,13 @@ export function TaskNode({
       >
         {index + 1}
       </text>
-      <text textAnchor="middle" dy="0.35em" className="node-emoji" onMouseDown={onMouseDown}>
+      <text
+        textAnchor="middle"
+        dy="0.35em"
+        className="node-emoji"
+        onMouseDown={onMouseDown}
+        onDoubleClick={handleStartEditDoubleClick}
+      >
         {statuses[task.status]?.emoji || "💤"}
       </text>
       {(task.text || isEditing) && (
@@ -212,10 +229,7 @@ export function TaskNode({
             <g
               className="tooltip"
               style={{ cursor: "text" }}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                startEdit();
-              }}
+              onDoubleClick={handleStartEditDoubleClick}
             >
               <rect
                 x={tooltipX}
