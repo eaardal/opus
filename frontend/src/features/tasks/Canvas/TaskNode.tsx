@@ -21,6 +21,7 @@ interface TaskNodeProps {
   onMouseLeave: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onUpdateText: (text: string) => void;
+  onEditingChange: (editing: boolean) => void;
 }
 
 export function TaskNode({
@@ -38,10 +39,11 @@ export function TaskNode({
   onMouseLeave,
   onContextMenu,
   onUpdateText,
+  onEditingChange,
 }: TaskNodeProps) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.text);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -50,9 +52,22 @@ export function TaskNode({
     }
   }, [editing]);
 
+  const startEdit = () => {
+    setEditValue(task.text);
+    setEditing(true);
+    onEditingChange(true);
+  };
+
   const commitEdit = () => {
     setEditing(false);
+    onEditingChange(false);
     onUpdateText(editValue);
+  };
+
+  const cancelEdit = () => {
+    setEditValue(task.text);
+    setEditing(false);
+    onEditingChange(false);
   };
 
   const statusColor = statuses[task.status]?.color || statuses.pending.color;
@@ -73,6 +88,12 @@ export function TaskNode({
   const LINE_HEIGHT = 16;
   const TOOLTIP_V_PADDING = 8;
   const MAX_CHARS = Math.floor(MAX_TOOLTIP_WIDTH / CHAR_WIDTH);
+
+  // The edit textarea is intentionally larger than the read-only tooltip so a
+  // long title wraps across multiple lines while editing instead of being
+  // squeezed onto one clipped line.
+  const EDIT_WIDTH = 220;
+  const EDIT_HEIGHT = 80;
 
   const tooltipText = editing ? editValue : task.text;
 
@@ -168,10 +189,10 @@ export function TaskNode({
       {(task.text || editing) && (
         <g transform="translate(0, 40)">
           {editing ? (
-            <foreignObject x={-MAX_TOOLTIP_WIDTH / 2} y="-12" width={MAX_TOOLTIP_WIDTH} height="24">
-              <input
+            <foreignObject x={-EDIT_WIDTH / 2} y="-12" width={EDIT_WIDTH} height={EDIT_HEIGHT}>
+              <textarea
                 ref={inputRef}
-                className="group-title-input"
+                className="task-title-input"
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onBlur={commitEdit}
@@ -181,8 +202,8 @@ export function TaskNode({
                     commitEdit();
                   }
                   if (e.key === "Escape") {
-                    setEditValue(task.text);
-                    setEditing(false);
+                    e.preventDefault();
+                    cancelEdit();
                   }
                 }}
               />
@@ -193,8 +214,7 @@ export function TaskNode({
               style={{ cursor: "text" }}
               onDoubleClick={(e) => {
                 e.stopPropagation();
-                setEditValue(task.text);
-                setEditing(true);
+                startEdit();
               }}
             >
               <rect

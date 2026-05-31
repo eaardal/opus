@@ -165,6 +165,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const multiSelectionContextMenuRef = useRef<HTMLDivElement>(null);
   const [canvasLocked, setCanvasLocked] = useState(false);
+  // The node currently being edited (inline title textarea). Kept here so the
+  // node stays in the top render branch while editing — otherwise clearing the
+  // hover state would move it to the main list, remounting it and dropping
+  // focus mid-edit.
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
@@ -550,7 +555,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         ))}
 
         {tasks
-          .filter((task) => task.id !== hoveredNode)
+          .filter((task) => task.id !== hoveredNode && task.id !== editingNodeId)
           .map((task) => (
             <TaskNode
               key={task.id}
@@ -575,6 +580,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               onMouseLeave={() => onNodeHover(null)}
               onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
               onUpdateText={(text) => onUpdateTaskText(task.id, text)}
+              onEditingChange={(editing) => setEditingNodeId(editing ? task.id : null)}
             />
           ))}
 
@@ -595,37 +601,42 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           );
         })}
 
-        {hoveredNode &&
-          (() => {
-            const task = tasks.find((t) => t.id === hoveredNode);
-            if (!task) return null;
-            return (
-              <TaskNode
-                key={task.id}
-                task={task}
-                index={tasks.indexOf(task)}
-                categories={categories}
-                statuses={statuses}
-                isDragging={draggingNode === task.id}
-                isHighlighted={highlightedTaskId === task.id}
-                isSelected={selectedNodes.has(task.id)}
-                assignedPersons={
-                  task.assignedPersonIds
-                    ?.map((id) => people.find((p) => p.id === id))
-                    .filter(Boolean) as Person[]
-                }
-                onMouseDown={(e) => {
-                  if (canvasLocked && !e.shiftKey) return;
-                  onNodeMouseDown(e, task.id);
-                }}
-                onClick={() => onNodeClick(task.id)}
-                onMouseEnter={() => onNodeHover(task.id)}
-                onMouseLeave={() => onNodeHover(null)}
-                onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
-                onUpdateText={(text) => onUpdateTaskText(task.id, text)}
-              />
-            );
-          })()}
+        {/* Nodes drawn on top of the rest: the hovered node and the node being
+            edited. The editing node is listed first so the hovered node paints
+            above it, and so it stays mounted (keeping focus) once hover clears. */}
+        {Array.from(
+          new Set([editingNodeId, hoveredNode].filter((id): id is string => id !== null)),
+        ).map((id) => {
+          const task = tasks.find((t) => t.id === id);
+          if (!task) return null;
+          return (
+            <TaskNode
+              key={task.id}
+              task={task}
+              index={tasks.indexOf(task)}
+              categories={categories}
+              statuses={statuses}
+              isDragging={draggingNode === task.id}
+              isHighlighted={highlightedTaskId === task.id}
+              isSelected={selectedNodes.has(task.id)}
+              assignedPersons={
+                task.assignedPersonIds
+                  ?.map((pid) => people.find((p) => p.id === pid))
+                  .filter(Boolean) as Person[]
+              }
+              onMouseDown={(e) => {
+                if (canvasLocked && !e.shiftKey) return;
+                onNodeMouseDown(e, task.id);
+              }}
+              onClick={() => onNodeClick(task.id)}
+              onMouseEnter={() => onNodeHover(task.id)}
+              onMouseLeave={() => onNodeHover(null)}
+              onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
+              onUpdateText={(text) => onUpdateTaskText(task.id, text)}
+              onEditingChange={(editing) => setEditingNodeId(editing ? task.id : null)}
+            />
+          );
+        })}
 
         {connecting && (
           <PendingConnector

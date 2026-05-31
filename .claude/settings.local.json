@@ -20,7 +20,8 @@
       "Bash(mise run generate:changelog 2>&1)",
       "Bash(npm test *)",
       "Bash(git log *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(node_modules/.bin/vitest run *)"
     ]
   }
 }
