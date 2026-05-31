@@ -28,6 +28,7 @@ interface SidebarProps {
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onSetTaskStatus: (id: string, status: TaskStatus) => void;
   onDuplicateTask: (id: string) => void;
+  onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onSetHighlightedTaskId: (id: string | null) => void;
   onSetOpenMenuId: (id: string | null) => void;
@@ -59,6 +60,7 @@ export function Sidebar({
   onSetTaskCategory,
   onSetTaskStatus,
   onDuplicateTask,
+  onCopyTask,
   onDeleteTask,
   onSetHighlightedTaskId,
   onSetOpenMenuId,
@@ -135,6 +137,7 @@ export function Sidebar({
         onSetTaskCategory={onSetTaskCategory}
         onSetTaskStatus={onSetTaskStatus}
         onDuplicateTask={onDuplicateTask}
+        onCopyTask={onCopyTask}
         onDeleteTask={onDeleteTask}
         onSetHighlightedTaskId={onSetHighlightedTaskId}
         onSetOpenMenuId={onSetOpenMenuId}

@@ -18,6 +18,7 @@ interface TaskListProps {
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onSetTaskStatus: (id: string, status: TaskStatus) => void;
   onDuplicateTask: (id: string) => void;
+  onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onSetHighlightedTaskId: (id: string | null) => void;
   onSetOpenMenuId: (id: string | null) => void;
@@ -42,6 +43,7 @@ export function TaskList({
   onSetTaskCategory,
   onSetTaskStatus,
   onDuplicateTask,
+  onCopyTask,
   onDeleteTask,
   onSetHighlightedTaskId,
   onSetOpenMenuId,
@@ -115,6 +117,7 @@ export function TaskList({
         onSetCategory={(category) => onSetTaskCategory(task.id, category)}
         onSetStatus={(status) => onSetTaskStatus(task.id, status)}
         onDuplicate={() => onDuplicateTask(task.id)}
+        onCopy={() => onCopyTask(task.id)}
         onDelete={() => onDeleteTask(task.id)}
         onSetHighlighted={(highlighted) => onSetHighlightedTaskId(highlighted ? task.id : null)}
         onToggleMenu={(e) => handleOpenMenu(task.id, e)}

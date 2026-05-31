@@ -43,6 +43,7 @@ interface ConnectingState {
 
 export interface CanvasHandle {
   getSvgCoords: (e: React.MouseEvent) => { x: number; y: number };
+  clientToSvgCoords: (clientX: number, clientY: number) => { x: number; y: number };
   getSvgElement: () => SVGSVGElement | null;
   exportAsPng: () => void;
   openSettings: () => void;
@@ -94,11 +95,19 @@ interface CanvasProps {
   onSetTaskStatus: (id: string, status: TaskStatus) => void;
   onSetTaskCategory: (id: string, category: string | undefined) => void;
   onDuplicateTask: (id: string) => void;
+  onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onDeleteSelected: () => void;
   onUpdateTaskText: (id: string, text: string) => void;
   onCreateTaskAt: (x: number, y: number) => void;
   onCreateGroupAt: (x: number, y: number) => void;
+  /** Pastes clipboard content. With a target point (right-click paste) the
+      content lands at that canvas position; without one it follows the
+      viewport-centred Cmd/Ctrl+V behaviour. */
+  onPaste: (targetPoint?: { x: number; y: number }) => void;
+  /** Resolves true when the system clipboard holds Domino-valid canvas content.
+      Used to enable/disable the canvas Paste menu item. */
+  onCheckPasteAvailable: () => Promise<boolean>;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -152,11 +161,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onSetTaskStatus,
     onSetTaskCategory,
     onDuplicateTask,
+    onCopyTask,
     onDeleteTask,
     onDeleteSelected,
     onUpdateTaskText,
     onCreateTaskAt,
     onCreateGroupAt,
+    onPaste,
+    onCheckPasteAvailable,
     canUndo,
     canRedo,
     onUndo,
@@ -198,6 +210,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     svgX: number;
     svgY: number;
   } | null>(null);
+  // Whether the clipboard currently holds Domino-valid content. Refreshed each
+  // time the canvas context menu opens, since the clipboard read is async.
+  const [canPaste, setCanPaste] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
 
@@ -267,6 +282,20 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }, [canvasContextMenu]);
 
   useEffect(() => {
+    if (!canvasContextMenu) {
+      setCanPaste(false);
+      return;
+    }
+    let cancelled = false;
+    onCheckPasteAvailable().then((available) => {
+      if (!cancelled) setCanPaste(available);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [canvasContextMenu, onCheckPasteAvailable]);
+
+  useEffect(() => {
     if (!multiSelectionContextMenu) return;
     const handleClose = (e: MouseEvent) => {
       if (
@@ -324,6 +353,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
   useImperativeHandle(ref, () => ({
     getSvgCoords,
+    clientToSvgCoords: toSvgCoords,
     getSvgElement: () => svgRef.current,
     exportAsPng: () => {
       void exportCanvasAsPng();
@@ -881,6 +911,17 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           >
             New group here
           </button>
+          <hr className="menu-divider" />
+          <button
+            className="menu-item"
+            disabled={!canPaste}
+            onClick={() => {
+              onPaste({ x: canvasContextMenu.svgX, y: canvasContextMenu.svgY });
+              setCanvasContextMenu(null);
+            }}
+          >
+            Paste
+          </button>
         </div>
       )}
       {groupContextMenu &&
@@ -959,6 +1000,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               }}
               onDuplicate={() => {
                 onDuplicateTask(task.id);
+                setNodeContextMenu(null);
+              }}
+              onCopy={() => {
+                onCopyTask(task.id);
                 setNodeContextMenu(null);
               }}
               onEditTitle={() => {

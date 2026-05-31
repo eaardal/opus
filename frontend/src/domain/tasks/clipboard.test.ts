@@ -298,6 +298,39 @@ describe("applyPaste", () => {
     expect(result.tasks[0].y).toBeCloseTo(viewportCenterY + 40);
   });
 
+  test("positions a single pasted task at the target point when provided", () => {
+    const cb = clipboard({ tasks: [task("t1", 0, 0)], connections: [], groups: [] });
+    const result = applyPaste({
+      clipboard: cb,
+      currentWorkspaceId: WORKSPACE_A,
+      viewBox: viewBox(),
+      targetPoint: { x: 250, y: 175 },
+    });
+    // The task's center lands exactly on the target point — no viewport offset.
+    expect(result.tasks[0].x).toBeCloseTo(250);
+    expect(result.tasks[0].y).toBeCloseTo(175);
+  });
+
+  test("centers a multi-element paste on the target point, preserving layout", () => {
+    const cb = clipboard({
+      tasks: [task("t1", 0, 0), task("t2", 100, 0)],
+      connections: [],
+      groups: [],
+    });
+    const result = applyPaste({
+      clipboard: cb,
+      currentWorkspaceId: WORKSPACE_A,
+      viewBox: viewBox(),
+      targetPoint: { x: 500, y: 300 },
+    });
+    const [t1, t2] = result.tasks;
+    // Bounding-box centre (50, 0) maps onto the target point.
+    expect((t1.x + t2.x) / 2).toBeCloseTo(500);
+    expect((t1.y + t2.y) / 2).toBeCloseTo(300);
+    // Relative layout is preserved.
+    expect(t2.x - t1.x).toBeCloseTo(100);
+  });
+
   test("preserves relative positions between pasted elements", () => {
     const cb = clipboard({
       tasks: [task("t1", 0, 0), task("t2", 100, 50)],

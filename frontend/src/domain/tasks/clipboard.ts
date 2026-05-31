@@ -76,10 +76,19 @@ function requireGet<K, V>(map: Map<K, V>, key: K): V {
   return value;
 }
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 interface PasteArgs {
   clipboard: CanvasClipboard;
   currentWorkspaceId: string;
   viewBox: ViewBox;
+  /** When set (e.g. a right-click paste), the pasted content is centred on this
+      point in canvas coordinates. When omitted, it lands near the viewport
+      centre — the behaviour used by the Cmd/Ctrl+V shortcut. */
+  targetPoint?: Point;
 }
 
 interface PasteResult {
@@ -88,7 +97,12 @@ interface PasteResult {
   groups: Group[];
 }
 
-export function applyPaste({ clipboard, currentWorkspaceId, viewBox }: PasteArgs): PasteResult {
+export function applyPaste({
+  clipboard,
+  currentWorkspaceId,
+  viewBox,
+  targetPoint,
+}: PasteArgs): PasteResult {
   const isSameWorkspace = clipboard.workspaceId === currentWorkspaceId;
 
   const taskIdMap = new Map<string, string>();
@@ -101,7 +115,7 @@ export function applyPaste({ clipboard, currentWorkspaceId, viewBox }: PasteArgs
     groupIdMap.set(g.id, crypto.randomUUID());
   }
 
-  const { dx, dy } = computeTranslation(clipboard.tasks, clipboard.groups, viewBox);
+  const { dx, dy } = computeTranslation(clipboard.tasks, clipboard.groups, viewBox, targetPoint);
 
   const tasks: Task[] = clipboard.tasks.map((t) => ({
     ...t,
@@ -200,12 +214,23 @@ function computeTranslation(
   tasks: Task[],
   groups: Group[],
   viewBox: ViewBox,
+  targetPoint?: Point,
 ): { dx: number; dy: number } {
   const box = computeBoundingBox(tasks, groups);
   if (!box) return { dx: 0, dy: 0 };
 
   const selectionCenterX = (box.minX + box.maxX) / 2;
   const selectionCenterY = (box.minY + box.maxY) / 2;
+
+  // A target point (right-click paste) lands the content exactly under the
+  // cursor. Without one, fall back to the viewport centre plus a small offset
+  // so a Cmd/Ctrl+V paste does not perfectly overlap the copied originals.
+  if (targetPoint) {
+    return {
+      dx: targetPoint.x - selectionCenterX,
+      dy: targetPoint.y - selectionCenterY,
+    };
+  }
 
   const viewportCenterX = viewBox.x + viewBox.width / 2;
   const viewportCenterY = viewBox.y + viewBox.height / 2;

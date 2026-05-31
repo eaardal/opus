@@ -44,6 +44,7 @@ interface TaskContextMenuProps {
   onSetStatus: (status: TaskStatus) => void;
   onSetCategory: (category: string | undefined) => void;
   onDuplicate: () => void;
+  onCopy: () => void;
   /** When provided, shows an "Edit title" item. Canvas-only — the sidebar list
       omits it because that menu's task already has an inline-editable title. */
   onEditTitle?: () => void;
@@ -62,6 +63,7 @@ export function TaskContextMenu({
   onSetStatus,
   onSetCategory,
   onDuplicate,
+  onCopy,
   onEditTitle,
   onDelete,
   onAssignPeople,
@@ -188,7 +190,16 @@ export function TaskContextMenu({
           onClose();
         }}
       >
-        Duplicate
+        Duplicate task
+      </button>
+      <button
+        className="menu-item"
+        onClick={() => {
+          onCopy();
+          onClose();
+        }}
+      >
+        Copy task
       </button>
       {onEditTitle && (
         <button

@@ -179,6 +179,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
 
   const canvasRef = useRef<CanvasHandle>(null);
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  // Latest pointer position (client coords) so Cmd/Ctrl+V can paste under the
+  // cursor rather than at the viewport centre.
+  const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
 
   const {
     width: sidebarWidth,
@@ -327,30 +330,73 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     }
   }, [selectedNodes, selectedGroups, tasks, connections, groups, workspaceId]);
 
-  const handlePaste = useCallback(async () => {
+  const handlePaste = useCallback(
+    async (targetPoint?: { x: number; y: number }) => {
+      try {
+        const raw = await navigator.clipboard.readText();
+        const clipboard = deserializeClipboard(raw);
+        if (!clipboard) return;
+        const result = applyPaste({
+          clipboard,
+          currentWorkspaceId: workspaceId,
+          viewBox,
+          targetPoint,
+        });
+        push({
+          tasks: [...tasks, ...result.tasks],
+          connections: [...connections, ...result.connections],
+          groups: [...groups, ...result.groups],
+        });
+        selectElements(
+          new Set(result.tasks.map((t) => t.id)),
+          new Set(result.groups.map((g) => g.id)),
+        );
+        Promise.all([
+          ...result.tasks.map((t) => workspaceService.addTask(workspaceId, projectId, t)),
+          ...result.groups.map((g) => workspaceService.addGroup(workspaceId, projectId, g)),
+          ...result.connections.map((c) =>
+            workspaceService.addConnection(workspaceId, projectId, c),
+          ),
+        ]).catch(console.error);
+      } catch {
+        console.warn("[canvas] Paste failed — clipboard may be empty or access denied");
+      }
+    },
+    [tasks, connections, groups, viewBox, workspaceId, projectId, push, selectElements],
+  );
+
+  useEffect(() => {
+    const trackPointer = (e: MouseEvent) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("mousemove", trackPointer);
+    return () => window.removeEventListener("mousemove", trackPointer);
+  }, []);
+
+  // Cmd/Ctrl+V entry point: paste under the cursor when it is over the canvas,
+  // otherwise fall back to the viewport-centred paste.
+  const handlePasteAtPointer = useCallback(() => {
+    const handle = canvasRef.current;
+    const pointer = lastPointerRef.current;
+    const svg = handle?.getSvgElement();
+    if (handle && pointer && svg) {
+      const elementAtPointer = document.elementFromPoint(pointer.x, pointer.y);
+      if (elementAtPointer && svg.contains(elementAtPointer)) {
+        void handlePaste(handle.clientToSvgCoords(pointer.x, pointer.y));
+        return;
+      }
+    }
+    void handlePaste();
+  }, [handlePaste]);
+
+  const checkPasteAvailable = useCallback(async (): Promise<boolean> => {
     try {
       const raw = await navigator.clipboard.readText();
-      const clipboard = deserializeClipboard(raw);
-      if (!clipboard) return;
-      const result = applyPaste({ clipboard, currentWorkspaceId: workspaceId, viewBox });
-      push({
-        tasks: [...tasks, ...result.tasks],
-        connections: [...connections, ...result.connections],
-        groups: [...groups, ...result.groups],
-      });
-      selectElements(
-        new Set(result.tasks.map((t) => t.id)),
-        new Set(result.groups.map((g) => g.id)),
-      );
-      Promise.all([
-        ...result.tasks.map((t) => workspaceService.addTask(workspaceId, projectId, t)),
-        ...result.groups.map((g) => workspaceService.addGroup(workspaceId, projectId, g)),
-        ...result.connections.map((c) => workspaceService.addConnection(workspaceId, projectId, c)),
-      ]).catch(console.error);
+      return deserializeClipboard(raw) !== null;
     } catch {
-      console.warn("[canvas] Paste failed — clipboard may be empty or access denied");
+      return false;
     }
-  }, [tasks, connections, groups, viewBox, workspaceId, projectId, push, selectElements]);
+  }, []);
 
   const handleSelectAll = useCallback(() => {
     selectElements(new Set(tasks.map((t) => t.id)), new Set(groups.map((g) => g.id)));
@@ -407,13 +453,33 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     [tasks, groups, connections, push, selectElements, workspaceId, projectId],
   );
 
+  const handleCopyTask = useCallback(
+    async (taskId: string) => {
+      const serialized = serializeSelection({
+        selectedTaskIds: new Set([taskId]),
+        selectedGroupIds: new Set(),
+        tasks,
+        connections,
+        groups,
+        workspaceId,
+      });
+      if (!serialized) return;
+      try {
+        await navigator.clipboard.writeText(serialized);
+      } catch {
+        // Clipboard access denied — silent fail
+      }
+    },
+    [tasks, connections, groups, workspaceId],
+  );
+
   const { shiftPressed } = useGlobalKeyboardShortcuts({
     onUndo: wrappedUndo,
     onRedo: wrappedRedo,
     onEscape: clearSelection,
     onDelete: handleDeleteSelected,
     onCopy: handleCopy,
-    onPaste: handlePaste,
+    onPaste: handlePasteAtPointer,
     onSelectAll: handleSelectAll,
     onDuplicate: handleDuplicate,
   });
@@ -694,6 +760,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onSetTaskCategory={setTaskCategory}
         onSetTaskStatus={setTaskStatus}
         onDuplicateTask={handleDuplicateTask}
+        onCopyTask={handleCopyTask}
         onDeleteTask={deleteTask}
         onSetHighlightedTaskId={setHighlightedTaskId}
         onSetOpenMenuId={setOpenMenuId}
@@ -757,11 +824,14 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onSetTaskStatus={setTaskStatus}
         onSetTaskCategory={setTaskCategory}
         onDuplicateTask={handleDuplicateTask}
+        onCopyTask={handleCopyTask}
         onDeleteTask={deleteTask}
         onDeleteSelected={handleDeleteSelected}
         onUpdateTaskText={updateTaskText}
         onCreateTaskAt={addTaskAt}
         onCreateGroupAt={addGroupAt}
+        onPaste={handlePaste}
+        onCheckPasteAvailable={checkPasteAvailable}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={wrappedUndo}

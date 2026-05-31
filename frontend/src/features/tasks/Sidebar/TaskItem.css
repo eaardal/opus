@@ -114,6 +114,15 @@
   background: var(--menu-item-hover);
 }
 
+.menu-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.menu-item:disabled:hover {
+  background: transparent;
+}
+
 .menu-item.active {
   color: var(--text-primary);
   background: var(--menu-item-active-bg);

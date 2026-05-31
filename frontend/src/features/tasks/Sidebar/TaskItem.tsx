@@ -16,6 +16,7 @@ interface TaskItemProps {
   onSetCategory: (category: string | undefined) => void;
   onSetStatus: (status: TaskStatus) => void;
   onDuplicate: () => void;
+  onCopy: () => void;
   onDelete: () => void;
   onSetHighlighted: (highlighted: boolean) => void;
   onToggleMenu: (e: React.MouseEvent) => void;
@@ -39,6 +40,7 @@ export function TaskItem({
   onSetCategory,
   onSetStatus,
   onDuplicate,
+  onCopy,
   onDelete,
   onSetHighlighted,
   onToggleMenu,
@@ -92,6 +94,7 @@ export function TaskItem({
             onSetStatus={onSetStatus}
             onSetCategory={onSetCategory}
             onDuplicate={onDuplicate}
+            onCopy={onCopy}
             onDelete={onDelete}
             onAssignPeople={onAssignPeople}
             onClose={onCloseMenu}
