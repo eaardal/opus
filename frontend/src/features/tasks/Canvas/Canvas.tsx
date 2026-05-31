@@ -59,6 +59,7 @@ interface CanvasProps {
   shiftPressed: boolean;
   hoveredNode: string | null;
   highlightedTaskId: string | null;
+  editingNodeId: string | null;
   selectedNodes: Set<string>;
   selection: SelectionRect | null;
   onMouseDown: (e: React.MouseEvent, svgElement: SVGSVGElement | null) => void;
@@ -67,6 +68,7 @@ interface CanvasProps {
   onNodeMouseDown: (e: React.MouseEvent, taskId: string) => void;
   onNodeClick: (taskId: string) => void;
   onNodeHover: (taskId: string | null) => void;
+  onEditingNodeChange: (taskId: string | null) => void;
   onRemoveConnection: (e: React.MouseEvent, from: string, to: string) => void;
   groups: Group[];
   selectedGroups: Set<string>;
@@ -113,6 +115,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     shiftPressed,
     hoveredNode,
     highlightedTaskId,
+    editingNodeId,
     selectedNodes,
     selection,
     onMouseDown,
@@ -121,6 +124,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onNodeMouseDown,
     onNodeClick,
     onNodeHover,
+    onEditingNodeChange,
     onRemoveConnection,
     groups,
     selectedGroups,
@@ -165,11 +169,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const canvasContextMenuRef = useRef<HTMLDivElement>(null);
   const multiSelectionContextMenuRef = useRef<HTMLDivElement>(null);
   const [canvasLocked, setCanvasLocked] = useState(false);
-  // The node currently being edited (inline title textarea). Kept here so the
-  // node stays in the top render branch while editing — otherwise clearing the
-  // hover state would move it to the main list, remounting it and dropping
-  // focus mid-edit.
-  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
@@ -566,6 +565,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               isDragging={draggingNode === task.id}
               isHighlighted={highlightedTaskId === task.id}
               isSelected={selectedNodes.has(task.id)}
+              isEditing={editingNodeId === task.id}
               assignedPersons={
                 task.assignedPersonIds
                   ?.map((id) => people.find((p) => p.id === id))
@@ -580,7 +580,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               onMouseLeave={() => onNodeHover(null)}
               onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
               onUpdateText={(text) => onUpdateTaskText(task.id, text)}
-              onEditingChange={(editing) => setEditingNodeId(editing ? task.id : null)}
+              onEditingChange={(editing) => onEditingNodeChange(editing ? task.id : null)}
             />
           ))}
 
@@ -619,6 +619,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               isDragging={draggingNode === task.id}
               isHighlighted={highlightedTaskId === task.id}
               isSelected={selectedNodes.has(task.id)}
+              isEditing={editingNodeId === task.id}
               assignedPersons={
                 task.assignedPersonIds
                   ?.map((pid) => people.find((p) => p.id === pid))
@@ -633,7 +634,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               onMouseLeave={() => onNodeHover(null)}
               onContextMenu={(e) => handleNodeContextMenu(e, task.id)}
               onUpdateText={(text) => onUpdateTaskText(task.id, text)}
-              onEditingChange={(editing) => setEditingNodeId(editing ? task.id : null)}
+              onEditingChange={(editing) => onEditingNodeChange(editing ? task.id : null)}
             />
           );
         })}

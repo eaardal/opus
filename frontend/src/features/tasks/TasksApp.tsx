@@ -170,6 +170,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  // The task whose inline title editor is open on the canvas. Set when a task
+  // is created via the canvas so the user can type its title immediately.
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
 
   const canvasRef = useRef<CanvasHandle>(null);
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -439,7 +442,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const addTaskAt = (x: number, y: number) => {
     const newTask = buildNewTask(x, y);
     push({ tasks: addTaskOp(present.tasks, newTask), connections, groups });
-    setFocusTaskId(newTask.id);
+    setEditingNodeId(newTask.id);
     workspaceService.addTask(workspaceId, projectId, newTask).catch(console.error);
   };
 
@@ -715,6 +718,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         shiftPressed={shiftPressed}
         hoveredNode={hoveredNode}
         highlightedTaskId={highlightedTaskId}
+        editingNodeId={editingNodeId}
         selectedNodes={selectedNodes}
         selection={selection}
         onMouseDown={handleCanvasMouseDown}
@@ -723,6 +727,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onNodeMouseDown={handleNodeMouseDown}
         onNodeClick={handleNodeClick}
         onNodeHover={setHoveredNode}
+        onEditingNodeChange={setEditingNodeId}
         onRemoveConnection={handleRemoveConnection}
         groups={groups}
         selectedGroups={selectedGroups}

@@ -21,7 +21,9 @@
       "Bash(npm test *)",
       "Bash(git log *)",
       "Bash(git stash *)",
-      "Bash(node_modules/.bin/vitest run *)"
+      "Bash(node_modules/.bin/vitest run *)",
+      "Bash(./node_modules/.bin/biome format *)",
+      "Bash(./node_modules/.bin/vitest run *)"
     ]
   }
 }

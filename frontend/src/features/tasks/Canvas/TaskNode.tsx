@@ -14,6 +14,9 @@ interface TaskNodeProps {
   isDragging: boolean;
   isHighlighted: boolean;
   isSelected: boolean;
+  /** Whether this node's inline title editor is open. Controlled by the canvas
+      so editing survives hover changes and can be opened on task creation. */
+  isEditing: boolean;
   assignedPersons?: Person[];
   onMouseDown: (e: React.MouseEvent) => void;
   onClick: () => void;
@@ -32,6 +35,7 @@ export function TaskNode({
   isDragging,
   isHighlighted,
   isSelected,
+  isEditing,
   assignedPersons = [],
   onMouseDown,
   onClick,
@@ -41,32 +45,28 @@ export function TaskNode({
   onUpdateText,
   onEditingChange,
 }: TaskNodeProps) {
-  const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.text);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (editing && inputRef.current) {
+    if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
-  }, [editing]);
+  }, [isEditing]);
 
   const startEdit = () => {
     setEditValue(task.text);
-    setEditing(true);
     onEditingChange(true);
   };
 
   const commitEdit = () => {
-    setEditing(false);
     onEditingChange(false);
     onUpdateText(editValue);
   };
 
   const cancelEdit = () => {
     setEditValue(task.text);
-    setEditing(false);
     onEditingChange(false);
   };
 
@@ -95,7 +95,7 @@ export function TaskNode({
   const EDIT_WIDTH = 220;
   const EDIT_HEIGHT = 80;
 
-  const tooltipText = editing ? editValue : task.text;
+  const tooltipText = isEditing ? editValue : task.text;
 
   const wrapLines = (text: string): string[] => {
     const words = text.split(" ");
@@ -186,9 +186,9 @@ export function TaskNode({
       <text textAnchor="middle" dy="0.35em" className="node-emoji" onMouseDown={onMouseDown}>
         {statuses[task.status]?.emoji || "💤"}
       </text>
-      {(task.text || editing) && (
+      {(task.text || isEditing) && (
         <g transform="translate(0, 40)">
-          {editing ? (
+          {isEditing ? (
             <foreignObject x={-EDIT_WIDTH / 2} y="-12" width={EDIT_WIDTH} height={EDIT_HEIGHT}>
               <textarea
                 ref={inputRef}
