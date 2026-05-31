@@ -35,6 +35,8 @@ import { TaskContextMenu } from "../TaskContextMenu";
 import { TaskQueuePanel } from "../TaskQueuePanel/TaskQueuePanel";
 import { TimelinePanel } from "../TimelinePanel/TimelinePanel";
 import { MagnifiedTaskOverlay } from "./MagnifiedTaskOverlay";
+import { MagnifiedGroupOverlay } from "./MagnifiedGroupOverlay";
+import { findOwningGroup } from "../../../domain/tasks/groupGeometry";
 import { SettingsDialog, type AppSettings, loadSettings } from "../SettingsDialog";
 import { toSvgCoords as toSvgCoordsPure } from "../../../lib/svgCoords";
 import { centerViewBoxOnPoint, fitViewBoxToContent } from "../../../domain/tasks/viewport";
@@ -212,6 +214,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   // toggle makes it always-on; otherwise it activates while Alt/Option is held.
   const [magnifyEnabled, setMagnifyEnabled] = useState(false);
   const [altHeld, setAltHeld] = useState(false);
+  const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [isTaskQueueOpen, setIsTaskQueueOpen] = useState(false);
@@ -576,26 +579,50 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     }
   }, [presentationPersonId, assignedPeople, presentationTasks, presentationIndex]);
 
-  // ── Magnifier: the hovered task, enlarged in a read-only overlay ─────────────
-  const magnifierTask =
-    (magnifyEnabled || altHeld) &&
-    hoveredNode !== null &&
-    hoveredNode !== editingNodeId &&
-    draggingNode === null &&
-    connecting === null &&
-    !panMode
-      ? tasks.find((t) => t.id === hoveredNode)
-      : undefined;
+  // ── Magnifier: the hovered task or group, enlarged in a read-only overlay ────
+  const magnifyActive =
+    (magnifyEnabled || altHeld) && draggingNode === null && connecting === null && !panMode;
 
-  let magnifier: { task: Task; index: number; left: number; top: number } | null = null;
-  if (magnifierTask && svgRef.current && viewBox.width > 0 && viewBox.height > 0) {
+  let magnifier:
+    | {
+        kind: "task";
+        task: Task;
+        index: number;
+        groupTitle: string | null;
+        left: number;
+        top: number;
+      }
+    | { kind: "group"; title: string; left: number; top: number }
+    | null = null;
+
+  if (magnifyActive && svgRef.current && viewBox.width > 0 && viewBox.height > 0) {
     const rect = svgRef.current.getBoundingClientRect();
-    magnifier = {
-      task: magnifierTask,
-      index: tasks.indexOf(magnifierTask),
-      left: ((magnifierTask.x - viewBox.x) / viewBox.width) * rect.width,
-      top: ((magnifierTask.y - viewBox.y) / viewBox.height) * rect.height,
-    };
+    const toScreen = (cx: number, cy: number) => ({
+      left: ((cx - viewBox.x) / viewBox.width) * rect.width,
+      top: ((cy - viewBox.y) / viewBox.height) * rect.height,
+    });
+    const hoveredTask =
+      hoveredNode !== null && hoveredNode !== editingNodeId
+        ? tasks.find((t) => t.id === hoveredNode)
+        : undefined;
+    if (hoveredTask) {
+      magnifier = {
+        kind: "task",
+        task: hoveredTask,
+        index: tasks.indexOf(hoveredTask),
+        groupTitle: findOwningGroup(hoveredTask, groups)?.title ?? null,
+        ...toScreen(hoveredTask.x, hoveredTask.y),
+      };
+    } else if (hoveredGroupId !== null && hoveredGroupId !== editingGroupId) {
+      const group = groups.find((g) => g.id === hoveredGroupId);
+      if (group) {
+        magnifier = {
+          kind: "group",
+          title: group.title,
+          ...toScreen(group.x + group.width / 2, group.y + group.height / 2),
+        };
+      }
+    }
   }
 
   return (
@@ -734,7 +761,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           onClose={() => setIsTimelineOpen(false)}
         />
       )}
-      {magnifier && (
+      {magnifier?.kind === "task" && (
         <MagnifiedTaskOverlay
           task={magnifier.task}
           index={magnifier.index}
@@ -745,9 +772,13 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               ?.map((id) => people.find((p) => p.id === id))
               .filter(Boolean) as Person[]) ?? []
           }
+          groupTitle={magnifier.groupTitle}
           left={magnifier.left}
           top={magnifier.top}
         />
+      )}
+      {magnifier?.kind === "group" && (
+        <MagnifiedGroupOverlay title={magnifier.title} left={magnifier.left} top={magnifier.top} />
       )}
       {showSettings && (
         <SettingsDialog
@@ -816,6 +847,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 svgY: svgPos.y,
               });
             }}
+            onHover={(hovering) =>
+              setHoveredGroupId((prev) => (hovering ? group.id : prev === group.id ? null : prev))
+            }
             toSvgCoords={toSvgCoords}
           />
         ))}

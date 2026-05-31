@@ -53,6 +53,7 @@ interface GroupRectProps {
   onZoomTo: (id: string) => void;
   onToggleLock: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, groupId: string) => void;
+  onHover?: (hovering: boolean) => void;
   toSvgCoords: (clientX: number, clientY: number) => { x: number; y: number };
 }
 
@@ -78,6 +79,7 @@ export function GroupRect({
   onZoomTo,
   onToggleLock,
   onContextMenu: onGroupContextMenu,
+  onHover,
   toSvgCoords,
 }: GroupRectProps) {
   const containedTasks = tasks.filter(
@@ -225,6 +227,8 @@ export function GroupRect({
   return (
     <g
       transform={`translate(${group.x}, ${group.y})`}
+      onMouseEnter={() => onHover?.(true)}
+      onMouseLeave={() => onHover?.(false)}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();

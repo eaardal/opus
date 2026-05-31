@@ -13,3 +13,26 @@
 .magnifier-svg {
   display: block;
 }
+
+/* Parent-group title shown above the magnified task node (SVG text). */
+.magnifier-group-label {
+  fill: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* The group-only magnifier card. */
+.magnifier-group-overlay {
+  max-width: 320px;
+  padding: 14px 18px;
+}
+
+.magnifier-group-text {
+  display: block;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  word-break: break-word;
+}
