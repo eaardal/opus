@@ -1,10 +1,17 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import "./TaskNode.css";
 import type { Task } from "../../../domain/tasks/types";
 import type { CategoryConfig, StatusConfig } from "../theme";
 import type { TaskStatus } from "../../../domain/tasks/types";
 import type { Person } from "../../../domain/teams/types";
 import { avatarColor } from "../../../lib/avatar";
+
+// The title editor auto-grows: it starts one line tall and expands downward to
+// fit wrapped lines as you type. EDIT_BORDER_Y restores the 1px top/bottom border
+// that scrollHeight omits but the border-box height needs.
+const EDIT_WIDTH = 220;
+const EDIT_MIN_HEIGHT = 33;
+const EDIT_BORDER_Y = 2;
 
 interface TaskNodeProps {
   task: Task;
@@ -48,6 +55,7 @@ export function TaskNode({
   onEditingChange,
 }: TaskNodeProps) {
   const [editValue, setEditValue] = useState(task.text);
+  const [editHeight, setEditHeight] = useState(EDIT_MIN_HEIGHT);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -56,6 +64,19 @@ export function TaskNode({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // Auto-grow the editor to fit its wrapped lines, measured before paint so it
+  // never flashes at the wrong size. Collapsing to "auto" first lets scrollHeight
+  // report the true content height even when the field is currently taller.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: editValue is the resize trigger — it drives the textarea content we measure, even though the body reads the DOM, not the value.
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!isEditing || !el) return;
+    el.style.height = "auto";
+    const next = Math.max(EDIT_MIN_HEIGHT, el.scrollHeight + EDIT_BORDER_Y);
+    el.style.height = `${next}px`;
+    setEditHeight(next);
+  }, [isEditing, editValue]);
 
   const startEdit = () => {
     if (isEditing) return;
@@ -98,12 +119,6 @@ export function TaskNode({
   const LINE_HEIGHT = 16;
   const TOOLTIP_V_PADDING = 8;
   const MAX_CHARS = Math.floor(MAX_TOOLTIP_WIDTH / CHAR_WIDTH);
-
-  // The edit textarea is intentionally larger than the read-only tooltip so a
-  // long title wraps across multiple lines while editing instead of being
-  // squeezed onto one clipped line.
-  const EDIT_WIDTH = 220;
-  const EDIT_HEIGHT = 80;
 
   const tooltipText = isEditing ? editValue : task.text;
 
@@ -192,10 +207,11 @@ export function TaskNode({
       {(task.text || isEditing) && (
         <g transform="translate(0, 40)">
           {isEditing ? (
-            <foreignObject x={-EDIT_WIDTH / 2} y="-12" width={EDIT_WIDTH} height={EDIT_HEIGHT}>
+            <foreignObject x={-EDIT_WIDTH / 2} y="-12" width={EDIT_WIDTH} height={editHeight}>
               <textarea
                 ref={inputRef}
                 className="task-title-input"
+                rows={1}
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onBlur={commitEdit}

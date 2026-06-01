@@ -56,8 +56,8 @@
 }
 
 .task-title-input {
+  display: block;
   width: 100%;
-  height: 100%;
   background: var(--group-input-bg);
   border: 1px solid var(--group-input-border);
   border-radius: 4px;
@@ -70,5 +70,7 @@
   outline: none;
   box-sizing: border-box;
   resize: none;
-  overflow: auto;
+  /* Height is driven by the auto-grow effect in TaskNode; hide the transient
+     overflow while it measures so no scrollbar flashes. */
+  overflow: hidden;
 }
