@@ -98,12 +98,13 @@ export function GroupRect({
   );
   const inProgressTasks = containedTasks.filter((t) => t.status === "in_progress");
   const taskCount = containedTasks.length;
-  const allDone = taskCount > 0 && doneTasks.length === taskCount;
+  const doneCount = doneTasks.length;
+  const allDone = taskCount > 0 && doneCount === taskCount;
 
   // Animate the progress so the bar glides and the giant number can count along
   // with it. Lifted here (rather than inside the bar) so the bar and the number
   // share one animation source and stay in lockstep.
-  const donePct = taskCount > 0 ? doneTasks.length / taskCount : 0;
+  const donePct = taskCount > 0 ? doneCount / taskCount : 0;
   const inProgressPct = taskCount > 0 ? inProgressTasks.length / taskCount : 0;
   const done = useAnimatedNumber(donePct);
   const inProgressEnd = useAnimatedNumber(donePct + inProgressPct);
@@ -134,6 +135,20 @@ export function GroupRect({
       }
     }
   }, [donePct, done.animating]);
+
+  // Only highlight the giant number for real progress. A donePct change with no
+  // change to the done count means the denominator moved — a task was created or
+  // added to the group — so suppress the number for that animation.
+  const prevDoneCountRef = useRef(doneCount);
+  const prevDonePctForNumberRef = useRef(donePct);
+  const suppressNumberRef = useRef(false);
+  useEffect(() => {
+    if (donePct !== prevDonePctForNumberRef.current) {
+      suppressNumberRef.current = doneCount === prevDoneCountRef.current;
+    }
+    prevDonePctForNumberRef.current = donePct;
+    prevDoneCountRef.current = doneCount;
+  }, [donePct, doneCount]);
 
   const [editValue, setEditValue] = useState(group.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -366,7 +381,7 @@ export function GroupRect({
       {taskCount > 0 && (
         <GroupProgressNumber
           value={done.value}
-          animating={done.animating}
+          animating={done.animating && !suppressNumberRef.current}
           groupWidth={group.width}
           groupHeight={group.height}
         />

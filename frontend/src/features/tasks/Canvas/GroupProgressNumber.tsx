@@ -4,7 +4,12 @@ import "./GroupProgressNumber.css";
 interface GroupProgressNumberProps {
   /** Animated completed fraction (0..1), rendered as a whole-percent number. */
   value: number;
-  /** Whether the progress is currently animating (counting). */
+  /**
+   * Whether the number should play. The parent passes true only while the
+   * progress is counting from a change worth highlighting — it gates out
+   * non-progress changes (e.g. a task being created), so this can be false even
+   * while the bar itself is animating.
+   */
   animating: boolean;
   groupWidth: number;
   groupHeight: number;
