@@ -15,7 +15,7 @@
     "format:check": "biome format .",
     "lint": "biome lint --error-on-warnings .",
     "lint:fix": "biome lint --write .",
-    "verify": "npm run build && npm run format && npm run lint && npm run test:once"
+    "verify": "npm run typecheck && npm run build && npm run format && npm run lint && npm run test:once"
   },
   "dependencies": {
     "firebase": "^12.12.1",
