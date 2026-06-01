@@ -84,15 +84,9 @@
   stroke-dasharray: 4, 2;
 }
 
-.canvas-toolbar {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
-  display: flex;
-  gap: 4px;
-}
-
+/* Shared canvas icon button — used by the top-right action bar (CanvasActionBar)
+   and the presentation bar. Each owner positions its own container; this is the
+   common button look and its hover tooltip. */
 .canvas-toolbar-btn {
   display: flex;
   align-items: center;
@@ -118,14 +112,6 @@
 .canvas-toolbar-btn.active {
   background: var(--menu-trigger-hover);
   color: var(--text-primary);
-}
-
-.canvas-lock-btn.active {
-  border: 3px solid orange;
-}
-
-.canvas-magnify-btn.active {
-  border: 3px solid #3aa6b9;
 }
 
 .canvas-toolbar-btn[data-tooltip] {

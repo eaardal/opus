@@ -8,19 +8,7 @@ import {
   useEffect,
 } from "react";
 import "./Canvas.css";
-import {
-  Maximize,
-  Focus,
-  Undo2,
-  Redo2,
-  LayoutList,
-  GanttChart,
-  HelpCircle,
-  Pin,
-  Lock,
-  LockOpen,
-  ZoomIn,
-} from "lucide-react";
+import { HelpCircle, Pin } from "lucide-react";
 import type { Task, Group, TaskStatus } from "../../../domain/tasks/types";
 import { Connector, PendingConnector } from "./Connector";
 import { TaskNode } from "./TaskNode";
@@ -29,6 +17,7 @@ import { type CategoryConfig, type StatusConfig, getConnector, getGroupBox } fro
 import { GroupRect } from "./GroupRect";
 import type { Person } from "../../../domain/teams/types";
 import { PresentationBar } from "./PresentationBar";
+import { CanvasActionBar } from "./CanvasActionBar";
 import type { StatusFilter } from "./StatusFilterSelect";
 import { peopleWithAssignedTasks, tasksAssignedToPerson } from "../../../domain/tasks/assignments";
 import { TaskContextMenu } from "../TaskContextMenu";
@@ -679,90 +668,29 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <span className="canvas-locked-banner-badge">Canvas locked</span>
         </div>
       )}
-      <div className="canvas-toolbar">
-        <button
-          type="button"
-          className={`canvas-toolbar-btn ${isTaskQueueOpen ? "active" : ""}`}
-          onClick={() => {
-            setIsTaskQueueOpen((prev) => !prev);
-            setIsTimelineOpen(false);
-          }}
-          aria-label="Task Queue"
-          data-tooltip="Task Queue"
-        >
-          <LayoutList size={16} />
-        </button>
-        {settings.showTimelinePanel && (
-          <button
-            type="button"
-            className={`canvas-toolbar-btn ${isTimelineOpen ? "active" : ""}`}
-            onClick={() => {
-              setIsTimelineOpen((prev) => !prev);
-              setIsTaskQueueOpen(false);
-            }}
-            aria-label="Timeline"
-            data-tooltip="Timeline"
-          >
-            <GanttChart size={16} />
-          </button>
-        )}
-        <button
-          type="button"
-          className="canvas-toolbar-btn"
-          onClick={onUndo}
-          disabled={!canUndo}
-          aria-label="Undo"
-          data-tooltip="Undo (Ctrl+Z)"
-        >
-          <Undo2 size={16} />
-        </button>
-        <button
-          type="button"
-          className="canvas-toolbar-btn"
-          onClick={onRedo}
-          disabled={!canRedo}
-          aria-label="Redo"
-          data-tooltip="Redo (Ctrl+Shift+Z)"
-        >
-          <Redo2 size={16} />
-        </button>
-        <button
-          type="button"
-          className={`canvas-toolbar-btn canvas-lock-btn ${canvasLocked ? "active" : ""}`}
-          onClick={() => setCanvasLocked((v) => !v)}
-          aria-label={canvasLocked ? "Unlock canvas" : "Lock canvas"}
-          data-tooltip={canvasLocked ? "Unlock canvas" : "Lock canvas"}
-        >
-          {canvasLocked ? <Lock size={16} /> : <LockOpen size={16} />}
-        </button>
-        <button
-          type="button"
-          className={`canvas-toolbar-btn canvas-magnify-btn ${magnifyEnabled ? "active" : ""}`}
-          onClick={() => setMagnifyEnabled((v) => !v)}
-          aria-label={magnifyEnabled ? "Turn off magnifier" : "Turn on magnifier"}
-          data-tooltip={magnifyEnabled ? "Magnifier on — hover a task" : "Magnifier (or hold Alt)"}
-        >
-          <ZoomIn size={16} />
-        </button>
-        <button
-          type="button"
-          className="canvas-toolbar-btn"
-          onClick={fitToScreen}
-          aria-label="Fit to screen"
-          data-tooltip="Fit to screen"
-        >
-          <Maximize size={16} />
-        </button>
-        <button
-          type="button"
-          className="canvas-toolbar-btn"
-          onClick={resetZoom}
-          aria-label="Reset zoom to 100%"
-          data-tooltip="Reset zoom"
-        >
-          <Focus size={16} />
-        </button>
-      </div>
+      <CanvasActionBar
+        isTaskQueueOpen={isTaskQueueOpen}
+        isTimelineOpen={isTimelineOpen}
+        showTimelineToggle={settings.showTimelinePanel}
+        canvasLocked={canvasLocked}
+        magnifyEnabled={magnifyEnabled}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onToggleTaskQueue={() => {
+          setIsTaskQueueOpen((prev) => !prev);
+          setIsTimelineOpen(false);
+        }}
+        onToggleTimeline={() => {
+          setIsTimelineOpen((prev) => !prev);
+          setIsTaskQueueOpen(false);
+        }}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        onToggleLock={() => setCanvasLocked((v) => !v)}
+        onToggleMagnify={() => setMagnifyEnabled((v) => !v)}
+        onFitToScreen={fitToScreen}
+        onResetZoom={resetZoom}
+      />
       {settings.showPresentationBar && (
         <PresentationBar
           people={assignedPeople}

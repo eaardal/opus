@@ -23,7 +23,7 @@ interface PresentationBarProps {
 }
 
 /**
- * A row beneath the canvas toolbar listing people with assigned tasks. Selecting
+ * A row beneath the canvas action bar listing people with assigned tasks. Selecting
  * a person starts a presentation that steps the viewport through that person's
  * tasks in sequence order, one per click of the play button. A status filter
  * narrows the carousel to tasks in a chosen status.

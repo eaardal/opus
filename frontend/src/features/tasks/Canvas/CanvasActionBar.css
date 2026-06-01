@@ -1,0 +1,23 @@
+/* The icon-button cluster pinned to the top-right of the canvas. The shared
+   .canvas-toolbar-btn look (and its hover tooltip) lives in Canvas.css, since the
+   presentation bar reuses it.
+
+   z-index sits above the neighbouring presentation bar (z-index 10) and the
+   magnifier overlay (z-index 11) so the buttons' downward tooltips are never
+   covered by the bar rendered just below this one. */
+.canvas-action-bar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 12;
+  display: flex;
+  gap: 4px;
+}
+
+.canvas-lock-btn.active {
+  border: 3px solid orange;
+}
+
+.canvas-magnify-btn.active {
+  border: 3px solid #3aa6b9;
+}
