@@ -5,8 +5,9 @@ import { easeInOutCubic } from "../lib/easing";
 
 const DEFAULT_DURATION_MS = 450;
 
-function viewBoxEquals(a: ViewBox, b: ViewBox): boolean {
-  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+/** A stable string identity for a viewBox, used to recognise our own frames. */
+function viewBoxKey(vb: ViewBox): string {
+  return `${vb.x},${vb.y},${vb.width},${vb.height}`;
 }
 
 /**
@@ -31,14 +32,18 @@ export function useViewBoxAnimation(
   onChangeRef.current = onViewBoxChange;
 
   const frameRef = useRef<number | null>(null);
-  const lastEmittedRef = useRef<ViewBox | null>(null);
+  // Keys of every frame this run has emitted. The parent echoes each frame back
+  // through `viewBox`, and that echo (a post-paint re-render) lags behind the
+  // pre-paint rAF loop — so we recognise our own frames by membership rather than
+  // by matching only the latest, which the loop has usually moved past already.
+  const emittedKeysRef = useRef<Set<string>>(new Set());
 
   const stop = useCallback(() => {
     if (frameRef.current !== null) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
     }
-    lastEmittedRef.current = null;
+    emittedKeysRef.current.clear();
   }, []);
 
   const animateTo = useCallback(
@@ -50,13 +55,13 @@ export function useViewBoxAnimation(
       const step = (now: number) => {
         const t = durationMs <= 0 ? 1 : Math.min(1, (now - startTime) / durationMs);
         const frame = lerpViewBox(from, target, easeInOutCubic(t));
-        lastEmittedRef.current = frame;
+        emittedKeysRef.current.add(viewBoxKey(frame));
         onChangeRef.current(frame);
         if (t < 1) {
           frameRef.current = requestAnimationFrame(step);
         } else {
           frameRef.current = null;
-          lastEmittedRef.current = null;
+          emittedKeysRef.current.clear();
         }
       };
 
@@ -65,12 +70,13 @@ export function useViewBoxAnimation(
     [durationMs, stop],
   );
 
-  // If an external source moves the viewport mid-animation, the incoming
-  // viewBox no longer matches the frame we last emitted — yield to it.
+  // If an external source moves the viewport mid-animation, the incoming viewBox
+  // is a value this run never emitted — yield to it. Checking set membership (not
+  // equality with the last frame) stays correct even when the parent's echo trails
+  // the frame loop by several frames.
   useEffect(() => {
-    if (frameRef.current !== null && lastEmittedRef.current) {
-      if (!viewBoxEquals(viewBox, lastEmittedRef.current)) stop();
-    }
+    if (frameRef.current === null || emittedKeysRef.current.size === 0) return;
+    if (!emittedKeysRef.current.has(viewBoxKey(viewBox))) stop();
   }, [viewBox, stop]);
 
   // Cancel any in-flight animation on unmount.

@@ -58,6 +58,29 @@ describe("useViewBoxAnimation", () => {
     expect(frameQueue).toHaveLength(0);
   });
 
+  test("keeps animating to the target when the parent echo lags behind the frame loop", () => {
+    const emitted: ViewBox[] = [];
+    const { result, rerender } = renderHook(
+      ({ vb }) => useViewBoxAnimation(vb, (next) => emitted.push(next), 100),
+      { initialProps: { vb: START } },
+    );
+
+    act(() => result.current(TARGET));
+    // The rAF loop runs ahead of the parent: two frames emit before the parent
+    // re-renders with the first of them (a post-paint echo trailing the loop).
+    act(() => flushFrame(1000)); // frame 1 (t=0)
+    act(() => flushFrame(1050)); // frame 2 (t=0.5)
+    const emittedAfterTwoFrames = emitted.length;
+
+    // Catching up only to the FIRST emitted frame must NOT be read as an external
+    // change — it is still one of ours, just lagging.
+    rerender({ vb: emitted[0] });
+
+    act(() => flushFrame(1100)); // frame 3 (t=1) → must still reach the target
+    expect(emitted[emitted.length - 1]).toEqual(TARGET);
+    expect(emitted.length).toBeGreaterThan(emittedAfterTwoFrames);
+  });
+
   test("yields when an external viewBox change interrupts the animation", () => {
     const emitted: ViewBox[] = [];
     const { result, rerender } = renderHook(
