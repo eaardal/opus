@@ -42,20 +42,6 @@
   user-select: none;
 }
 
-.node-number-badge {
-  fill: var(--node-badge-fill);
-  stroke: var(--node-badge-stroke);
-  stroke-width: 1;
-}
-
-.node-number {
-  fill: var(--text-primary);
-  font-size: 10px;
-  font-weight: 600;
-  pointer-events: none;
-  user-select: none;
-}
-
 .tooltip rect {
   fill: var(--tooltip-fill);
   stroke: var(--tooltip-stroke);

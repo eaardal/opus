@@ -618,7 +618,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     | {
         kind: "task";
         task: Task;
-        index: number;
         groupTitle: string | null;
         left: number;
         top: number;
@@ -640,7 +639,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       magnifier = {
         kind: "task",
         task: hoveredTask,
-        index: tasks.indexOf(hoveredTask),
         groupTitle: findOwningGroup(hoveredTask, groups)?.title ?? null,
         ...(magnifierCursor ?? toScreen(hoveredTask.x, hoveredTask.y)),
       };
@@ -734,7 +732,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       {magnifier?.kind === "task" && (
         <MagnifiedTaskOverlay
           task={magnifier.task}
-          index={magnifier.index}
           categories={categories}
           statuses={statuses}
           assignedPersons={
@@ -830,7 +827,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             <TaskNode
               key={task.id}
               task={task}
-              index={tasks.indexOf(task)}
               categories={categories}
               statuses={statuses}
               isDragging={draggingNode === task.id}
@@ -884,7 +880,6 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             <TaskNode
               key={task.id}
               task={task}
-              index={tasks.indexOf(task)}
               categories={categories}
               statuses={statuses}
               isDragging={draggingNode === task.id}

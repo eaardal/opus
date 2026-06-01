@@ -18,8 +18,6 @@ export const CANVAS_CSS_VAR_NAMES: readonly string[] = [
   "--text-secondary",
   "--node-fill",
   "--node-stroke",
-  "--node-badge-fill",
-  "--node-badge-stroke",
   "--tooltip-fill",
   "--tooltip-stroke",
   "--connector-color",
@@ -61,8 +59,6 @@ const EXPORT_STYLE_RULES = `
   .node.selected { stroke: var(--selection-stroke); stroke-width: 3; }
   .node-text { fill: var(--text-primary); font-size: 10px; font-weight: 500; }
   .node-emoji { font-size: 18px; }
-  .node-number-badge { fill: var(--node-badge-fill); stroke: var(--node-badge-stroke); stroke-width: 1; }
-  .node-number { fill: var(--text-primary); font-size: 10px; font-weight: 600; }
   .tooltip rect { fill: var(--tooltip-fill); stroke: var(--tooltip-stroke); stroke-width: 1; }
   .tooltip text { fill: var(--text-primary); font-size: 12px; }
   .group-rect { fill: var(--group-fill); stroke: var(--group-stroke); stroke-width: 1.5; stroke-dasharray: 6, 3; }

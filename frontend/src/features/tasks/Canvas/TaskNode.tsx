@@ -8,7 +8,6 @@ import { avatarColor } from "../../../lib/avatar";
 
 interface TaskNodeProps {
   task: Task;
-  index: number;
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   isDragging: boolean;
@@ -32,7 +31,6 @@ interface TaskNodeProps {
 
 export function TaskNode({
   task,
-  index,
   categories,
   statuses,
   isDragging,
@@ -182,22 +180,6 @@ export function TaskNode({
           onContextMenu={onContextMenu}
         />
       )}
-      <circle
-        cx="0"
-        cy={shape === "diamond" || shape === "triangle" ? -30 : -25}
-        r="10"
-        className="node-number-badge"
-        style={task.category ? { fill: categories[task.category]?.color } : undefined}
-      />
-      <text
-        x="0"
-        y={shape === "diamond" || shape === "triangle" ? -30 : -25}
-        textAnchor="middle"
-        dy="0.35em"
-        className="node-number"
-      >
-        {index + 1}
-      </text>
       <text
         textAnchor="middle"
         dy="0.35em"

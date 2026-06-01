@@ -25,7 +25,6 @@ interface Box {
 
 interface MagnifiedTaskOverlayProps {
   task: Task;
-  index: number;
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   assignedPersons: Person[];
@@ -50,7 +49,6 @@ const noop = () => {};
  */
 export function MagnifiedTaskOverlay({
   task,
-  index,
   categories,
   statuses,
   assignedPersons,
@@ -132,7 +130,6 @@ export function MagnifiedTaskOverlay({
           )}
           <TaskNode
             task={task}
-            index={index}
             categories={categories}
             statuses={statuses}
             isDragging={false}
