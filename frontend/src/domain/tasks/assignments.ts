@@ -36,3 +36,21 @@ export function tasksAssignedToPerson(
       (status === undefined || task.status === status),
   );
 }
+
+/**
+ * The number of assigned tasks for each of the given people, keyed by person id.
+ * Honours the same status filter as `tasksAssignedToPerson`: when `status` is
+ * given only tasks in that status are counted; when omitted, every status counts.
+ * Every given person gets an entry — those with no matching tasks map to 0.
+ */
+export function taskCountsByPerson(
+  tasks: Task[],
+  people: Person[],
+  status?: TaskStatus,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const person of people) {
+    counts[person.id] = tasksAssignedToPerson(tasks, person.id, status).length;
+  }
+  return counts;
+}

@@ -4,7 +4,7 @@
   right: 12px;
   z-index: 10;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   max-width: min(70vw, 640px);
   padding: 4px 6px;
@@ -14,45 +14,115 @@
   box-shadow: 0 2px 8px var(--menu-shadow);
 }
 
-.canvas-presentation-bar .canvas-toolbar-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
+/* Collapsed: only the toggle remains, parked against the screen edge. */
+.canvas-presentation-bar.collapsed {
+  gap: 0;
+  padding: 4px;
 }
 
-.canvas-presentation-count {
-  font-size: 12px;
+/* "Status" caption stacked above the status filter dropdown. */
+.canvas-presentation-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.canvas-presentation-section-label {
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-  min-width: 28px;
-  text-align: center;
 }
 
 .canvas-presentation-people {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 8px;
   min-width: 0;
   overflow-x: auto;
 }
 
+/* One person: avatar on top, Play button below it, progress under that. */
 .canvas-presentation-person {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
   flex-shrink: 0;
+}
+
+.canvas-presentation-avatar {
+  display: flex;
   padding: 2px;
   border: 2px solid transparent;
   border-radius: 999px;
-  background: none;
-  cursor: pointer;
   transition: border-color 0.15s;
 }
 
-.canvas-presentation-person:hover {
-  border-color: var(--border-secondary);
+.canvas-presentation-person.active .canvas-presentation-avatar {
+  border-color: var(--accent-primary);
 }
 
-.canvas-presentation-person.selected {
-  border-color: var(--accent-primary);
+.canvas-presentation-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--menu-trigger-bg);
+  color: var(--menu-trigger-color);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.canvas-presentation-play:not(:disabled):hover {
+  background: var(--menu-trigger-hover);
+  color: var(--text-primary);
+}
+
+/* No tasks for the current filter — nothing to present. */
+.canvas-presentation-play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Always shown: a person's task total, or "position/total" while presenting.
+   Fixed height keeps every cell's baseline aligned. */
+.canvas-presentation-count {
+  height: 13px;
+  line-height: 13px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* Full-height tab on the right; the only thing visible while collapsed. */
+.canvas-presentation-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--menu-trigger-bg);
+  color: var(--menu-trigger-color);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.canvas-presentation-toggle:hover {
+  background: var(--menu-trigger-hover);
+  color: var(--text-primary);
 }

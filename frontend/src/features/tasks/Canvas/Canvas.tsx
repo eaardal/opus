@@ -19,7 +19,11 @@ import type { Person } from "../../../domain/teams/types";
 import { PresentationBar } from "./PresentationBar";
 import { CanvasActionBar } from "./CanvasActionBar";
 import type { StatusFilter } from "./StatusFilterSelect";
-import { peopleWithAssignedTasks, tasksAssignedToPerson } from "../../../domain/tasks/assignments";
+import {
+  peopleWithAssignedTasks,
+  taskCountsByPerson,
+  tasksAssignedToPerson,
+} from "../../../domain/tasks/assignments";
 import { TaskContextMenu } from "../TaskContextMenu";
 import { TaskQueuePanel } from "../TaskQueuePanel/TaskQueuePanel";
 import { TimelinePanel } from "../TimelinePanel/TimelinePanel";
@@ -515,6 +519,17 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const [presentationStatus, setPresentationStatus] = useState<StatusFilter>("in_progress");
 
   const assignedPeople = useMemo(() => peopleWithAssignedTasks(people, tasks), [people, tasks]);
+  // Each assigned person's task count in the current status filter, so the bar
+  // can show everyone's total all the time (not just the person being presented).
+  const presentationTaskCounts = useMemo(
+    () =>
+      taskCountsByPerson(
+        tasks,
+        assignedPeople,
+        presentationStatus === "all" ? undefined : presentationStatus,
+      ),
+    [tasks, assignedPeople, presentationStatus],
+  );
   const presentationTasks = useMemo(
     () =>
       presentationPersonId
@@ -696,7 +711,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           selectedPersonId={presentationPersonId}
           statusFilter={presentationStatus}
           currentIndex={presentationIndex}
-          taskCount={presentationTasks.length}
+          taskCountsByPerson={presentationTaskCounts}
           onSelectPerson={handleSelectPresentationPerson}
           onSelectStatus={handleSelectPresentationStatus}
           onAdvance={handleAdvancePresentation}

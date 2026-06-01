@@ -1,4 +1,5 @@
-import { Play } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Play } from "lucide-react";
+import { useState } from "react";
 import "./PresentationBar.css";
 import type { TaskStatus } from "../../../domain/tasks/types";
 import type { Person } from "../../../domain/teams/types";
@@ -15,18 +16,19 @@ interface PresentationBarProps {
   statusFilter: StatusFilter;
   /** Zero-based index of the task currently focused for the selected person. */
   currentIndex: number;
-  /** Number of tasks in the carousel (the selected person, in the chosen status). */
-  taskCount: number;
+  /** Each person's task count in the current status filter, keyed by person id. */
+  taskCountsByPerson: Record<string, number>;
   onSelectPerson: (personId: string) => void;
   onSelectStatus: (filter: StatusFilter) => void;
   onAdvance: () => void;
 }
 
 /**
- * A row beneath the canvas action bar listing people with assigned tasks. Selecting
- * a person starts a presentation that steps the viewport through that person's
- * tasks in sequence order, one per click of the play button. A status filter
- * narrows the carousel to tasks in a chosen status.
+ * A row beneath the canvas action bar listing people with assigned tasks. Each
+ * person has a Play button under their avatar: the first click starts a
+ * presentation that focuses the viewport on that person's first task, and each
+ * further click steps to their next task (wrapping). A status filter narrows the
+ * carousel, and a toggle on the right collapses the bar toward the screen edge.
  */
 export function PresentationBar({
   people,
@@ -34,49 +36,72 @@ export function PresentationBar({
   selectedPersonId,
   statusFilter,
   currentIndex,
-  taskCount,
+  taskCountsByPerson,
   onSelectPerson,
   onSelectStatus,
   onAdvance,
 }: PresentationBarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   if (people.length === 0) return null;
 
-  const hasSelection = selectedPersonId !== null;
-
   return (
-    <div className="canvas-presentation-bar">
+    <div className={`canvas-presentation-bar ${collapsed ? "collapsed" : ""}`}>
+      {!collapsed && (
+        <>
+          <div className="canvas-presentation-status">
+            <span className="canvas-presentation-section-label">Status</span>
+            <StatusFilterSelect
+              statuses={statuses}
+              value={statusFilter}
+              onChange={onSelectStatus}
+            />
+          </div>
+          <div className="canvas-presentation-people">
+            {people.map((person) => {
+              const isActive = person.id === selectedPersonId;
+              const name = person.name || "(unnamed)";
+              const total = taskCountsByPerson[person.id] ?? 0;
+              // Always show the person's total; while presenting, prefix the
+              // position within it (e.g. "2/3" vs "3").
+              const count = isActive && total > 0 ? `${currentIndex + 1}/${total}` : `${total}`;
+              return (
+                <div
+                  key={person.id}
+                  className={`canvas-presentation-person ${isActive ? "active" : ""}`}
+                  title={name}
+                >
+                  <span className="canvas-presentation-avatar">
+                    <PersonAvatar person={person} size={28} />
+                  </span>
+                  <button
+                    type="button"
+                    className="canvas-presentation-play"
+                    onClick={() => (isActive ? onAdvance() : onSelectPerson(person.id))}
+                    disabled={total === 0}
+                    aria-label={
+                      isActive ? `Advance ${name}'s presentation` : `Present ${name}'s tasks`
+                    }
+                  >
+                    <Play size={14} />
+                  </button>
+                  <span className="canvas-presentation-count">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
       <button
         type="button"
-        className="canvas-toolbar-btn"
-        onClick={onAdvance}
-        disabled={!hasSelection || taskCount === 0}
-        aria-label="Go to the selected person's next task"
-        data-tooltip="Present tasks"
+        className="canvas-presentation-toggle"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-label={collapsed ? "Expand presentation bar" : "Collapse presentation bar"}
+        aria-expanded={!collapsed}
+        title={collapsed ? "Expand" : "Collapse"}
       >
-        <Play size={16} />
+        {collapsed ? <ChevronsLeft size={16} /> : <ChevronsRight size={16} />}
       </button>
-      {hasSelection && (
-        <span className="canvas-presentation-count">
-          {taskCount === 0 ? 0 : currentIndex + 1}/{taskCount}
-        </span>
-      )}
-      <StatusFilterSelect statuses={statuses} value={statusFilter} onChange={onSelectStatus} />
-      <div className="canvas-presentation-people">
-        {people.map((person) => (
-          <button
-            key={person.id}
-            type="button"
-            className={`canvas-presentation-person ${
-              person.id === selectedPersonId ? "selected" : ""
-            }`}
-            onClick={() => onSelectPerson(person.id)}
-            aria-pressed={person.id === selectedPersonId}
-            title={person.name || "(unnamed)"}
-          >
-            <PersonAvatar person={person} size={28} />
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

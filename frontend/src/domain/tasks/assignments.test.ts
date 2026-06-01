@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Person } from "../teams/types";
-import { peopleWithAssignedTasks, tasksAssignedToPerson } from "./assignments";
+import { peopleWithAssignedTasks, taskCountsByPerson, tasksAssignedToPerson } from "./assignments";
 import type { Task } from "./types";
 
 const person = (id: string, name = id): Person => ({ id, name, picture: null });
@@ -80,5 +80,27 @@ describe("tasksAssignedToPerson", () => {
     ];
 
     expect(tasksAssignedToPerson(tasks, "alice").map((t) => t.id)).toEqual(["t1", "t2"]);
+  });
+});
+
+describe("taskCountsByPerson", () => {
+  test("counts each person's assigned tasks, mapping people with none to 0", () => {
+    const tasks = [task("t1", ["alice"]), task("t2", ["alice", "bob"])];
+
+    const result = taskCountsByPerson(tasks, [ALICE, BOB, CARLA]);
+
+    expect(result).toEqual({ alice: 2, bob: 1, carla: 0 });
+  });
+
+  test("counts only tasks in the given status when a status is provided", () => {
+    const tasks: Task[] = [
+      { id: "t1", text: "t1", x: 0, y: 0, status: "in_progress", assignedPersonIds: ["alice"] },
+      { id: "t2", text: "t2", x: 0, y: 0, status: "completed", assignedPersonIds: ["alice"] },
+      { id: "t3", text: "t3", x: 0, y: 0, status: "in_progress", assignedPersonIds: ["bob"] },
+    ];
+
+    const result = taskCountsByPerson(tasks, [ALICE, BOB], "in_progress");
+
+    expect(result).toEqual({ alice: 1, bob: 1 });
   });
 });
