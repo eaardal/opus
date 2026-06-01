@@ -31,7 +31,11 @@ interface MagnifiedTaskOverlayProps {
   assignedPersons: Person[];
   /** Title of the group this task belongs to, shown above the node. */
   groupTitle: string | null;
-  /** Task centre in pixels, relative to the canvas container. */
+  /**
+   * The anchor point in pixels, relative to the canvas container — the trailing
+   * cursor while magnifying, or the task centre as a fallback. The panel floats
+   * above and to the right of this point (see `.magnifier-overlay` in CSS).
+   */
   left: number;
   top: number;
 }
@@ -88,11 +92,6 @@ export function MagnifiedTaskOverlay({
     );
   });
 
-  // The node's centre (task.x, task.y) as a fraction of the fitted box, so the
-  // panel can be anchored to keep the magnified node over the real one.
-  const fracX = box ? (task.x - box.x) / box.width : 0.5;
-  const fracY = box ? (task.y - box.y) / box.height : 0.3;
-
   // SVG text does not wrap, so split the title ourselves and stack the lines.
   const groupLabelLines = groupTitle ? wrapText(groupTitle, GROUP_LABEL_MAX_CHARS_PER_LINE) : [];
 
@@ -102,7 +101,6 @@ export function MagnifiedTaskOverlay({
       style={{
         left,
         top,
-        transform: `translate(${-fracX * 100}%, ${-fracY * 100}%)`,
         visibility: box ? "visible" : "hidden",
       }}
     >

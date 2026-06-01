@@ -1,4 +1,6 @@
 .magnifier-overlay {
+  /* Gap between the cursor and the panel's nearest corner. */
+  --magnifier-cursor-gap: 16px;
   position: absolute;
   z-index: 11;
   pointer-events: none;
@@ -8,6 +10,8 @@
     0 8px 28px rgba(0, 0, 0, 0.35),
     0 0 0 1px var(--menu-border);
   overflow: hidden;
+  /* left/top is the anchor (cursor); float the panel above and to the right. */
+  transform: translate(var(--magnifier-cursor-gap), calc(-100% - var(--magnifier-cursor-gap)));
 }
 
 .magnifier-svg {

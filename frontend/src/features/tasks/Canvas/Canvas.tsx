@@ -214,6 +214,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   // toggle makes it always-on; otherwise it activates while Alt/Option is held.
   const [magnifyEnabled, setMagnifyEnabled] = useState(false);
   const [altHeld, setAltHeld] = useState(false);
+  // While magnifying, the cursor position in canvas-container pixels, so the
+  // magnifier panel can trail the pointer instead of pinning to the element.
+  const [magnifierCursor, setMagnifierCursor] = useState<{ left: number; top: number } | null>(
+    null,
+  );
   const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
@@ -427,6 +432,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     [getSvgCoords],
   );
 
+  // The magnifier is on while the toolbar toggle is set or Alt/Option is held,
+  // but never during a drag, a connection drag, or panning.
+  const magnifyActive =
+    (magnifyEnabled || altHeld) && draggingNode === null && connecting === null && !panMode;
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (tryStartPan(e)) return;
     onMouseDown(e, svgRef.current);
@@ -434,6 +444,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (tryUpdatePan(e)) return;
+    if (magnifyActive && svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect();
+      setMagnifierCursor({ left: e.clientX - rect.left, top: e.clientY - rect.top });
+    }
     onMouseMove(e, getSvgCoords(e));
   };
 
@@ -580,8 +594,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }, [presentationPersonId, assignedPeople, presentationTasks, presentationIndex]);
 
   // ── Magnifier: the hovered task or group, enlarged in a read-only overlay ────
-  const magnifyActive =
-    (magnifyEnabled || altHeld) && draggingNode === null && connecting === null && !panMode;
+  // Drop the trailed cursor whenever magnifying stops, so the next session starts
+  // pinned to the element centre until the pointer moves again.
+  useEffect(() => {
+    if (!magnifyActive) setMagnifierCursor(null);
+  }, [magnifyActive]);
 
   let magnifier:
     | {
@@ -611,7 +628,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         task: hoveredTask,
         index: tasks.indexOf(hoveredTask),
         groupTitle: findOwningGroup(hoveredTask, groups)?.title ?? null,
-        ...toScreen(hoveredTask.x, hoveredTask.y),
+        ...(magnifierCursor ?? toScreen(hoveredTask.x, hoveredTask.y)),
       };
     } else if (hoveredGroupId !== null && hoveredGroupId !== editingGroupId) {
       const group = groups.find((g) => g.id === hoveredGroupId);
@@ -619,7 +636,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         magnifier = {
           kind: "group",
           title: group.title,
-          ...toScreen(group.x + group.width / 2, group.y + group.height / 2),
+          ...(magnifierCursor ?? toScreen(group.x + group.width / 2, group.y + group.height / 2)),
         };
       }
     }
