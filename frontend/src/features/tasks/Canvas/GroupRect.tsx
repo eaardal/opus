@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import "./GroupRect.css";
 import type { Group, Task, TaskStatus } from "../../../domain/tasks/types";
 import type { GroupBoxConfig, StatusConfig } from "../theme";
+import { useAnimatedNumber } from "../../../hooks/useAnimatedNumber";
 import { GroupProgressBar } from "./GroupProgressBar";
+import { GroupProgressNumber } from "./GroupProgressNumber";
 
 const HANDLE_SIZE = 12;
 const EDGE_THICKNESS = 8;
@@ -94,7 +96,16 @@ export function GroupRect({
     (t) => t.status === "completed" || t.status === "archived",
   );
   const inProgressTasks = containedTasks.filter((t) => t.status === "in_progress");
-  const allDone = containedTasks.length > 0 && doneTasks.length === containedTasks.length;
+  const taskCount = containedTasks.length;
+  const allDone = taskCount > 0 && doneTasks.length === taskCount;
+
+  // Animate the progress so the bar glides and the giant number can count along
+  // with it. Lifted here (rather than inside the bar) so the bar and the number
+  // share one animation source and stay in lockstep.
+  const donePct = taskCount > 0 ? doneTasks.length / taskCount : 0;
+  const inProgressPct = taskCount > 0 ? inProgressTasks.length / taskCount : 0;
+  const done = useAnimatedNumber(donePct);
+  const inProgressEnd = useAnimatedNumber(donePct + inProgressPct);
 
   const [editValue, setEditValue] = useState(group.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -272,10 +283,11 @@ export function GroupRect({
           {group.title || "Untitled Group"}
         </text>
       )}
-      {containedTasks.length > 0 && (
+      {taskCount > 0 && (
         <GroupProgressBar
-          donePct={doneTasks.length / containedTasks.length}
-          inProgressPct={inProgressTasks.length / containedTasks.length}
+          doneValue={done.value}
+          inProgressValue={inProgressEnd.value}
+          doneAnimating={done.animating}
           barWidth={group.width - PROGRESS_BAR_MARGIN * 2}
           x={PROGRESS_BAR_MARGIN}
           y={PROGRESS_BAR_Y}
@@ -321,6 +333,15 @@ export function GroupRect({
         <circle cx="9" cy="9" r="4" className="group-zoom-btn-icon" />
         <line x1="12" y1="12" x2="16" y2="16" className="group-zoom-btn-icon" />
       </g>
+
+      {taskCount > 0 && (
+        <GroupProgressNumber
+          value={done.value}
+          animating={done.animating}
+          groupWidth={group.width}
+          groupHeight={group.height}
+        />
+      )}
 
       {/* Edge handles */}
       <rect

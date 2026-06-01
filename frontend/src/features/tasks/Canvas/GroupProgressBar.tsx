@@ -1,11 +1,12 @@
 import "./GroupProgressBar.css";
-import { useAnimatedNumber } from "../../../hooks/useAnimatedNumber";
 
 interface GroupProgressBarProps {
-  /** Fraction (0..1) of the group's tasks that are done. */
-  donePct: number;
-  /** Fraction (0..1) of the group's tasks that are in progress. */
-  inProgressPct: number;
+  /** Animated completed fraction (0..1). */
+  doneValue: number;
+  /** Animated combined done + in-progress fraction (0..1) — the in-progress edge. */
+  inProgressValue: number;
+  /** Whether the completed edge is animating; drives the lead bulb's visibility. */
+  doneAnimating: boolean;
   /** Inner width of the bar in canvas units. */
   barWidth: number;
   x: number;
@@ -22,14 +23,16 @@ interface GroupProgressBarProps {
 const BULB_RADIUS = 4;
 
 /**
- * The per-group progress bar. The completed and in-progress fills animate smoothly
- * whenever the group's task statuses change, and a glowing "lead bulb" rides the
- * completed edge while it moves — in either direction, so a regression (a task
- * going from done back to in progress) is just as visible as progress.
+ * The per-group progress bar (completed + in-progress fills) with a glowing "lead
+ * bulb" that rides the completed edge while it moves — in either direction, so a
+ * regression (a task going from done back to in progress) is as visible as
+ * progress. Presentational: the parent owns the animation and feeds the animated
+ * values, so the bar and the big progress number stay in lockstep.
  */
 export function GroupProgressBar({
-  donePct,
-  inProgressPct,
+  doneValue,
+  inProgressValue,
+  doneAnimating,
   barWidth,
   x,
   y,
@@ -37,11 +40,8 @@ export function GroupProgressBar({
   completedFill,
   inProgressFill,
 }: GroupProgressBarProps) {
-  const done = useAnimatedNumber(donePct);
-  const inProgressEnd = useAnimatedNumber(donePct + inProgressPct);
-
-  const doneWidth = barWidth * done.value;
-  const inProgressWidth = barWidth * inProgressEnd.value;
+  const doneWidth = barWidth * doneValue;
+  const inProgressWidth = barWidth * inProgressValue;
 
   return (
     <g>
@@ -73,7 +73,7 @@ export function GroupProgressBar({
         cx={x + doneWidth}
         cy={y + height / 2}
         r={BULB_RADIUS}
-        style={{ fill: completedFill, opacity: done.animating ? 1 : 0 }}
+        style={{ fill: completedFill, opacity: doneAnimating ? 1 : 0 }}
       />
     </g>
   );

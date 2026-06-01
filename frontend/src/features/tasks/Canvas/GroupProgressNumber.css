@@ -1,0 +1,11 @@
+/* Giant faint progress number laid over the group during the bar animation.
+   pointer-events: none so it never blocks the group, its buttons, or handles;
+   opacity is toggled inline and eased so it fades in and out. */
+.group-progress-number {
+  fill: var(--text-primary);
+  font-weight: 700;
+  pointer-events: none;
+  /* Duration is set inline (fast in, slow out); keep the rest here. */
+  transition-property: opacity;
+  transition-timing-function: ease-out;
+}
