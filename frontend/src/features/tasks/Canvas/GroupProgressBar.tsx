@@ -1,6 +1,9 @@
+import type { Ref } from "react";
 import "./GroupProgressBar.css";
 
 interface GroupProgressBarProps {
+  /** Ref to the lead bulb, so its on-screen position can be read (for confetti). */
+  bulbRef?: Ref<SVGCircleElement>;
   /** Animated completed fraction (0..1). */
   doneValue: number;
   /** Animated combined done + in-progress fraction (0..1) — the in-progress edge. */
@@ -30,6 +33,7 @@ const BULB_RADIUS = 4;
  * values, so the bar and the big progress number stay in lockstep.
  */
 export function GroupProgressBar({
+  bulbRef,
   doneValue,
   inProgressValue,
   doneAnimating,
@@ -69,6 +73,7 @@ export function GroupProgressBar({
         />
       )}
       <circle
+        ref={bulbRef}
         className="group-progress-bulb"
         cx={x + doneWidth}
         cy={y + height / 2}

@@ -3,6 +3,7 @@ import "./GroupRect.css";
 import type { Group, Task, TaskStatus } from "../../../domain/tasks/types";
 import type { GroupBoxConfig, StatusConfig } from "../theme";
 import { useAnimatedNumber } from "../../../hooks/useAnimatedNumber";
+import { burstConfettiAt } from "./confetti";
 import { GroupProgressBar } from "./GroupProgressBar";
 import { GroupProgressNumber } from "./GroupProgressNumber";
 
@@ -106,6 +107,33 @@ export function GroupRect({
   const inProgressPct = taskCount > 0 ? inProgressTasks.length / taskCount : 0;
   const done = useAnimatedNumber(donePct);
   const inProgressEnd = useAnimatedNumber(donePct + inProgressPct);
+
+  // Celebrate when the bar fills to 100%: fire confetti from the bulb at the tip
+  // the moment the fill animation settles on completion. Only on a genuine
+  // transition to 100% (armed when it crosses, disarmed if it drops back), so it
+  // never fires for groups that are already complete on load.
+  const bulbRef = useRef<SVGCircleElement>(null);
+  const prevDonePctRef = useRef(donePct);
+  const wasAnimatingRef = useRef(done.animating);
+  const completionPendingRef = useRef(false);
+
+  useEffect(() => {
+    if (prevDonePctRef.current < 1 && donePct >= 1) completionPendingRef.current = true;
+    else if (donePct < 1) completionPendingRef.current = false;
+    prevDonePctRef.current = donePct;
+
+    const animationEnded = wasAnimatingRef.current && !done.animating;
+    wasAnimatingRef.current = done.animating;
+
+    if (animationEnded && completionPendingRef.current && donePct >= 1) {
+      completionPendingRef.current = false;
+      const el = bulbRef.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        burstConfettiAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
+    }
+  }, [donePct, done.animating]);
 
   const [editValue, setEditValue] = useState(group.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -285,6 +313,7 @@ export function GroupRect({
       )}
       {taskCount > 0 && (
         <GroupProgressBar
+          bulbRef={bulbRef}
           doneValue={done.value}
           inProgressValue={inProgressEnd.value}
           doneAnimating={done.animating}
