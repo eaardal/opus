@@ -86,14 +86,6 @@ g:has(.group-rect.locked) > .group-lock-btn {
   stroke-linecap: round;
 }
 
-.group-progress-track {
-  fill: var(--bg-tertiary);
-}
-
-.group-progress-fill {
-  transition: width 0.3s;
-}
-
 .group-resize-handle {
   fill: transparent;
   cursor: nwse-resize;

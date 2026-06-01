@@ -1,0 +1,12 @@
+.group-progress-track {
+  fill: var(--bg-tertiary);
+}
+
+/* The lead bulb fades in while the completed edge is moving and fades back out
+   once it settles; its position is driven per-frame from JS, so it tracks the
+   edge exactly. The glow + bulge draw attention to the change. */
+.group-progress-bulb {
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px var(--highlight-border));
+  transition: opacity 0.2s ease-out;
+}

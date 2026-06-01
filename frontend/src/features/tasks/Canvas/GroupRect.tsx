@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import "./GroupRect.css";
 import type { Group, Task, TaskStatus } from "../../../domain/tasks/types";
 import type { GroupBoxConfig, StatusConfig } from "../theme";
+import { GroupProgressBar } from "./GroupProgressBar";
 
 const HANDLE_SIZE = 12;
 const EDGE_THICKNESS = 8;
@@ -271,46 +272,18 @@ export function GroupRect({
           {group.title || "Untitled Group"}
         </text>
       )}
-      {containedTasks.length > 0 &&
-        (() => {
-          const donePct = doneTasks.length / containedTasks.length;
-          const inProgressPct = inProgressTasks.length / containedTasks.length;
-          const barWidth = group.width - PROGRESS_BAR_MARGIN * 2;
-          return (
-            <g>
-              <rect
-                className="group-progress-track"
-                x={PROGRESS_BAR_MARGIN}
-                y={PROGRESS_BAR_Y}
-                width={barWidth}
-                height={PROGRESS_BAR_HEIGHT}
-                rx="2"
-              />
-              {inProgressPct > 0 && (
-                <rect
-                  className="group-progress-in-progress"
-                  x={PROGRESS_BAR_MARGIN}
-                  y={PROGRESS_BAR_Y}
-                  width={barWidth * (donePct + inProgressPct)}
-                  height={PROGRESS_BAR_HEIGHT}
-                  rx="2"
-                  style={{ fill: statuses.in_progress.color }}
-                />
-              )}
-              {donePct > 0 && (
-                <rect
-                  className="group-progress-fill"
-                  x={PROGRESS_BAR_MARGIN}
-                  y={PROGRESS_BAR_Y}
-                  width={barWidth * donePct}
-                  height={PROGRESS_BAR_HEIGHT}
-                  rx="2"
-                  style={{ fill: groupBox.progressCompletedFill }}
-                />
-              )}
-            </g>
-          );
-        })()}
+      {containedTasks.length > 0 && (
+        <GroupProgressBar
+          donePct={doneTasks.length / containedTasks.length}
+          inProgressPct={inProgressTasks.length / containedTasks.length}
+          barWidth={group.width - PROGRESS_BAR_MARGIN * 2}
+          x={PROGRESS_BAR_MARGIN}
+          y={PROGRESS_BAR_Y}
+          height={PROGRESS_BAR_HEIGHT}
+          completedFill={groupBox.progressCompletedFill}
+          inProgressFill={statuses.in_progress.color}
+        />
+      )}
       <g
         className="group-lock-btn"
         transform={`translate(${group.width - ZOOM_BTN_SIZE - ZOOM_BTN_MARGIN}, ${ZOOM_BTN_MARGIN})`}
