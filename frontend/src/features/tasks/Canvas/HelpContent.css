@@ -1,0 +1,17 @@
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.help-table td {
+  padding-block: 5px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.help-key {
+  color: var(--text-primary);
+  font-weight: 500;
+  padding-right: 16px;
+  white-space: nowrap;
+}

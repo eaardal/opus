@@ -18,6 +18,7 @@ import { GroupRect } from "./GroupRect";
 import type { Person } from "../../../domain/teams/types";
 import { PresentationBar } from "./PresentationBar";
 import { CanvasActionBar } from "./CanvasActionBar";
+import { HelpContent } from "./HelpContent";
 import type { StatusFilter } from "./StatusFilterSelect";
 import {
   peopleWithAssignedTasks,
@@ -945,7 +946,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         {showHelpPanel && (
           <div className="help-panel">
             <div className="help-panel-header">
-              <span>Keyboard Shortcuts</span>
+              <span>How to Use</span>
               <div className="help-panel-header-actions">
                 <button
                   className={`help-pin-btn ${isHelpPanelPinned ? "active" : ""}`}
@@ -959,85 +960,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 </button>
               </div>
             </div>
-            <table className="help-table">
-              <tbody>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + Z</td>
-                  <td>Undo</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + Shift + Z</td>
-                  <td>Redo</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + Enter</td>
-                  <td>Add new task</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Shift + drag</td>
-                  <td>Connect nodes</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Shift + click connection</td>
-                  <td>Remove connection</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Space + drag</td>
-                  <td>Pan canvas</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Middle mouse + drag</td>
-                  <td>Pan canvas</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Two-finger scroll / scroll wheel</td>
-                  <td>Pan canvas</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Ctrl + scroll / pinch</td>
-                  <td>Zoom in/out</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Drag on canvas</td>
-                  <td>Select — node/group must be fully inside the selection area</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + A</td>
-                  <td>Select all elements</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + C</td>
-                  <td>Copy selected elements</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + V</td>
-                  <td>Paste elements (works across projects and workspaces)</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + D</td>
-                  <td>Duplicate selected elements</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Escape</td>
-                  <td>Clear selection</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Double-click group title</td>
-                  <td>Edit group name</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Double-click node tooltip</td>
-                  <td>Rename node</td>
-                </tr>
-              </tbody>
-            </table>
+            <HelpContent categories={categories} statuses={statuses} />
           </div>
         )}
         <button
           type="button"
           className="help-panel-btn"
           onClick={() => setShowHelpPanel((v) => !v)}
-          aria-label="Keyboard shortcuts"
+          aria-label="How to use"
         >
           <HelpCircle size={18} />
         </button>
@@ -1046,83 +976,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         <div className="help-overlay" onClick={() => setShowHelp(false)}>
           <div className="help-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="help-dialog-header">
-              <h3>Keyboard Shortcuts</h3>
+              <h3>How to Use</h3>
               <button className="help-close-btn" onClick={() => setShowHelp(false)}>
                 ×
               </button>
             </div>
-            <table className="help-table">
-              <tbody>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + Z</td>
-                  <td>Undo</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + Shift + Z</td>
-                  <td>Redo</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + Enter</td>
-                  <td>Add new task</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Shift + drag</td>
-                  <td>Connect nodes</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Shift + click connection</td>
-                  <td>Remove connection</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Space + drag</td>
-                  <td>Pan canvas</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Middle mouse + drag</td>
-                  <td>Pan canvas</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Two-finger scroll / scroll wheel</td>
-                  <td>Pan canvas</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Ctrl + scroll / pinch</td>
-                  <td>Zoom in/out</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Drag on canvas</td>
-                  <td>Select — node/group must be fully inside the selection area</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + A</td>
-                  <td>Select all elements</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + C</td>
-                  <td>Copy selected elements</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + V</td>
-                  <td>Paste elements (works across projects and workspaces)</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Cmd/Ctrl + D</td>
-                  <td>Duplicate selected elements</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Escape</td>
-                  <td>Clear selection</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Double-click group title</td>
-                  <td>Edit group name</td>
-                </tr>
-                <tr>
-                  <td className="help-key">Double-click node tooltip</td>
-                  <td>Rename node</td>
-                </tr>
-              </tbody>
-            </table>
+            <HelpContent categories={categories} statuses={statuses} />
           </div>
         </div>
       )}
