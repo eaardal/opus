@@ -4,9 +4,9 @@
 
 ### Added
 
-- Timeline panel showing a task's status duration as a timeline. Use via top-left actionbar on the canvas.
+- Experimenal: Timeline panel showing a task's status duration as a timeline. Use via top-right actionbar on the canvas.
   - Separate timeline segments for each person assigned to the task, with richer segment tooltips
-- Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas
+- Experimenal: Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas
   - Status selector in the presentation bar
 - Magnifying glass: hold Option/Alt and hover a task to view an enlarged copy of it
 - Copy & paste options in the canvas context menus

@@ -34,13 +34,13 @@ export const CHANGELOG: ChangelogEntry[] = [
             heading: null,
             items: [
               {
-                text: "Timeline panel showing a task's status duration as a timeline. Use via top-left actionbar on the canvas.",
+                text: "Experimenal: Timeline panel showing a task's status duration as a timeline. Use via top-right actionbar on the canvas.",
                 subitems: [
                   "Separate timeline segments for each person assigned to the task, with richer segment tooltips",
                 ],
               },
               {
-                text: "Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas",
+                text: "Experimenal: Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas",
                 subitems: ["Status selector in the presentation bar"],
               },
               {
