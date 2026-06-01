@@ -22,3 +22,28 @@ export function burstConfettiAt(clientX: number, clientY: number): void {
     disableForReducedMotion: true,
   });
 }
+
+/**
+ * A bigger, canvas-wide celebration: confetti rains down from the top edge of the
+ * given client-pixel rect (the canvas area), spread across its width, so it falls
+ * over the whole canvas. For the "everything is done" moment.
+ */
+export function rainConfettiFromTop(rect: DOMRect): void {
+  const { innerWidth, innerHeight } = window;
+  if (innerWidth === 0 || innerHeight === 0) return;
+  const y = rect.top / innerHeight;
+  const ORIGIN_FRACTIONS = [0.1, 0.3, 0.5, 0.7, 0.9];
+  for (const fraction of ORIGIN_FRACTIONS) {
+    confetti({
+      origin: { x: (rect.left + rect.width * fraction) / innerWidth, y },
+      angle: 270, // fire downward so it drops from the top
+      particleCount: 60,
+      spread: 110,
+      startVelocity: 32,
+      gravity: 1,
+      scalar: 1,
+      ticks: 300, // live long enough to fall the height of the canvas
+      disableForReducedMotion: true,
+    });
+  }
+}
