@@ -137,6 +137,12 @@ interface CanvasProps {
   onUndo: () => void;
   onRedo: () => void;
   onHighlightTask: (taskId: string | null) => void;
+  /**
+   * When true, fit all content into the viewport once after mount — used on the
+   * first-ever open of a project that already has content, so the user lands on
+   * a sensible framing instead of the default origin view.
+   */
+  autoFitOnLoad: boolean;
 }
 
 export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
@@ -199,6 +205,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onUndo,
     onRedo,
     onHighlightTask,
+    autoFitOnLoad,
   },
   ref,
 ) {
@@ -494,6 +501,24 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     const rect = svg.getBoundingClientRect();
     onViewBoxChange({ x: 0, y: 0, width: rect.width, height: rect.height });
   }, [onViewBoxChange]);
+
+  // First-open auto-fit: when a project that already has content is opened for
+  // the first time (no persisted viewBox yet), frame the whole board so the user
+  // lands on a sensible view rather than the default origin. fitToScreen persists
+  // the viewBox, so a re-open finds a saved one and autoFitOnLoad is false — this
+  // fires at most once, ever, per project. "Already has content" is captured at
+  // open time, so creating the first task in an empty project never yanks the view.
+  const didAutoFitRef = useRef(false);
+  const hadContentOnOpenRef = useRef(tasks.length > 0 || groups.length > 0);
+  useEffect(() => {
+    if (didAutoFitRef.current || !autoFitOnLoad || !hadContentOnOpenRef.current) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    didAutoFitRef.current = true;
+    fitToScreen();
+  }, [autoFitOnLoad, fitToScreen]);
 
   // ── Presentation mode: step the viewport through one person's tasks ──────────
   const [presentationPersonId, setPresentationPersonId] = useState<string | null>(null);

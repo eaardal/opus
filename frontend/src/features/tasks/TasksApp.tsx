@@ -84,6 +84,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [viewBox, setViewBox] = useState<ViewBox>(loadViewBox(projectId) ?? DEFAULT_VIEW_BOX);
+  // True only on the first-ever open of this project (no viewBox persisted yet),
+  // letting the canvas fit-to-screen once instead of showing the default view.
+  const [autoFitOnLoad] = useState(() => loadViewBox(projectId) === null);
 
   // ── Remote reconciliation ──────────────────────────────────────────────────
 
@@ -866,6 +869,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onAssignPersonAndSetInProgress={assignPersonAndSetInProgress}
         viewBox={viewBox}
         onViewBoxChange={handleViewBoxChange}
+        autoFitOnLoad={autoFitOnLoad}
         onSetTaskStatus={setTaskStatus}
         onSetTaskCategory={setTaskCategory}
         onDuplicateTask={handleDuplicateTask}
