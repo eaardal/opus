@@ -3,6 +3,7 @@ import "./TaskContextMenu.css";
 import type { Task, TaskStatus } from "../../domain/tasks/types";
 import type { CategoryConfig, StatusConfig } from "./theme";
 import type { Person } from "../../domain/teams/types";
+import { orderPeopleByAssignment } from "../../domain/tasks/assignments";
 import { PersonAvatar } from "./PersonAvatar";
 
 interface TaskContextMenuProps {
@@ -75,9 +76,12 @@ export function TaskContextMenu({
     onAssignPeople([...next]);
   };
 
+  // Assigned people sort to the top, then everyone else — each group alphabetical.
+  // assignedIds is recomputed every render, so toggling re-sorts the list live.
   const filteredPeople = people.filter(
     (p) => !peopleFilter || p.name.toLowerCase().includes(peopleFilter.toLowerCase()),
   );
+  const orderedPeople = orderPeopleByAssignment(filteredPeople, assignedIds);
 
   return (
     <div
@@ -137,7 +141,7 @@ export function TaskContextMenu({
             />
           </div>
           <div className="tcm-people-list">
-            {filteredPeople.map((person) => (
+            {orderedPeople.map((person) => (
               <button
                 key={person.id}
                 className={`menu-item tcm-person-item ${assignedIds.has(person.id) ? "active" : ""}`}

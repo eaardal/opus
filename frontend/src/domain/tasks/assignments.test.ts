@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { Person } from "../teams/types";
-import { peopleWithAssignedTasks, taskCountsByPerson, tasksAssignedToPerson } from "./assignments";
+import {
+  orderPeopleByAssignment,
+  peopleWithAssignedTasks,
+  taskCountsByPerson,
+  tasksAssignedToPerson,
+} from "./assignments";
 import type { Task } from "./types";
 
 const person = (id: string, name = id): Person => ({ id, name, picture: null });
@@ -102,5 +107,30 @@ describe("taskCountsByPerson", () => {
     const result = taskCountsByPerson(tasks, [ALICE, BOB], "in_progress");
 
     expect(result).toEqual({ alice: 1, bob: 1 });
+  });
+});
+
+describe("orderPeopleByAssignment", () => {
+  test("lists assigned people first, each group sorted alphabetically (case-insensitive)", () => {
+    const zoe = person("z", "Zoe");
+    const adam = person("a", "adam");
+    const mia = person("m", "Mia");
+    const bob = person("b", "Bob");
+
+    const result = orderPeopleByAssignment([zoe, adam, mia, bob], new Set(["z", "b"]));
+
+    // assigned (Bob, Zoe) alphabetically, then unassigned (adam, Mia) alphabetically
+    expect(result.map((p) => p.id)).toEqual(["b", "z", "a", "m"]);
+  });
+
+  test("returns everyone alphabetically when no one is assigned", () => {
+    const result = orderPeopleByAssignment([person("z", "Zoe"), person("a", "adam")], new Set());
+    expect(result.map((p) => p.id)).toEqual(["a", "z"]);
+  });
+
+  test("does not mutate the input array", () => {
+    const list = [person("z", "Zoe"), person("a", "adam")];
+    orderPeopleByAssignment(list, new Set());
+    expect(list.map((p) => p.id)).toEqual(["z", "a"]);
   });
 });

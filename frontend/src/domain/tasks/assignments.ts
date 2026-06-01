@@ -54,3 +54,21 @@ export function taskCountsByPerson(
   }
   return counts;
 }
+
+/**
+ * Orders people for the assignment picker: those currently assigned first, then
+ * the rest, each group sorted alphabetically by name (case-insensitive). Grouping
+ * is by the given assigned-id set, so un-assigning a person re-sorts them back
+ * among the unassigned. Does not mutate the input.
+ */
+export function orderPeopleByAssignment(
+  people: Person[],
+  assignedIds: ReadonlySet<string>,
+): Person[] {
+  return [...people].sort((a, b) => {
+    const aAssigned = assignedIds.has(a.id);
+    const bAssigned = assignedIds.has(b.id);
+    if (aAssigned !== bAssigned) return aAssigned ? -1 : 1;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  });
+}
