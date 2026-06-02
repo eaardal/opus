@@ -96,10 +96,10 @@ export function TaskList({
     else grouped.set(key, [task]);
   }
 
-  const groupOrder: (string | null)[] = [
-    ...groups.filter((g) => grouped.has(g.id)).map((g) => g.id),
-    ...(grouped.has(null) ? [null] : []),
-  ];
+  const ungroupedTasks = grouped.get(null) ?? [];
+  const groupedSections = groups
+    .filter((g) => grouped.has(g.id))
+    .map((g) => ({ group: g, groupTasks: grouped.get(g.id) ?? [] }));
 
   const renderTask = (task: Task) => {
     const index = tasks.indexOf(task);
@@ -136,18 +136,25 @@ export function TaskList({
 
   return (
     <div className="task-list">
-      {groupOrder.map((groupId) => {
-        const groupTasks = grouped.get(groupId) ?? [];
-        const group = groupId ? groups.find((g) => g.id === groupId) : null;
-        return (
-          <div key={groupId ?? "__ungrouped__"} className="task-list-group">
-            {group && (
-              <div className="task-list-group-header">{group.title || "(unnamed group)"}</div>
-            )}
-            {groupTasks.map(renderTask)}
-          </div>
-        );
-      })}
+      {/* Ungrouped tasks (e.g. ones just created via Add Task) get their own
+          labelled section at the top, kept clearly apart from the groups below. */}
+      <div className="task-list-group">
+        <div className="task-list-group-header">Ungrouped</div>
+        {ungroupedTasks.length > 0 ? (
+          ungroupedTasks.map(renderTask)
+        ) : (
+          <div className="task-list-empty">No ungrouped tasks</div>
+        )}
+      </div>
+
+      {groupedSections.length > 0 && <div className="task-list-divider" />}
+
+      {groupedSections.map(({ group, groupTasks }) => (
+        <div key={group.id} className="task-list-group">
+          <div className="task-list-group-header">{group.title || "(unnamed group)"}</div>
+          {groupTasks.map(renderTask)}
+        </div>
+      ))}
     </div>
   );
 }
