@@ -56,6 +56,10 @@ export function HelpContent({ categories, statuses }: HelpContentProps) {
             <td>Zoom in/out</td>
           </tr>
           <tr>
+            <td className="help-key">Alt/Option + hover</td>
+            <td>Magnify the task or group under the cursor</td>
+          </tr>
+          <tr>
             <td className="help-key">Drag on canvas</td>
             <td>Select — node/group must be fully inside the selection area</td>
           </tr>
