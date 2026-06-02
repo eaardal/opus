@@ -37,6 +37,8 @@ interface SidebarProps {
   onFocusTaskId: (id: string | null) => void;
   registerTaskItemRef: (id: string, el: HTMLDivElement | null) => void;
   onAddGroup: () => void;
+  /** Add a new task placed inside the given group's top-left corner. */
+  onAddTaskToGroup: (groupId: string) => void;
   people: Person[];
   onAssignPeople: (taskId: string, personIds: string[]) => void;
   onZoomToGroup: (groupId: string) => void;
@@ -71,6 +73,7 @@ export function Sidebar({
   onFocusTaskId,
   registerTaskItemRef,
   onAddGroup,
+  onAddTaskToGroup,
   people,
   onAssignPeople,
   onZoomToGroup,
@@ -151,6 +154,7 @@ export function Sidebar({
         registerTaskItemRef={registerTaskItemRef}
         people={people}
         onAssignPeople={onAssignPeople}
+        onAddTaskToGroup={onAddTaskToGroup}
         onZoomToGroup={onZoomToGroup}
         onZoomToTask={onZoomToTask}
       />

@@ -6,6 +6,7 @@ import {
   duplicateElements,
   serializeSelection,
 } from "../../domain/tasks/clipboard";
+import { taskPositionInGroupCorner } from "../../domain/tasks/groupGeometry";
 import {
   addGroup as addGroupOp,
   addTask as addTaskOp,
@@ -550,6 +551,18 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     workspaceService.addTask(workspaceId, projectId, newTask).catch(console.error);
   };
 
+  const addTaskToGroup = (groupId: string) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) return;
+    const { x, y } = taskPositionInGroupCorner(group);
+    const newTask = buildNewTask(x, y);
+    push({ tasks: addTaskOp(present.tasks, newTask), connections, groups });
+    setFocusTaskId(newTask.id);
+    // Bring the group into view so the freshly created task is visible.
+    zoomToGroup(groupId);
+    workspaceService.addTask(workspaceId, projectId, newTask).catch(console.error);
+  };
+
   const addGroupAt = (x: number, y: number) => {
     const newGroup = buildNewGroup(x, y);
     push({ tasks, connections, groups: addGroupOp(groups, newGroup) });
@@ -840,6 +853,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onFocusTaskId={setFocusTaskId}
         registerTaskItemRef={registerTaskItemRef}
         onAddGroup={addGroup}
+        onAddTaskToGroup={addTaskToGroup}
         people={people}
         onAssignPeople={assignPeople}
         onZoomToGroup={zoomToGroup}

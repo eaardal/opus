@@ -4,6 +4,7 @@ import type { Task, Group, TaskStatus } from "../../../domain/tasks/types";
 import { TaskItem } from "./TaskItem";
 import type { CategoryConfig, StatusConfig } from "../theme";
 import type { Person } from "../../../domain/teams/types";
+import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
 
 interface TaskListProps {
   tasks: Task[];
@@ -32,6 +33,8 @@ interface TaskListProps {
   onZoomToGroup: (groupId: string) => void;
   /** Zoom the canvas to focus a task when its sequence number is clicked. */
   onZoomToTask: (taskId: string) => void;
+  /** Add a new task placed inside the given group's top-left corner. */
+  onAddTaskToGroup: (groupId: string) => void;
 }
 
 export function TaskList({
@@ -59,7 +62,9 @@ export function TaskList({
   onAssignPeople,
   onZoomToGroup,
   onZoomToTask,
+  onAddTaskToGroup,
 }: TaskListProps) {
+  const { canEdit } = useWorkspaceRole();
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   useEffect(() => {
@@ -167,6 +172,15 @@ export function TaskList({
             {group.title || "(unnamed group)"}
           </button>
           {groupTasks.map(renderTask)}
+          <button
+            type="button"
+            className="task-list-add-task"
+            onClick={() => onAddTaskToGroup(group.id)}
+            disabled={!canEdit}
+            title={canEdit ? "Add a task to this group" : "View-only access"}
+          >
+            + Add Task
+          </button>
         </div>
       ))}
     </div>
