@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { Person } from "../teams/types";
 import {
+  hasTasksWithAssignedPeople,
   orderPeopleByAssignment,
   peopleWithAssignedTasks,
   taskCountsByPerson,
@@ -50,6 +51,20 @@ describe("peopleWithAssignedTasks", () => {
   test("ignores assignee ids that do not match a known person", () => {
     const result = peopleWithAssignedTasks([ALICE], [task("t1", ["ghost"])]);
     expect(result).toEqual([]);
+  });
+});
+
+describe("hasTasksWithAssignedPeople", () => {
+  test("returns true when at least one task has an assigned person", () => {
+    expect(hasTasksWithAssignedPeople([task("t1"), task("t2", ["alice"])])).toBe(true);
+  });
+
+  test("returns false when no task has an assigned person", () => {
+    expect(hasTasksWithAssignedPeople([task("t1"), task("t2", [])])).toBe(false);
+  });
+
+  test("returns false for an empty task list", () => {
+    expect(hasTasksWithAssignedPeople([])).toBe(false);
   });
 });
 

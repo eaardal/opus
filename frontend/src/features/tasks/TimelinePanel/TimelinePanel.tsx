@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./TimelinePanel.css";
-import { Maximize, Minus, Plus } from "lucide-react";
+import { Maximize, Minus, Plus, X } from "lucide-react";
 import type { Task, TaskStatus } from "../../../domain/tasks/types";
 import type { Person } from "../../../domain/teams/types";
 import type { StatusConfig } from "../theme";
@@ -25,6 +25,7 @@ import { PersonAvatar } from "../PersonAvatar";
 
 const LABEL_WIDTH = 240;
 const DEFAULT_HEIGHT = 360;
+const EXPANDED_HEIGHT_RATIO = 0.8;
 const MAX_TICKS = 8;
 const MIN_SPAN_MS = 60_000;
 const DAY_MS = 86_400_000;
@@ -92,7 +93,18 @@ export function TimelinePanel({
   const now = useNow(10_000);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
+  const [isExpanded, setIsExpanded] = useState(false);
   const resizeRef = useRef<{ startY: number; startHeight: number } | null>(null);
+
+  const toggleExpand = useCallback(() => {
+    if (isExpanded) {
+      setHeight(DEFAULT_HEIGHT);
+      setIsExpanded(false);
+    } else {
+      setHeight(Math.floor(window.innerHeight * EXPANDED_HEIGHT_RATIO));
+      setIsExpanded(true);
+    }
+  }, [isExpanded]);
 
   // Tasks with any in-progress history, earliest first.
   const timelineTasks = useMemo(() => {
@@ -211,6 +223,15 @@ export function TimelinePanel({
             title="Fit to content"
           >
             <Maximize size={15} />
+          </button>
+          <button
+            type="button"
+            className="tl-ctrl-btn tl-close-btn"
+            onClick={onClose}
+            aria-label="Close timeline"
+            title="Close"
+          >
+            <X size={16} />
           </button>
         </div>
       </div>
@@ -378,6 +399,15 @@ export function TimelinePanel({
 
       <div className="tl-drag-handle" onMouseDown={handleResizeStart} />
       <div className="tl-footer">
+        <button
+          type="button"
+          className="tl-expand-btn"
+          onClick={toggleExpand}
+          aria-label={isExpanded ? "Reset timeline size" : "Expand timeline"}
+          title={isExpanded ? "Reset size" : "Expand"}
+        >
+          {isExpanded ? "⊡" : "⊞"}
+        </button>
         <button
           type="button"
           className="tl-collapse-btn"

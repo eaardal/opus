@@ -21,6 +21,7 @@ import { CanvasActionBar } from "./CanvasActionBar";
 import { HelpContent } from "./HelpContent";
 import type { StatusFilter } from "./StatusFilterSelect";
 import {
+  hasTasksWithAssignedPeople,
   peopleWithAssignedTasks,
   taskCountsByPerson,
   tasksAssignedToPerson,
@@ -372,6 +373,21 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     };
   }, [multiSelectionContextMenu]);
 
+  // Escape closes the Task Queue / Timeline panel while one is open. Skips events
+  // from editable targets (mirroring the global shortcuts) so Escape inside a
+  // panel's own field — e.g. the task picker — is left to that field.
+  useEffect(() => {
+    if (!isTaskQueueOpen && !isTimelineOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      setIsTaskQueueOpen(false);
+      setIsTimelineOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isTaskQueueOpen, isTimelineOpen]);
+
   useEffect(() => {
     if (!showHelpPanel || isHelpPanelPinned) return;
     const handleClose = (e: MouseEvent) => {
@@ -690,6 +706,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       <CanvasActionBar
         isTaskQueueOpen={isTaskQueueOpen}
         isTimelineOpen={isTimelineOpen}
+        taskQueueDisabled={!hasTasksWithAssignedPeople(tasks)}
         showTimelineToggle={settings.showTimelinePanel}
         canvasLocked={canvasLocked}
         magnifyEnabled={magnifyEnabled}

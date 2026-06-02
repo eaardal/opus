@@ -14,6 +14,8 @@ import "./CanvasActionBar.css";
 interface CanvasActionBarProps {
   isTaskQueueOpen: boolean;
   isTimelineOpen: boolean;
+  /** Disables the Task Queue toggle — true when no task has any assigned people. */
+  taskQueueDisabled: boolean;
   /** Whether to show the Timeline toggle (settings.showTimelinePanel). */
   showTimelineToggle: boolean;
   canvasLocked: boolean;
@@ -39,6 +41,7 @@ interface CanvasActionBarProps {
 export function CanvasActionBar({
   isTaskQueueOpen,
   isTimelineOpen,
+  taskQueueDisabled,
   showTimelineToggle,
   canvasLocked,
   magnifyEnabled,
@@ -59,8 +62,11 @@ export function CanvasActionBar({
         type="button"
         className={`canvas-toolbar-btn ${isTaskQueueOpen ? "active" : ""}`}
         onClick={onToggleTaskQueue}
+        disabled={taskQueueDisabled}
         aria-label="Task Queue"
-        data-tooltip="Task Queue"
+        data-tooltip={
+          taskQueueDisabled ? "Task Queue — assign someone to a task first" : "Task Queue"
+        }
       >
         <LayoutList size={16} />
       </button>

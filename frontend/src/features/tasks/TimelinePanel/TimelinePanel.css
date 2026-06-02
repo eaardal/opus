@@ -54,6 +54,11 @@
   color: var(--text-primary);
 }
 
+/* The close button sits apart from the zoom/fit controls to its left. */
+.tl-close-btn {
+  margin-left: 8px;
+}
+
 .tl-body {
   flex: 1;
   overflow: hidden;
@@ -325,19 +330,34 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 6px;
   padding: 6px 12px;
   border-top: 1px solid var(--menu-border);
+  background: var(--bg-primary);
 }
 
+/* Footer buttons mirror the Task Queue panel's footer buttons (.tq-*-btn). */
+.tl-expand-btn,
 .tl-collapse-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--menu-border);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  font-size: 14px;
-  padding: 2px 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition:
+    color 0.15s,
+    background 0.15s;
+  flex-shrink: 0;
 }
 
+.tl-expand-btn:hover,
 .tl-collapse-btn:hover {
   color: var(--text-primary);
+  background: var(--bg-control);
 }

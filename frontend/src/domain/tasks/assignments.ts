@@ -18,6 +18,15 @@ export function peopleWithAssignedTasks(people: Person[], tasks: Task[]): Person
 }
 
 /**
+ * Whether any of the given tasks has at least one assigned person. Used to gate
+ * features that only make sense once work has been assigned — e.g. the Task
+ * Queue, which is organised by person.
+ */
+export function hasTasksWithAssignedPeople(tasks: Task[]): boolean {
+  return tasks.some((task) => (task.assignedPersonIds?.length ?? 0) > 0);
+}
+
+/**
  * The tasks assigned to a person, in their original array order. Task array
  * order is the canvas sequence order (the number badge shown on each node), so
  * this is also the carousel order for presentation mode.

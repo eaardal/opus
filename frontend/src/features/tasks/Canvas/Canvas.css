@@ -110,9 +110,14 @@
     color 0.15s;
 }
 
-.canvas-toolbar-btn:hover {
+.canvas-toolbar-btn:not(:disabled):hover {
   background: var(--menu-trigger-hover);
   color: var(--text-primary);
+}
+
+.canvas-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .canvas-toolbar-btn.active {

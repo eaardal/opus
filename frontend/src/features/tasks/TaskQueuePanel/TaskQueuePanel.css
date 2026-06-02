@@ -13,6 +13,44 @@
   min-height: 120px;
 }
 
+/* Header mirrors the Timeline panel's header (.tl-header / .tl-title). */
+.tq-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--menu-border);
+}
+
+.tq-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Matches the Timeline panel's header close button (.tl-ctrl-btn + .tl-close-btn). */
+.tq-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.tq-close-btn:hover {
+  background: var(--menu-item-hover);
+  color: var(--text-primary);
+}
+
 .tq-scroll-body {
   flex: 1;
   overflow-y: auto;

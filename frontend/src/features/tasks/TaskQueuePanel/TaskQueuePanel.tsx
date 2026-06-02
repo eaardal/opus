@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import "./TaskQueuePanel.css";
+import { X } from "lucide-react";
 import type { Connection, Group, Task, TaskStatus } from "../../../domain/tasks/types";
 import type { Person } from "../../../domain/teams/types";
 import type { CategoryConfig, StatusConfig } from "../theme";
@@ -204,6 +205,18 @@ export function TaskQueuePanel({
 
   return (
     <div className="task-queue-overlay" style={{ height }}>
+      <div className="tq-header">
+        <span className="tq-title">Task assignments</span>
+        <button
+          type="button"
+          className="tq-close-btn"
+          onClick={onClose}
+          aria-label="Close task queue"
+          title="Close"
+        >
+          <X size={16} />
+        </button>
+      </div>
       <div className="tq-scroll-body">
         <div className="tq-swimlanes">
           {swimlanePeople.map((person) => {
