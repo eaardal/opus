@@ -242,6 +242,8 @@ function App() {
     );
   }
 
+  const activeProjectName = projects.find((p) => p.id === activeProjectId)?.name;
+
   return (
     <WorkspaceRoleProvider role={role}>
       <div className="app-shell">
@@ -256,7 +258,13 @@ function App() {
             </button>
             <span className="app-bar-filename">
               <span className="app-bar-filename-row">
-                {workspaceName}
+                <span className="app-bar-workspace">{workspaceName}</span>
+                {activeProjectName && (
+                  <>
+                    <span className="app-bar-dot">·</span>
+                    <span className="app-bar-project">{activeProjectName}</span>
+                  </>
+                )}
                 {role && <span className="app-bar-role-badge">{roleLabel(role)}</span>}
               </span>
             </span>
