@@ -67,6 +67,19 @@ const mouseEvent = (overrides: Partial<MouseEvent> = {}) =>
     ...overrides,
   }) as unknown as React.MouseEvent;
 
+const wheelEvent = (overrides: Partial<WheelEvent> = {}) =>
+  ({
+    deltaX: 0,
+    deltaY: 0,
+    deltaMode: 0,
+    clientX: 0,
+    clientY: 0,
+    ctrlKey: false,
+    metaKey: false,
+    preventDefault: vi.fn(),
+    ...overrides,
+  }) as unknown as WheelEvent;
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -165,6 +178,42 @@ describe("tryUpdatePan", () => {
       consumed = result.current.tryUpdatePan(mouseEvent({ clientX: 50, clientY: 50 }));
     });
     expect(consumed).toBe(false);
+  });
+});
+
+describe("wheel zoom", () => {
+  // A zoom changes the viewBox dimensions (width/height); a pan only translates
+  // x/y. Asserting on which of those changed keeps these tests independent of the
+  // exact zoom-factor math, which is covered in viewport.test.ts.
+  test("zooms when Ctrl is held with the wheel", () => {
+    const svg = makeMockSvg();
+    const { onViewBoxChange } = renderCanvasPan({ svg });
+    act(() => {
+      svg.fire("wheel", wheelEvent({ ctrlKey: true, deltaY: 100, clientX: 500, clientY: 400 }));
+    });
+    expect(onViewBoxChange).toHaveBeenCalledTimes(1);
+    expect(onViewBoxChange.mock.calls[0][0].width).not.toBe(VIEWBOX.width);
+  });
+
+  test("zooms when Cmd/Meta is held with the wheel", () => {
+    const svg = makeMockSvg();
+    const { onViewBoxChange } = renderCanvasPan({ svg });
+    act(() => {
+      svg.fire("wheel", wheelEvent({ metaKey: true, deltaY: 100, clientX: 500, clientY: 400 }));
+    });
+    expect(onViewBoxChange).toHaveBeenCalledTimes(1);
+    expect(onViewBoxChange.mock.calls[0][0].width).not.toBe(VIEWBOX.width);
+  });
+
+  test("pans (does not zoom) on a plain wheel when scrollToPan is on", () => {
+    const svg = makeMockSvg();
+    const { onViewBoxChange } = renderCanvasPan({ svg });
+    act(() => {
+      svg.fire("wheel", wheelEvent({ deltaX: 20, deltaY: 30 }));
+    });
+    expect(onViewBoxChange).toHaveBeenCalledTimes(1);
+    // scale is 1 (viewBox.width === rect.width), so deltas map straight to x/y.
+    expect(onViewBoxChange).toHaveBeenCalledWith({ x: 20, y: 30, width: 1000, height: 800 });
   });
 });
 

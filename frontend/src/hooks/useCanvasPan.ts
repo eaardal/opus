@@ -88,7 +88,7 @@ export function useCanvasPan({
   }, []);
 
   // Wheel handler (registered on the SVG to allow preventDefault).
-  // scrollToPan=true (default): plain scroll → pan, ctrlKey → zoom.
+  // scrollToPan=true (default): plain scroll → pan, Ctrl or Cmd → zoom.
   // scrollToPan=false (legacy): plain scroll → zoom.
   useEffect(() => {
     const svg = svgRef.current;
@@ -96,7 +96,7 @@ export function useCanvasPan({
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const rect = svg.getBoundingClientRect();
-      if (e.ctrlKey || !scrollToPanRef.current) {
+      if (e.ctrlKey || e.metaKey || !scrollToPanRef.current) {
         onViewBoxChange(
           zoomViewBoxAtPoint({
             viewBox: viewBoxRef.current,

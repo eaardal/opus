@@ -52,7 +52,7 @@ export function HelpContent({ categories, statuses }: HelpContentProps) {
             <td>Pan canvas</td>
           </tr>
           <tr>
-            <td className="help-key">Ctrl + scroll / pinch</td>
+            <td className="help-key">Cmd/Ctrl + scroll / pinch</td>
             <td>Zoom in/out</td>
           </tr>
           <tr>
