@@ -23,14 +23,24 @@
 .task-number {
   min-width: 18px;
   height: 18px;
+  padding: 0;
+  border: none;
   background: var(--bg-control);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: inherit;
   font-size: 10px;
   font-weight: 600;
   color: var(--text-primary);
+  /* Clickable: zooms the canvas to the task. */
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.task-number:hover {
+  filter: brightness(1.12);
 }
 
 .task-item input {

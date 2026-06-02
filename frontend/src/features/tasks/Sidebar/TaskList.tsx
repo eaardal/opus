@@ -30,6 +30,8 @@ interface TaskListProps {
   onAssignPeople: (taskId: string, personIds: string[]) => void;
   /** Zoom the canvas to focus a group when its sidebar header is clicked. */
   onZoomToGroup: (groupId: string) => void;
+  /** Zoom the canvas to focus a task when its sequence number is clicked. */
+  onZoomToTask: (taskId: string) => void;
 }
 
 export function TaskList({
@@ -56,6 +58,7 @@ export function TaskList({
   people,
   onAssignPeople,
   onZoomToGroup,
+  onZoomToTask,
 }: TaskListProps) {
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
@@ -133,6 +136,7 @@ export function TaskList({
         }}
         people={people}
         onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
+        onZoomTo={() => onZoomToTask(task.id)}
       />
     );
   };

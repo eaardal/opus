@@ -20,7 +20,7 @@ import {
 } from "../../domain/tasks/operations";
 import { backfillUpdate, recordAssignment, recordStatusChange } from "../../domain/tasks/timeline";
 import type { Group, Task, TaskStatus, ViewBox } from "../../domain/tasks/types";
-import { zoomViewBoxToGroup } from "../../domain/tasks/viewport";
+import { centerViewBoxOnPoint, zoomViewBoxToGroup } from "../../domain/tasks/viewport";
 import type { Person } from "../../domain/teams/types";
 import { useDragSelection } from "../../hooks/useDragSelection";
 import { useGlobalKeyboardShortcuts } from "../../hooks/useGlobalKeyboardShortcuts";
@@ -37,6 +37,10 @@ import { Sidebar } from "./Sidebar/Sidebar";
 import { getCategories, getStatuses } from "./theme";
 
 const DEFAULT_VIEW_BOX: ViewBox = { x: 0, y: 0, width: 1200, height: 800 };
+
+// Viewport width (canvas units) when zooming to a single task — comfortable focus
+// with surrounding context. Tasks render ~60 units wide.
+const TASK_FOCUS_WIDTH = 600;
 
 interface AppProps {
   workspaceId: string;
@@ -767,6 +771,20 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     animateViewBoxTo(newVb);
   };
 
+  const zoomToTask = (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const svg = canvasRef.current?.getSvgElement();
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const newVb = centerViewBoxOnPoint(
+      { x: task.x, y: task.y },
+      { width: rect.width, height: rect.height },
+      TASK_FOCUS_WIDTH,
+    );
+    animateViewBoxTo(newVb);
+  };
+
   const handleNodeClick = (taskId: string) => {
     setHighlightedTaskId(taskId);
     const taskItem = taskItemRefs.current.get(taskId);
@@ -825,6 +843,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         people={people}
         onAssignPeople={assignPeople}
         onZoomToGroup={zoomToGroup}
+        onZoomToTask={zoomToTask}
       />
 
       <div

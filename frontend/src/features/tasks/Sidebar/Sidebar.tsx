@@ -40,6 +40,7 @@ interface SidebarProps {
   people: Person[];
   onAssignPeople: (taskId: string, personIds: string[]) => void;
   onZoomToGroup: (groupId: string) => void;
+  onZoomToTask: (taskId: string) => void;
 }
 
 export function Sidebar({
@@ -73,6 +74,7 @@ export function Sidebar({
   people,
   onAssignPeople,
   onZoomToGroup,
+  onZoomToTask,
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { canEdit } = useWorkspaceRole();
@@ -150,6 +152,7 @@ export function Sidebar({
         people={people}
         onAssignPeople={onAssignPeople}
         onZoomToGroup={onZoomToGroup}
+        onZoomToTask={onZoomToTask}
       />
     </div>
   );

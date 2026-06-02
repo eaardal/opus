@@ -26,6 +26,8 @@ interface TaskItemProps {
   registerInputRef: (el: HTMLInputElement | null) => void;
   people: Person[];
   onAssignPeople: (personIds: string[]) => void;
+  /** Zoom the canvas to focus this task (clicking its sequence number). */
+  onZoomTo: () => void;
 }
 
 export function TaskItem({
@@ -50,6 +52,7 @@ export function TaskItem({
   registerInputRef,
   people,
   onAssignPeople,
+  onZoomTo,
 }: TaskItemProps) {
   return (
     <div
@@ -58,12 +61,15 @@ export function TaskItem({
       onMouseEnter={() => onSetHighlighted(true)}
       onMouseLeave={() => onSetHighlighted(false)}
     >
-      <span
+      <button
+        type="button"
         className="task-number"
         style={task.category ? { background: categories[task.category]?.color } : undefined}
+        onClick={onZoomTo}
+        title="Zoom to task"
       >
         {index + 1}
-      </span>
+      </button>
       <span
         className="task-status-dot"
         style={{ background: statuses[task.status]?.color }}
