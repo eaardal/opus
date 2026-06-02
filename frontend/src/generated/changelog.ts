@@ -24,6 +24,103 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.0",
+    date: "2026-06-02",
+    sections: [
+      {
+        name: "Added",
+        subsections: [
+          {
+            heading: null,
+            items: [
+              {
+                text: "Progress bars now animate, with celebratory flourishes:",
+                subitems: [
+                  "Smooth animated movement as task statuses inside a group change",
+                  "A large progress percentage shown over the group when the progress percentage number change up or down",
+                  "Confetti from a group's progress bar when it reaches 100%",
+                  "Confetti rains down the canvas when the overall progress bar reaches 100%",
+                ],
+              },
+              {
+                text: "The canvas background tints green when every task in the project is completed",
+                subitems: [],
+              },
+              {
+                text: 'Legend for task categories and statuses in the "How to Use" dialog',
+                subitems: [],
+              },
+              {
+                text: "The current project name now appears next to the workspace name in the app bar",
+                subitems: [],
+              },
+              {
+                text: "Environment badge for development and staging backends",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Fixed",
+        subsections: [
+          {
+            heading: null,
+            items: [
+              {
+                text: "Camera zoom no longer takes several clicks to settle when starting a person's presentation",
+                subitems: [],
+              },
+              {
+                text: "Canvas action bar tooltips no longer disappear behind the presentation bar",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Changed",
+        subsections: [
+          {
+            heading: null,
+            items: [
+              {
+                text: "Presentation bar reworked: Now has one Play button per person to hopefully make it more intuitive",
+                subitems: [],
+              },
+              {
+                text: "Presentation bar can now be collapsed when not in use",
+                subitems: [],
+              },
+              {
+                text: "People assigned to a task are listed above unassigned people in the assign menu",
+                subitems: [],
+              },
+              {
+                text: "The task-title editor on the canvas grows to fit its content as you type",
+                subitems: [],
+              },
+              {
+                text: "Magnifying glass overlay panel now follows the cursor",
+                subitems: [],
+              },
+              {
+                text: "Removed the sequence number from task nodes on the canvas",
+                subitems: [],
+              },
+              {
+                text: "Opening a project for the first time snaps the viewport to fit its content",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: "0.6.0",
     date: "2026-05-31",
     sections: [

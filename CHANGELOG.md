@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.7.0] - 2026-06-02
+
+### Added
+
+- Progress bars now animate, with celebratory flourishes:
+  - Smooth animated movement as task statuses inside a group change
+  - A large progress percentage shown over the group when the progress percentage number change up or down
+  - Confetti from a group's progress bar when it reaches 100%
+  - Confetti rains down the canvas when the overall progress bar reaches 100%
+- The canvas background tints green when every task in the project is completed
+- Legend for task categories and statuses in the "How to Use" dialog
+- The current project name now appears next to the workspace name in the app bar
+- Environment badge for development and staging backends
+
+### Fixed
+
+- Camera zoom no longer takes several clicks to settle when starting a person's presentation
+- Canvas action bar tooltips no longer disappear behind the presentation bar
+
+### Changed
+
+- Presentation bar reworked: Now has one Play button per person to hopefully make it more intuitive
+- Presentation bar can now be collapsed when not in use
+- People assigned to a task are listed above unassigned people in the assign menu
+- The task-title editor on the canvas grows to fit its content as you type
+- Magnifying glass overlay panel now follows the cursor
+- Removed the sequence number from task nodes on the canvas
+- Opening a project for the first time snaps the viewport to fit its content
+
 ## [0.6.0] - 2026-05-31
 
 ### Added
