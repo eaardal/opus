@@ -670,8 +670,13 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     }
   }
 
+  // Tint the whole canvas once every task in the project is done — a quiet "all
+  // finished" cue.
+  const allTasksDone =
+    tasks.length > 0 && tasks.every((t) => t.status === "completed" || t.status === "archived");
+
   return (
-    <div className="canvas-container">
+    <div className={`canvas-container ${allTasksDone ? "all-tasks-done" : ""}`}>
       {isViewerOnly && (
         <div className="canvas-viewer-banner" aria-hidden="true">
           <span className="canvas-viewer-banner-badge">Viewer only</span>

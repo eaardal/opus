@@ -2,9 +2,15 @@
   flex: 1;
   background: var(--bg-primary);
   position: relative;
+  transition: background-color 0.5s ease;
   /* Height of the bottom progress-bar panel. Kept in sync with .progress-bar-container
      padding + content so the viewer banner can sit flush above it. */
   --progress-bar-height: 26px;
+}
+
+/* Every task in the project is completed/archived — tint the canvas. */
+.canvas-container.all-tasks-done {
+  background: #fcfffc;
 }
 
 .canvas-viewer-banner {
