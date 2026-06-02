@@ -28,6 +28,8 @@ interface TaskListProps {
   registerTaskItemRef: (id: string, el: HTMLDivElement | null) => void;
   people: Person[];
   onAssignPeople: (taskId: string, personIds: string[]) => void;
+  /** Zoom the canvas to focus a group when its sidebar header is clicked. */
+  onZoomToGroup: (groupId: string) => void;
 }
 
 export function TaskList({
@@ -53,6 +55,7 @@ export function TaskList({
   registerTaskItemRef,
   people,
   onAssignPeople,
+  onZoomToGroup,
 }: TaskListProps) {
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
@@ -151,7 +154,14 @@ export function TaskList({
 
       {groupedSections.map(({ group, groupTasks }) => (
         <div key={group.id} className="task-list-group">
-          <div className="task-list-group-header">{group.title || "(unnamed group)"}</div>
+          <button
+            type="button"
+            className="task-list-group-header task-list-group-link"
+            onClick={() => onZoomToGroup(group.id)}
+            title="Zoom to group"
+          >
+            {group.title || "(unnamed group)"}
+          </button>
           {groupTasks.map(renderTask)}
         </div>
       ))}

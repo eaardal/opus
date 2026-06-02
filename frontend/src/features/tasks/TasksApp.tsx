@@ -26,6 +26,7 @@ import { useDragSelection } from "../../hooks/useDragSelection";
 import { useGlobalKeyboardShortcuts } from "../../hooks/useGlobalKeyboardShortcuts";
 import { type HistoryStep, useHistory } from "../../hooks/useHistory";
 import { useResizableSidebar } from "../../hooks/useResizableSidebar";
+import { useViewBoxAnimation } from "../../hooks/useViewBoxAnimation";
 import { loadViewBox, saveViewBox } from "../../lib/viewBox";
 import { workspaceService } from "../../services/container";
 import type { ProjectSummary } from "../../services/workspace.types";
@@ -187,6 +188,10 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     },
     [projectId],
   );
+
+  // Glide to a target viewport (e.g. "zoom to group") with an eased ~500 ms
+  // transition instead of jumping there.
+  const animateViewBoxTo = useViewBoxAnimation(viewBox, handleViewBoxChange, 500);
 
   const categories = getCategories();
   const statuses = getStatuses();
@@ -759,7 +764,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
     const newVb = zoomViewBoxToGroup(group, { width: rect.width, height: rect.height }, 80);
-    handleViewBoxChange(newVb);
+    animateViewBoxTo(newVb);
   };
 
   const handleNodeClick = (taskId: string) => {
@@ -819,6 +824,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onAddGroup={addGroup}
         people={people}
         onAssignPeople={assignPeople}
+        onZoomToGroup={zoomToGroup}
       />
 
       <div
