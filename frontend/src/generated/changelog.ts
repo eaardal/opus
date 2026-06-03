@@ -24,441 +24,437 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    "version": "0.8.0",
-    "date": "2026-06-03",
-    "sections": [
+    version: "0.8.0",
+    date: "2026-06-03",
+    sections: [
       {
-        "name": "Added",
-        "subsections": [
+        name: "Added",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Close button on the Task Queue and Timeline panels",
-                "subitems": []
+                text: "Close button on the Task Queue and Timeline panels",
+                subitems: [],
               },
               {
-                "text": "\"Add Task\" button on each group in the sidebar's task list, for creating a task directly in that group",
-                "subitems": []
+                text: '"Add Task" button on each group in the sidebar\'s task list, for creating a task directly in that group',
+                subitems: [],
               },
               {
-                "text": "CMD+Scroll to zoom, in addition to the existing CTRL+Scroll",
-                "subitems": []
+                text: "CMD+Scroll to zoom, in addition to the existing CTRL+Scroll",
+                subitems: [],
               },
               {
-                "text": "Magnifying glass feature in the \"How to Use\" table",
-                "subitems": []
+                text: 'Magnifying glass feature in the "How to Use" table',
+                subitems: [],
               },
               {
-                "text": "Click a task's sequence number in the task list to zoom the canvas to that task",
-                "subitems": []
+                text: "Click a task's sequence number in the task list to zoom the canvas to that task",
+                subitems: [],
               },
               {
-                "text": "Click a group's header to pan the canvas to focus on that group",
-                "subitems": []
+                text: "Click a group's header to pan the canvas to focus on that group",
+                subitems: [],
               },
               {
-                "text": "\"Ungrouped\" group for tasks placed directly on the canvas",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: '"Ungrouped" group for tasks placed directly on the canvas',
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Fixed",
-        "subsections": [
+        name: "Fixed",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Context menus can now be dismissed by clicking outside them over a group background",
-                "subitems": []
+                text: "Context menus can now be dismissed by clicking outside them over a group background",
+                subitems: [],
               },
               {
-                "text": "Assigned people's avatars now show on tasks with no title (a \"\u003cNo title\u003e\" placeholder keeps the title and its avatars visible)",
-                "subitems": []
-              }
-            ]
-          }
-        ]
-      }
-    ]
+                text: 'Assigned people\'s avatars now show on tasks with no title (a "\u003cNo title\u003e" placeholder keeps the title and its avatars visible)',
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
-    "version": "0.7.0",
-    "date": "2026-06-02",
-    "sections": [
+    version: "0.7.0",
+    date: "2026-06-02",
+    sections: [
       {
-        "name": "Added",
-        "subsections": [
+        name: "Added",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Progress bars now animate, with celebratory flourishes:",
-                "subitems": [
+                text: "Progress bars now animate, with celebratory flourishes:",
+                subitems: [
                   "Smooth animated movement as task statuses inside a group change",
                   "A large progress percentage shown over the group when the progress percentage number change up or down",
                   "Confetti from a group's progress bar when it reaches 100%",
-                  "Confetti rains down the canvas when the overall progress bar reaches 100%"
-                ]
+                  "Confetti rains down the canvas when the overall progress bar reaches 100%",
+                ],
               },
               {
-                "text": "The canvas background tints green when every task in the project is completed",
-                "subitems": []
+                text: "The canvas background tints green when every task in the project is completed",
+                subitems: [],
               },
               {
-                "text": "Legend for task categories and statuses in the \"How to Use\" dialog",
-                "subitems": []
+                text: 'Legend for task categories and statuses in the "How to Use" dialog',
+                subitems: [],
               },
               {
-                "text": "The current project name now appears next to the workspace name in the app bar",
-                "subitems": []
+                text: "The current project name now appears next to the workspace name in the app bar",
+                subitems: [],
               },
               {
-                "text": "Environment badge for development and staging backends",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: "Environment badge for development and staging backends",
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Fixed",
-        "subsections": [
+        name: "Fixed",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Camera zoom no longer takes several clicks to settle when starting a person's presentation",
-                "subitems": []
+                text: "Camera zoom no longer takes several clicks to settle when starting a person's presentation",
+                subitems: [],
               },
               {
-                "text": "Canvas action bar tooltips no longer disappear behind the presentation bar",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: "Canvas action bar tooltips no longer disappear behind the presentation bar",
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Changed",
-        "subsections": [
+        name: "Changed",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Presentation bar reworked: Now has one Play button per person to hopefully make it more intuitive",
-                "subitems": []
+                text: "Presentation bar reworked: Now has one Play button per person to hopefully make it more intuitive",
+                subitems: [],
               },
               {
-                "text": "Presentation bar can now be collapsed when not in use",
-                "subitems": []
+                text: "Presentation bar can now be collapsed when not in use",
+                subitems: [],
               },
               {
-                "text": "People assigned to a task are listed above unassigned people in the assign menu",
-                "subitems": []
+                text: "People assigned to a task are listed above unassigned people in the assign menu",
+                subitems: [],
               },
               {
-                "text": "The task-title editor on the canvas grows to fit its content as you type",
-                "subitems": []
+                text: "The task-title editor on the canvas grows to fit its content as you type",
+                subitems: [],
               },
               {
-                "text": "Magnifying glass overlay panel now follows the cursor",
-                "subitems": []
+                text: "Magnifying glass overlay panel now follows the cursor",
+                subitems: [],
               },
               {
-                "text": "Removed the sequence number from task nodes on the canvas",
-                "subitems": []
+                text: "Removed the sequence number from task nodes on the canvas",
+                subitems: [],
               },
               {
-                "text": "Opening a project for the first time snaps the viewport to fit its content",
-                "subitems": []
-              }
-            ]
-          }
-        ]
-      }
-    ]
+                text: "Opening a project for the first time snaps the viewport to fit its content",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
-    "version": "0.6.0",
-    "date": "2026-05-31",
-    "sections": [
+    version: "0.6.0",
+    date: "2026-05-31",
+    sections: [
       {
-        "name": "Added",
-        "subsections": [
+        name: "Added",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Experimenal: Timeline panel showing a task's status duration as a timeline. Use via top-right actionbar on the canvas.",
-                "subitems": [
-                  "Separate timeline segments for each person assigned to the task, with richer segment tooltips"
-                ]
+                text: "Experimenal: Timeline panel showing a task's status duration as a timeline. Use via top-right actionbar on the canvas.",
+                subitems: [
+                  "Separate timeline segments for each person assigned to the task, with richer segment tooltips",
+                ],
               },
               {
-                "text": "Experimenal: Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas",
-                "subitems": [
-                  "Status selector in the presentation bar"
-                ]
+                text: "Experimenal: Presentation Mode that shows each person's assigned work one-by-one by moving around the canvas",
+                subitems: ["Status selector in the presentation bar"],
               },
               {
-                "text": "Magnifying glass: hold Option/Alt and hover a task to view an enlarged copy of it",
-                "subitems": []
+                text: "Magnifying glass: hold Option/Alt and hover a task to view an enlarged copy of it",
+                subitems: [],
               },
               {
-                "text": "Copy \u0026 paste options in the canvas context menus",
-                "subitems": [
-                  "\"Copy X items\" option in the multi-select context menu"
-                ]
+                text: "Copy \u0026 paste options in the canvas context menus",
+                subitems: ['"Copy X items" option in the multi-select context menu'],
               },
               {
-                "text": "\"Edit title\" option in a task's right-click context menu",
-                "subitems": []
+                text: '"Edit title" option in a task\'s right-click context menu',
+                subitems: [],
               },
               {
-                "text": "\"Canvas locked\" border and indicator around the canvas when it's locked",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: '"Canvas locked" border and indicator around the canvas when it\'s locked',
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Fixed",
-        "subsections": [
+        name: "Fixed",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Zoom no longer \"jumps\" when zooming quickly with an external mouse's scrollwheel. Smoother zoom overall.",
-                "subitems": []
+                text: 'Zoom no longer "jumps" when zooming quickly with an external mouse\'s scrollwheel. Smoother zoom overall.',
+                subitems: [],
               },
               {
-                "text": "No longer losing edit mode when a task node lost hover state while editing its title",
-                "subitems": []
+                text: "No longer losing edit mode when a task node lost hover state while editing its title",
+                subitems: [],
               },
               {
-                "text": "How group titles are displayed in the magnifying glass panel",
-                "subitems": []
+                text: "How group titles are displayed in the magnifying glass panel",
+                subitems: [],
               },
               {
-                "text": "Timeline kickstart logic",
-                "subitems": []
+                text: "Timeline kickstart logic",
+                subitems: [],
               },
               {
-                "text": "Width allocation for the project selector dropdown",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: "Width allocation for the project selector dropdown",
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Changed",
-        "subsections": [
+        name: "Changed",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "New tasks and new groups now start in edit mode so you can set a title right away",
-                "subitems": [
+                text: "New tasks and new groups now start in edit mode so you can set a title right away",
+                subitems: [
                   "Double-clicking a task's node on the canvas enters edit mode even if it has no title yet",
-                  "Larger input field when editing a task's title on the canvas"
-                ]
+                  "Larger input field when editing a task's title on the canvas",
+                ],
               },
               {
-                "text": "Larger hitbox for removing a connection between nodes, making it easier to click",
-                "subitems": []
-              }
-            ]
-          }
-        ]
-      }
-    ]
+                text: "Larger hitbox for removing a connection between nodes, making it easier to click",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
-    "version": "0.5.0",
-    "date": "2026-05-25",
-    "sections": [
+    version: "0.5.0",
+    date: "2026-05-25",
+    sections: [
       {
-        "name": "Added",
-        "subsections": [
+        name: "Added",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Viewer-only indicator around canvas so it's easier to understand why you can't edit or move things",
-                "subitems": []
+                text: "Viewer-only indicator around canvas so it's easier to understand why you can't edit or move things",
+                subitems: [],
               },
               {
-                "text": "Owner info shown in workspaces that are shared with you",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: "Owner info shown in workspaces that are shared with you",
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Fixed",
-        "subsections": [
+        name: "Fixed",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Undo/redo and Firestore sync issues",
-                "subitems": []
+                text: "Undo/redo and Firestore sync issues",
+                subitems: [],
               },
               {
-                "text": "Bugs around duplicating tasks and groups",
-                "subitems": []
+                text: "Bugs around duplicating tasks and groups",
+                subitems: [],
               },
               {
-                "text": "Copy \u0026 paste and duplicate logic",
-                "subitems": []
+                text: "Copy \u0026 paste and duplicate logic",
+                subitems: [],
               },
               {
-                "text": "Creating a new workspace now also creates an initial project",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: "Creating a new workspace now also creates an initial project",
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Changed",
-        "subsections": [
+        name: "Changed",
+        subsections: [
           {
-            "heading": "Real-time editing",
-            "items": [
+            heading: "Real-time editing",
+            items: [
               {
-                "text": "The storage layer has been totally re-written to better leverage Firestore as a real-time database:",
-                "subitems": [
+                text: "The storage layer has been totally re-written to better leverage Firestore as a real-time database:",
+                subitems: [
                   "Changes, movements and edits on the canvas and tasks should be instantly visible to all users seeing the canvas",
                   "Save functionality has been removed since all changes are automatically saved immediately",
                   "Undo/redo and Duplicate Task functionality in particular has some minor bugs yet",
-                  "Might be other issues due to this major change - please report!"
-                ]
-              }
-            ]
+                  "Might be other issues due to this major change - please report!",
+                ],
+              },
+            ],
           },
           {
-            "heading": "Other changes",
-            "items": [
+            heading: "Other changes",
+            items: [
               {
-                "text": "Button colors updated",
-                "subitems": []
+                text: "Button colors updated",
+                subitems: [],
               },
               {
-                "text": "Dark mode theme removed (light mode only going forward)",
-                "subitems": []
-              }
-            ]
-          }
-        ]
-      }
-    ]
+                text: "Dark mode theme removed (light mode only going forward)",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
-    "version": "0.4.0",
-    "date": "2026-05-22",
-    "sections": [
+    version: "0.4.0",
+    date: "2026-05-22",
+    sections: [
       {
-        "name": "Added",
-        "subsections": [
+        name: "Added",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Lock/unlock button (top right in canvas) to prevent all canvas elements from being moved",
-                "subitems": []
+                text: "Lock/unlock button (top right in canvas) to prevent all canvas elements from being moved",
+                subitems: [],
               },
               {
-                "text": "Pan canvas with scroll gesture (two fingers on laptop touchpad, scrollwheel on external mouse), with option to disable in Settings",
-                "subitems": []
+                text: "Pan canvas with scroll gesture (two fingers on laptop touchpad, scrollwheel on external mouse), with option to disable in Settings",
+                subitems: [],
               },
               {
-                "text": "Moving a group also moves its content; hold Shift to move the group independently",
-                "subitems": []
+                text: "Moving a group also moves its content; hold Shift to move the group independently",
+                subitems: [],
               },
               {
-                "text": "New right-click context menu when multiple canvas nodes are selected",
-                "subitems": []
+                text: "New right-click context menu when multiple canvas nodes are selected",
+                subitems: [],
               },
               {
-                "text": "Duplicate tasks or groups with Cmd+D",
-                "subitems": []
+                text: "Duplicate tasks or groups with Cmd+D",
+                subitems: [],
               },
               {
-                "text": "Duplicate option in the task right-click context menu",
-                "subitems": []
+                text: "Duplicate option in the task right-click context menu",
+                subitems: [],
               },
               {
-                "text": "Help button in the bottom right corner of the canvas with a keyboard shortcuts reference",
-                "subitems": []
+                text: "Help button in the bottom right corner of the canvas with a keyboard shortcuts reference",
+                subitems: [],
               },
               {
-                "text": "Copy and paste tasks and groups (Cmd+C / Cmd+V). Can be copied in the same canvas or across projects or workspaces.",
-                "subitems": [
-                  "Pasted elements are automatically selected after pasting so they can be moved into place"
-                ]
+                text: "Copy and paste tasks and groups (Cmd+C / Cmd+V). Can be copied in the same canvas or across projects or workspaces.",
+                subitems: [
+                  "Pasted elements are automatically selected after pasting so they can be moved into place",
+                ],
               },
               {
-                "text": "Select multiple elements by choosing each by Cmd+clicking them",
-                "subitems": []
+                text: "Select multiple elements by choosing each by Cmd+clicking them",
+                subitems: [],
               },
               {
-                "text": "Select all elements on the canvas with Cmd+A",
-                "subitems": []
-              }
-            ]
-          }
-        ]
+                text: "Select all elements on the canvas with Cmd+A",
+                subitems: [],
+              },
+            ],
+          },
+        ],
       },
       {
-        "name": "Fixed",
-        "subsections": [
+        name: "Fixed",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Permission denied errors now show an error screen with actionable options instead of an infinite loader",
-                "subitems": []
+                text: "Permission denied errors now show an error screen with actionable options instead of an infinite loader",
+                subitems: [],
               },
               {
-                "text": "Last active project is now selected by defeault when re-opening the app",
-                "subitems": []
-              }
-            ]
-          }
-        ]
-      }
-    ]
+                text: "Last active project is now selected by defeault when re-opening the app",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
-    "version": "0.3.0",
-    "date": "2026-04-17",
-    "sections": [
+    version: "0.3.0",
+    date: "2026-04-17",
+    sections: [
       {
-        "name": "Added",
-        "subsections": [
+        name: "Added",
+        subsections: [
           {
-            "heading": null,
-            "items": [
+            heading: null,
+            items: [
               {
-                "text": "Workspace roles: Owner, Editor, Viewer",
-                "subitems": []
+                text: "Workspace roles: Owner, Editor, Viewer",
+                subitems: [],
               },
               {
-                "text": "User avatar and account info in the top bar",
-                "subitems": []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
+                text: "User avatar and account info in the top bar",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ];
