@@ -20,6 +20,34 @@
   padding: 4px;
 }
 
+/* Heading + controls stacked; flexes so the people row can still shrink/scroll
+   while the toggle tab keeps its width on the right. */
+.canvas-presentation-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Small uppercase caption labelling the bar. */
+.canvas-presentation-heading {
+  padding-left: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* The original horizontal control row: status filter beside the people list. */
+.canvas-presentation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
 /* "Status" caption stacked above the status filter dropdown. */
 .canvas-presentation-status {
   display: flex;
@@ -31,7 +59,7 @@
 
 .canvas-presentation-section-label {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-secondary);
 }
 

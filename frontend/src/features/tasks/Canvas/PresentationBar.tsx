@@ -48,49 +48,52 @@ export function PresentationBar({
   return (
     <div className={`canvas-presentation-bar ${collapsed ? "collapsed" : ""}`}>
       {!collapsed && (
-        <>
-          <div className="canvas-presentation-status">
-            <span className="canvas-presentation-section-label">Status</span>
-            <StatusFilterSelect
-              statuses={statuses}
-              value={statusFilter}
-              onChange={onSelectStatus}
-            />
-          </div>
-          <div className="canvas-presentation-people">
-            {people.map((person) => {
-              const isActive = person.id === selectedPersonId;
-              const name = person.name || "(unnamed)";
-              const total = taskCountsByPerson[person.id] ?? 0;
-              // Always show the person's total; while presenting, prefix the
-              // position within it (e.g. "2/3" vs "3").
-              const count = isActive && total > 0 ? `${currentIndex + 1}/${total}` : `${total}`;
-              return (
-                <div
-                  key={person.id}
-                  className={`canvas-presentation-person ${isActive ? "active" : ""}`}
-                  title={name}
-                >
-                  <span className="canvas-presentation-avatar">
-                    <PersonAvatar person={person} size={28} />
-                  </span>
-                  <button
-                    type="button"
-                    className="canvas-presentation-play"
-                    onClick={() => (isActive ? onAdvance() : onSelectPerson(person.id))}
-                    disabled={total === 0}
-                    aria-label={
-                      isActive ? `Advance ${name}'s presentation` : `Present ${name}'s tasks`
-                    }
+        <div className="canvas-presentation-main">
+          <span className="canvas-presentation-heading">Presentation mode</span>
+          <div className="canvas-presentation-row">
+            <div className="canvas-presentation-status">
+              <span className="canvas-presentation-section-label">Status</span>
+              <StatusFilterSelect
+                statuses={statuses}
+                value={statusFilter}
+                onChange={onSelectStatus}
+              />
+            </div>
+            <div className="canvas-presentation-people">
+              {people.map((person) => {
+                const isActive = person.id === selectedPersonId;
+                const name = person.name || "(unnamed)";
+                const total = taskCountsByPerson[person.id] ?? 0;
+                // Always show the person's total; while presenting, prefix the
+                // position within it (e.g. "2/3" vs "3").
+                const count = isActive && total > 0 ? `${currentIndex + 1}/${total}` : `${total}`;
+                return (
+                  <div
+                    key={person.id}
+                    className={`canvas-presentation-person ${isActive ? "active" : ""}`}
+                    title={name}
                   >
-                    <Play size={14} />
-                  </button>
-                  <span className="canvas-presentation-count">{count}</span>
-                </div>
-              );
-            })}
+                    <span className="canvas-presentation-avatar">
+                      <PersonAvatar person={person} size={28} />
+                    </span>
+                    <button
+                      type="button"
+                      className="canvas-presentation-play"
+                      onClick={() => (isActive ? onAdvance() : onSelectPerson(person.id))}
+                      disabled={total === 0}
+                      aria-label={
+                        isActive ? `Advance ${name}'s presentation` : `Present ${name}'s tasks`
+                      }
+                    >
+                      <Play size={14} />
+                    </button>
+                    <span className="canvas-presentation-count">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </>
+        </div>
       )}
       <button
         type="button"
