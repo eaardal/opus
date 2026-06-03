@@ -39,6 +39,7 @@ import { exportSvgElementAsPng } from "../../../domain/tasks/exportCanvasAsPng";
 import type { Connection, ViewBox } from "../../../domain/tasks/types";
 import { useCanvasPan } from "../../../hooks/useCanvasPan";
 import { useViewBoxAnimation } from "../../../hooks/useViewBoxAnimation";
+import { useDismissOnOutside } from "../../../hooks/useDismissOnOutside";
 import { useWorkspaceRole } from "../../workspace/WorkspaceRoleContext";
 
 // Width (in canvas units) of the viewport when presentation mode focuses a task.
@@ -299,44 +300,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     }
   });
 
-  useEffect(() => {
-    if (!groupContextMenu) return;
-    const handleClose = (e: MouseEvent) => {
-      if (groupContextMenuRef.current && !groupContextMenuRef.current.contains(e.target as Node)) {
-        setGroupContextMenu(null);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setGroupContextMenu(null);
-    };
-    document.addEventListener("mousedown", handleClose);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClose);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [groupContextMenu]);
+  useDismissOnOutside(groupContextMenuRef, () => setGroupContextMenu(null), !!groupContextMenu);
 
-  useEffect(() => {
-    if (!canvasContextMenu) return;
-    const handleClose = (e: MouseEvent) => {
-      if (
-        canvasContextMenuRef.current &&
-        !canvasContextMenuRef.current.contains(e.target as Node)
-      ) {
-        setCanvasContextMenu(null);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setCanvasContextMenu(null);
-    };
-    document.addEventListener("mousedown", handleClose);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClose);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [canvasContextMenu]);
+  useDismissOnOutside(canvasContextMenuRef, () => setCanvasContextMenu(null), !!canvasContextMenu);
 
   useEffect(() => {
     if (!canvasContextMenu) {
@@ -352,26 +318,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     };
   }, [canvasContextMenu, onCheckPasteAvailable]);
 
-  useEffect(() => {
-    if (!multiSelectionContextMenu) return;
-    const handleClose = (e: MouseEvent) => {
-      if (
-        multiSelectionContextMenuRef.current &&
-        !multiSelectionContextMenuRef.current.contains(e.target as Node)
-      ) {
-        setMultiSelectionContextMenu(null);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMultiSelectionContextMenu(null);
-    };
-    document.addEventListener("mousedown", handleClose);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClose);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [multiSelectionContextMenu]);
+  useDismissOnOutside(
+    multiSelectionContextMenuRef,
+    () => setMultiSelectionContextMenu(null),
+    !!multiSelectionContextMenu,
+  );
 
   // Escape closes the Task Queue / Timeline panel while one is open. Skips events
   // from editable targets (mirroring the global shortcuts) so Escape inside a
@@ -388,16 +339,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isTaskQueueOpen, isTimelineOpen]);
 
-  useEffect(() => {
-    if (!showHelpPanel || isHelpPanelPinned) return;
-    const handleClose = (e: MouseEvent) => {
-      if (helpPanelRef.current && !helpPanelRef.current.contains(e.target as Node)) {
-        setShowHelpPanel(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClose);
-    return () => document.removeEventListener("mousedown", handleClose);
-  }, [showHelpPanel, isHelpPanelPinned]);
+  useDismissOnOutside(
+    helpPanelRef,
+    () => setShowHelpPanel(false),
+    showHelpPanel && !isHelpPanelPinned,
+    {
+      closeOnEscape: false,
+    },
+  );
 
   const handleNodeContextMenu = useCallback(
     (e: React.MouseEvent, taskId: string) => {

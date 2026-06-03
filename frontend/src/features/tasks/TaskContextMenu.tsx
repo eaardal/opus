@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import "./TaskContextMenu.css";
 import type { Task, TaskStatus } from "../../domain/tasks/types";
 import type { CategoryConfig, StatusConfig } from "./theme";
 import type { Person } from "../../domain/teams/types";
 import { orderPeopleByAssignment } from "../../domain/tasks/assignments";
+import { useDismissOnOutside } from "../../hooks/useDismissOnOutside";
 import { PersonAvatar } from "./PersonAvatar";
 
 interface TaskContextMenuProps {
@@ -46,20 +47,7 @@ export function TaskContextMenu({
   const [peopleFilter, setPeopleFilter] = useState("");
   const assignedIds = new Set(task.assignedPersonIds ?? []);
 
-  useEffect(() => {
-    const handleClose = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose();
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("mousedown", handleClose);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClose);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+  useDismissOnOutside(menuRef, onClose);
 
   useLayoutEffect(() => {
     if (!menuRef.current) return;
