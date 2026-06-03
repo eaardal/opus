@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.0] - 2026-06-03
+
+### Added
+
+- Close button on the Task Queue and Timeline panels
+- "Add Task" button on each group in the sidebar's task list, for creating a task directly in that group
+- CMD+Scroll to zoom, in addition to the existing CTRL+Scroll
+- Magnifying glass feature in the "How to Use" table
+- Click a task's sequence number in the task list to zoom the canvas to that task
+- Click a group's header to pan the canvas to focus on that group
+- "Ungrouped" group for tasks placed directly on the canvas
+
+### Fixed
+
+- Context menus can now be dismissed by clicking outside them over a group background
+- Assigned people's avatars now show on tasks with no title (a "<No title>" placeholder keeps the title and its avatars visible)
+
 ## [0.7.0] - 2026-06-02
 
 ### Added
