@@ -4,13 +4,13 @@
 
 ### Added
 
-- Close button on the Task Queue and Timeline panels
+- Close button on the Task Queue and Timeline panels. They can also be closed by pressing Escape
 - "Add Task" button on each group in the sidebar's task list, for creating a task directly in that group
-- CMD+Scroll to zoom, in addition to the existing CTRL+Scroll
-- Magnifying glass feature in the "How to Use" table
-- Click a task's sequence number in the task list to zoom the canvas to that task
-- Click a group's header to pan the canvas to focus on that group
-- "Ungrouped" group for tasks placed directly on the canvas
+- Can use CMD+Scroll to zoom the canvas, in addition to the existing CTRL+Scroll
+- Magnifying glass feature is now listed in the "How to Use" table
+- Click a task's sequence number in the sidebar to zoom the canvas to that task
+- Click a group's header in the sidebar to zoom the canvas to that group
+- Added a new "Ungrouped" group on the top of the sidebar for tasks placed directly on the canvas
 
 ### Fixed
 

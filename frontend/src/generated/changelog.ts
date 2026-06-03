@@ -34,7 +34,7 @@ export const CHANGELOG: ChangelogEntry[] = [
             heading: null,
             items: [
               {
-                text: "Close button on the Task Queue and Timeline panels",
+                text: "Close button on the Task Queue and Timeline panels. They can also be closed by pressing Escape",
                 subitems: [],
               },
               {
@@ -42,23 +42,23 @@ export const CHANGELOG: ChangelogEntry[] = [
                 subitems: [],
               },
               {
-                text: "CMD+Scroll to zoom, in addition to the existing CTRL+Scroll",
+                text: "Can use CMD+Scroll to zoom the canvas, in addition to the existing CTRL+Scroll",
                 subitems: [],
               },
               {
-                text: 'Magnifying glass feature in the "How to Use" table',
+                text: 'Magnifying glass feature is now listed in the "How to Use" table',
                 subitems: [],
               },
               {
-                text: "Click a task's sequence number in the task list to zoom the canvas to that task",
+                text: "Click a task's sequence number in the sidebar to zoom the canvas to that task",
                 subitems: [],
               },
               {
-                text: "Click a group's header to pan the canvas to focus on that group",
+                text: "Click a group's header in the sidebar to zoom the canvas to that group",
                 subitems: [],
               },
               {
-                text: '"Ungrouped" group for tasks placed directly on the canvas',
+                text: 'Added a new "Ungrouped" group on the top of the sidebar for tasks placed directly on the canvas',
                 subitems: [],
               },
             ],
