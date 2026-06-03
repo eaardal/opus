@@ -46,8 +46,9 @@ interface TimelinePanelProps {
   tasks: Task[];
   people: Person[];
   statuses: Record<TaskStatus, StatusConfig>;
-  highlightedTaskId: string | null;
-  onHighlightTask: (taskId: string | null) => void;
+  selectedTaskIds: ReadonlySet<string>;
+  /** Select a single task and centre the canvas on it. */
+  onSelectTask: (taskId: string) => void;
   onClose: () => void;
 }
 
@@ -86,8 +87,8 @@ export function TimelinePanel({
   tasks,
   people,
   statuses,
-  highlightedTaskId,
-  onHighlightTask,
+  selectedTaskIds,
+  onSelectTask,
   onClose,
 }: TimelinePanelProps) {
   const now = useNow(10_000);
@@ -264,14 +265,14 @@ export function TimelinePanel({
               {timelineTasks.map((task) => {
                 const seq = tasks.indexOf(task) + 1;
                 const assignedIds = task.assignedPersonIds ?? [];
-                const isHighlighted = highlightedTaskId === task.id;
+                const isSelected = selectedTaskIds.has(task.id);
                 return (
-                  <div key={task.id} className={`tl-row ${isHighlighted ? "highlighted" : ""}`}>
+                  <div key={task.id} className={`tl-row ${isSelected ? "selected" : ""}`}>
                     <div className="tl-label">
                       <button
                         type="button"
                         className="tl-task-head"
-                        onClick={() => onHighlightTask(isHighlighted ? null : task.id)}
+                        onClick={() => onSelectTask(task.id)}
                         title={task.text || "(untitled)"}
                       >
                         <span className="tl-status-emoji">{statuses[task.status]?.emoji}</span>

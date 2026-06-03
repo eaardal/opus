@@ -12,7 +12,7 @@
 }
 
 .group-rect.selected {
-  stroke: var(--selection-stroke);
+  stroke: var(--selection-border);
   stroke-width: 2;
 }
 

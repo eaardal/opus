@@ -134,8 +134,8 @@
   border-bottom: 1px solid var(--menu-border);
 }
 
-.tl-row.highlighted {
-  background: var(--menu-item-active-bg);
+.tl-row.selected {
+  background: var(--selection-fill);
 }
 
 .tl-label {

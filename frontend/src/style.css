@@ -28,8 +28,12 @@
   --connector-pending: #aaa;
   --connector-remove: #e04040;
 
-  --selection-fill: rgba(244, 114, 182, 0.15);
-  --selection-stroke: #e0609a;
+  /* Selection (persistent, single or multi). See .claude/plans/selection-normalization.md */
+  --selection-fill: rgba(47, 111, 224, 0.14);
+  --selection-border: #2f6fe0;
+  /* Peek: transient cross-surface hover echo on tasks — distinct from selection. */
+  --peek-border: #85b0f6;
+  /* Generic accent blue (settings toggle, progress glow). */
   --highlight-bg: rgba(96, 165, 250, 0.2);
   --highlight-border: #85b0f6;
 

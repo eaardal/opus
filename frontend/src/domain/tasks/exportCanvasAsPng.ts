@@ -23,7 +23,7 @@ export const CANVAS_CSS_VAR_NAMES: readonly string[] = [
   "--connector-color",
   "--connector-pending",
   "--selection-fill",
-  "--selection-stroke",
+  "--selection-border",
   "--group-fill",
   "--group-stroke",
   "--group-stroke-hover",
@@ -56,13 +56,13 @@ export function inlineCssVarsInAttributes(root: Element, getValue: (name: string
 const EXPORT_STYLE_RULES = `
   .node { fill: var(--node-fill); stroke: var(--node-stroke); stroke-width: 2; }
   .node.highlighted { stroke-width: 3; }
-  .node.selected { stroke: var(--selection-stroke); stroke-width: 3; }
+  .node.selected { stroke: var(--selection-border); stroke-width: 3; }
   .node-text { fill: var(--text-primary); font-size: 10px; font-weight: 500; }
   .node-emoji { font-size: 18px; }
   .tooltip rect { fill: var(--tooltip-fill); stroke: var(--tooltip-stroke); stroke-width: 1; }
   .tooltip text { fill: var(--text-primary); font-size: 12px; }
   .group-rect { fill: var(--group-fill); stroke: var(--group-stroke); stroke-width: 1.5; stroke-dasharray: 6, 3; }
-  .group-rect.selected { stroke: var(--selection-stroke); stroke-width: 2; }
+  .group-rect.selected { stroke: var(--selection-border); stroke-width: 2; }
   .group-title { fill: var(--group-title-color); font-size: 13px; font-weight: 500; }
   .group-zoom-btn-bg { fill: var(--group-fill); stroke: var(--group-stroke); stroke-width: 1; }
   .group-zoom-btn-icon { fill: none; stroke: var(--group-title-color); stroke-width: 1.5; stroke-linecap: round; }

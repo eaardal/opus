@@ -19,7 +19,9 @@ interface SidebarProps {
   activeProjectId: string;
   onSwitchProject: (id: string) => void;
   onOpenProjectAdmin: () => void;
-  highlightedTaskId: string | null;
+  peekedTaskId: string | null;
+  selectedTaskIds: ReadonlySet<string>;
+  selectedGroupIds: ReadonlySet<string>;
   openMenuId: string | null;
   menuPosition: { top: number; left: number } | null;
   focusTaskId: string | null;
@@ -30,7 +32,7 @@ interface SidebarProps {
   onDuplicateTask: (id: string) => void;
   onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
-  onSetHighlightedTaskId: (id: string | null) => void;
+  onSetPeekedTaskId: (id: string | null) => void;
   onSetOpenMenuId: (id: string | null) => void;
   onSetMenuPosition: (position: { top: number; left: number } | null) => void;
   onTaskKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -55,7 +57,9 @@ export function Sidebar({
   activeProjectId,
   onSwitchProject,
   onOpenProjectAdmin,
-  highlightedTaskId,
+  peekedTaskId,
+  selectedTaskIds,
+  selectedGroupIds,
   openMenuId,
   menuPosition,
   focusTaskId,
@@ -66,7 +70,7 @@ export function Sidebar({
   onDuplicateTask,
   onCopyTask,
   onDeleteTask,
-  onSetHighlightedTaskId,
+  onSetPeekedTaskId,
   onSetOpenMenuId,
   onSetMenuPosition,
   onTaskKeyDown,
@@ -136,7 +140,9 @@ export function Sidebar({
         groups={groups}
         categories={categories}
         statuses={statuses}
-        highlightedTaskId={highlightedTaskId}
+        peekedTaskId={peekedTaskId}
+        selectedTaskIds={selectedTaskIds}
+        selectedGroupIds={selectedGroupIds}
         openMenuId={openMenuId}
         menuPosition={menuPosition}
         focusTaskId={focusTaskId}
@@ -146,7 +152,7 @@ export function Sidebar({
         onDuplicateTask={onDuplicateTask}
         onCopyTask={onCopyTask}
         onDeleteTask={onDeleteTask}
-        onSetHighlightedTaskId={onSetHighlightedTaskId}
+        onSetPeekedTaskId={onSetPeekedTaskId}
         onSetOpenMenuId={onSetOpenMenuId}
         onSetMenuPosition={onSetMenuPosition}
         onTaskKeyDown={onTaskKeyDown}

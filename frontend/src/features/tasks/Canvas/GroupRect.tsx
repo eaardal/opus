@@ -12,6 +12,9 @@ const EDGE_THICKNESS = 8;
 const MIN_WIDTH = 80;
 const MIN_HEIGHT = 60;
 
+// Pointer travel (px) that turns a group press into a move rather than a select.
+const GROUP_DRAG_THRESHOLD = 4;
+
 const ZOOM_BTN_SIZE = 20;
 const ZOOM_BTN_MARGIN = 6;
 const LOCK_BTN_GAP = 4;
@@ -45,6 +48,8 @@ interface GroupRectProps {
   panMode: boolean;
   canvasLocked?: boolean;
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
+  /** Select this group as the sole selection (plain click on an unselected group). */
+  onSelect: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
   onMoveStart: () => void;
@@ -71,6 +76,7 @@ export function GroupRect({
   panMode,
   canvasLocked = false,
   onMouseDown: onGroupMouseDown,
+  onSelect,
   onMove,
   onMoveWithTasks,
   onMoveStart,
@@ -181,22 +187,35 @@ export function GroupRect({
     if (panMode || e.button === 1) return;
     if (canvasLocked) return;
     if (group.locked && !e.shiftKey) return;
-    if (isSelected) {
+    // Cmd/Ctrl-click toggles this group in the multi-selection (handled by the hook).
+    // An already-selected group lets the hook start a selection drag.
+    if (e.metaKey || e.ctrlKey || isSelected) {
       onGroupMouseDown(e, group.id);
       return;
     }
     e.preventDefault();
     e.stopPropagation();
 
-    onMoveStart();
-
+    // Unselected group: a plain click selects it; dragging past the threshold
+    // moves it. onMoveStart (which checkpoints history) is deferred until an
+    // actual move, so a click leaves no stray undo entry.
     const startSvg = toSvgCoords(e.clientX, e.clientY);
+    const startClientX = e.clientX;
+    const startClientY = e.clientY;
     const origX = group.x;
     const origY = group.y;
     const withTasks = !e.shiftKey;
     const carriedTaskIds = withTasks ? new Set(containedTasks.map((t) => t.id)) : new Set<string>();
+    let moving = false;
 
     const handleMouseMove = (ev: MouseEvent) => {
+      if (!moving) {
+        const dx = ev.clientX - startClientX;
+        const dy = ev.clientY - startClientY;
+        if (Math.hypot(dx, dy) < GROUP_DRAG_THRESHOLD) return;
+        moving = true;
+        onMoveStart();
+      }
       const currentSvg = toSvgCoords(ev.clientX, ev.clientY);
       const newX = origX + currentSvg.x - startSvg.x;
       const newY = origY + currentSvg.y - startSvg.y;
@@ -210,7 +229,11 @@ export function GroupRect({
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      onMoveEnd(group.id, carriedTaskIds);
+      if (moving) {
+        onMoveEnd(group.id, carriedTaskIds);
+      } else {
+        onSelect(group.id);
+      }
     };
 
     document.addEventListener("mousemove", handleMouseMove);

@@ -5,6 +5,7 @@ import type { CategoryConfig, StatusConfig } from "../theme";
 import type { TaskStatus } from "../../../domain/tasks/types";
 import type { Person } from "../../../domain/teams/types";
 import { taskDisplayTitle } from "../../../domain/tasks/displayTitle";
+import { nodeSelectionRing } from "../../../domain/tasks/selectionRing";
 import { avatarColor } from "../../../lib/avatar";
 
 // The title editor auto-grows: it starts one line tall and expands downward to
@@ -14,13 +15,22 @@ const EDIT_WIDTH = 220;
 const EDIT_MIN_HEIGHT = 33;
 const EDIT_BORDER_Y = 2;
 
+// Node border + selection/peek ring styling. Tunable while we settle on values.
+const NODE_STROKE_WIDTH = 3;
+const SELECTION_RING_GAP = 5; // px the ring sits outside the node shape
+const SELECTION_RING_WIDTH = 3; // canvas selection ring thickness
+const PEEK_RING_WIDTH = 2; // transient hover-echo ring thickness
+const TITLE_RING_OFFSET = 1; // px the title ring sits outside the tooltip
+
 interface TaskNodeProps {
   task: Task;
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   isDragging: boolean;
-  isHighlighted: boolean;
+  /** Persistent selection (single click or marquee) — draws the blue selection ring. */
   isSelected: boolean;
+  /** Transient cross-surface hover echo (e.g. hovering this task's sidebar row). */
+  isPeeked: boolean;
   /** Whether this node's inline title editor is open. Controlled by the canvas
       so editing survives hover changes and can be opened on task creation. */
   isEditing: boolean;
@@ -42,8 +52,8 @@ export function TaskNode({
   categories,
   statuses,
   isDragging,
-  isHighlighted,
   isSelected,
+  isPeeked,
   isEditing,
   assignedPersons = [],
   idPrefix = "",
@@ -108,12 +118,20 @@ export function TaskNode({
   const categoryColor = category?.color;
   const shape = category?.shape || "circle";
   const baseFill = categoryColor || statusColor;
-  const nodeClass = `node ${isDragging ? "dragging" : ""} ${isHighlighted ? "highlighted" : ""} ${isSelected ? "selected" : ""}`;
+  const nodeClass = `node ${isDragging ? "dragging" : ""}`;
+  // The shape keeps its status-colour border at all times; selection and peek are
+  // drawn as separate offset rings (below) so the status colour stays legible.
   const nodeStyle = {
     fill: baseFill,
-    stroke: isHighlighted ? "var(--highlight-border)" : isSelected ? undefined : statusColor,
-    strokeWidth: isHighlighted ? 4 : 3,
+    stroke: statusColor,
+    strokeWidth: NODE_STROKE_WIDTH,
   };
+
+  // Selection takes visual precedence over a transient peek.
+  const showRing = isSelected || isPeeked;
+  const ringColor = isSelected ? "var(--selection-border)" : "var(--peek-border)";
+  const ringWidth = isSelected ? SELECTION_RING_WIDTH : PEEK_RING_WIDTH;
+  const ring = nodeSelectionRing(shape, SELECTION_RING_GAP);
 
   const MAX_TOOLTIP_WIDTH = 170;
   const CHAR_WIDTH = 8;
@@ -199,6 +217,24 @@ export function TaskNode({
           onContextMenu={onContextMenu}
         />
       )}
+      {showRing &&
+        (ring.kind === "circle" ? (
+          <circle
+            r={ring.r}
+            fill="none"
+            stroke={ringColor}
+            strokeWidth={ringWidth}
+            style={{ pointerEvents: "none" }}
+          />
+        ) : (
+          <polygon
+            points={ring.points}
+            fill="none"
+            stroke={ringColor}
+            strokeWidth={ringWidth}
+            style={{ pointerEvents: "none" }}
+          />
+        ))}
       <text
         textAnchor="middle"
         dy="0.35em"
@@ -244,17 +280,18 @@ export function TaskNode({
               rx="4"
               style={{ fill: statusColor }}
             />
-            {isHighlighted && (
+            {showRing && (
               <rect
-                x={tooltipX - 2}
-                y="-14"
-                width={tooltipWidth + 4}
-                height={tooltipHeight + 4}
+                x={tooltipX - TITLE_RING_OFFSET}
+                y={-12 - TITLE_RING_OFFSET}
+                width={tooltipWidth + TITLE_RING_OFFSET * 2}
+                height={tooltipHeight + TITLE_RING_OFFSET * 2}
                 rx="6"
                 style={{
                   fill: "none",
-                  stroke: "var(--highlight-border)",
-                  strokeWidth: 2,
+                  stroke: ringColor,
+                  strokeWidth: ringWidth,
+                  pointerEvents: "none",
                 }}
               />
             )}

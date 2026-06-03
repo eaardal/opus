@@ -8,9 +8,15 @@
   margin-right: 6px;
 }
 
-.task-item.highlighted {
-  outline: 2px solid var(--highlight-border);
-  outline-offset: 3px;
+/* Transient hover echo. Listed before .selected so selection wins when both apply. */
+.task-item.peeked {
+  outline: 2px solid var(--peek-border);
+  outline-offset: 2px;
+}
+
+.task-item.selected {
+  outline: 2px solid var(--selection-border);
+  outline-offset: 2px;
 }
 
 .task-status-dot {

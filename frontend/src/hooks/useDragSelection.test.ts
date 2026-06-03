@@ -42,12 +42,12 @@ function renderDragSelection({ state, coords = { x: 0, y: 0 } }: RenderArgs = {}
   const push = vi.fn();
   const replace = vi.fn();
   const getSvgCoords = vi.fn(() => coords);
-  const onClearHighlight = vi.fn();
+  const onClearPeek = vi.fn();
 
   const result = renderHook(() =>
-    useDragSelection({ present, push, replace, getSvgCoords, onClearHighlight }),
+    useDragSelection({ present, push, replace, getSvgCoords, onClearPeek }),
   );
-  return { ...result, push, replace, getSvgCoords, onClearHighlight };
+  return { ...result, push, replace, getSvgCoords, onClearPeek };
 }
 
 describe("handleNodeMouseDown", () => {
@@ -265,18 +265,18 @@ describe("handleGroupMouseDown — Cmd/Ctrl multi-select", () => {
 
 describe("handleCanvasMouseDown", () => {
   test("ignores mousedowns on a non-svg target", () => {
-    const { result, onClearHighlight } = renderDragSelection();
+    const { result, onClearPeek } = renderDragSelection();
     const otherTarget = {} as EventTarget;
     act(() => {
       result.current.handleCanvasMouseDown(mouseEvent({ target: otherTarget }), null);
     });
     expect(result.current.selection).toBeNull();
-    expect(onClearHighlight).not.toHaveBeenCalled();
+    expect(onClearPeek).not.toHaveBeenCalled();
   });
 
-  test("starts a marquee selection at the click coordinates and clears the highlight", () => {
+  test("starts a marquee selection at the click coordinates and clears the peek echo", () => {
     const svg = {} as SVGSVGElement;
-    const { result, onClearHighlight } = renderDragSelection({ coords: { x: 10, y: 20 } });
+    const { result, onClearPeek } = renderDragSelection({ coords: { x: 10, y: 20 } });
 
     act(() => {
       result.current.handleCanvasMouseDown(mouseEvent({ target: svg }), svg);
@@ -288,7 +288,7 @@ describe("handleCanvasMouseDown", () => {
       currentX: 10,
       currentY: 20,
     });
-    expect(onClearHighlight).toHaveBeenCalled();
+    expect(onClearPeek).toHaveBeenCalled();
   });
 });
 

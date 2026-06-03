@@ -78,7 +78,7 @@ interface CanvasProps {
   connecting: ConnectingState | null;
   shiftPressed: boolean;
   hoveredNode: string | null;
-  highlightedTaskId: string | null;
+  peekedTaskId: string | null;
   editingNodeId: string | null;
   selectedNodes: Set<string>;
   selection: SelectionRect | null;
@@ -132,7 +132,10 @@ interface CanvasProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  onHighlightTask: (taskId: string | null) => void;
+  /** Select a single task and centre the canvas on it (from panels/navigation). */
+  onSelectTask: (taskId: string) => void;
+  /** Select a single group as the sole selection (plain click on a group body). */
+  onSelectGroup: (groupId: string) => void;
   /**
    * When true, fit all content into the viewport once after mount — used on the
    * first-ever open of a project that already has content, so the user lands on
@@ -151,7 +154,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     connecting,
     shiftPressed,
     hoveredNode,
-    highlightedTaskId,
+    peekedTaskId,
     editingNodeId,
     selectedNodes,
     selection,
@@ -200,7 +203,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     canRedo,
     onUndo,
     onRedo,
-    onHighlightTask,
+    onSelectTask,
+    onSelectGroup,
     autoFitOnLoad,
   },
   ref,
@@ -697,12 +701,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           people={people}
           categories={categories}
           statuses={statuses}
-          highlightedTaskId={highlightedTaskId}
+          selectedTaskIds={selectedNodes}
           showBlockedBySection={settings.showBlockedBySection}
           onAssignPersonToTask={onAssignPeople}
           onAssignPersonAndSetInProgress={onAssignPersonAndSetInProgress}
           onSetTaskStatus={onSetTaskStatus}
-          onHighlightTask={onHighlightTask}
+          onSelectTask={onSelectTask}
           onClose={() => setIsTaskQueueOpen(false)}
         />
       )}
@@ -711,8 +715,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           tasks={tasks}
           people={people}
           statuses={statuses}
-          highlightedTaskId={highlightedTaskId}
-          onHighlightTask={onHighlightTask}
+          selectedTaskIds={selectedNodes}
+          onSelectTask={onSelectTask}
           onClose={() => setIsTimelineOpen(false)}
         />
       )}
@@ -780,6 +784,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             panMode={panMode}
             canvasLocked={canvasLocked}
             onMouseDown={onGroupMouseDown}
+            onSelect={onSelectGroup}
             onMove={onGroupMove}
             onMoveWithTasks={onGroupMoveWithTasks}
             onMoveStart={onGroupMoveStart}
@@ -817,8 +822,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               categories={categories}
               statuses={statuses}
               isDragging={draggingNode === task.id}
-              isHighlighted={highlightedTaskId === task.id}
               isSelected={selectedNodes.has(task.id)}
+              isPeeked={peekedTaskId === task.id}
               isEditing={editingNodeId === task.id}
               assignedPersons={
                 task.assignedPersonIds
@@ -870,8 +875,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               categories={categories}
               statuses={statuses}
               isDragging={draggingNode === task.id}
-              isHighlighted={highlightedTaskId === task.id}
               isSelected={selectedNodes.has(task.id)}
+              isPeeked={peekedTaskId === task.id}
               isEditing={editingNodeId === task.id}
               assignedPersons={
                 task.assignedPersonIds

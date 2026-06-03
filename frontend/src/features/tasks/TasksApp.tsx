@@ -205,7 +205,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
-  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  // Transient cross-surface hover echo (e.g. hovering a task's sidebar row lights
+  // up its canvas node). Distinct from selection — see selection-normalization plan.
+  const [peekedTaskId, setPeekedTaskId] = useState<string | null>(null);
   // The task whose inline title editor is open on the canvas. Set when a task
   // is created via the canvas so the user can type its title immediately.
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
@@ -268,7 +270,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     push,
     replace,
     getSvgCoords: (e) => canvasRef.current?.getSvgCoords(e) ?? { x: 0, y: 0 },
-    onClearHighlight: () => setHighlightedTaskId(null),
+    onClearPeek: () => setPeekedTaskId(null),
     onDragComplete: handleDragComplete,
     onConnectionAdded: handleConnectionAdded,
   });
@@ -798,12 +800,29 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     animateViewBoxTo(newVb);
   };
 
+  // Clicking a canvas node already selects it (via the drag-selection hook); here
+  // we just reveal it in the sidebar so the two stay in sync.
   const handleNodeClick = (taskId: string) => {
-    setHighlightedTaskId(taskId);
     const taskItem = taskItemRefs.current.get(taskId);
     if (taskItem) {
       taskItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
+  };
+
+  // Navigation/panels: make a task or group the sole selection and centre on it.
+  const selectAndCenterTask = (id: string) => {
+    selectElements(new Set([id]), new Set());
+    zoomToTask(id);
+  };
+
+  const selectAndCenterGroup = (id: string) => {
+    selectElements(new Set(), new Set([id]));
+    zoomToGroup(id);
+  };
+
+  // Plain click on a group body: select it without moving the camera (already in view).
+  const selectGroupOnly = (id: string) => {
+    selectElements(new Set(), new Set([id]));
   };
 
   const handleRemoveConnection = (e: React.MouseEvent, from: string, to: string) => {
@@ -835,7 +854,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         activeProjectId={activeProjectId}
         onSwitchProject={onSwitchProject}
         onOpenProjectAdmin={onOpenProjectAdmin}
-        highlightedTaskId={highlightedTaskId}
+        peekedTaskId={peekedTaskId}
+        selectedTaskIds={selectedNodes}
+        selectedGroupIds={selectedGroups}
         openMenuId={openMenuId}
         menuPosition={menuPosition}
         focusTaskId={focusTaskId}
@@ -846,7 +867,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onDuplicateTask={handleDuplicateTask}
         onCopyTask={handleCopyTask}
         onDeleteTask={deleteTask}
-        onSetHighlightedTaskId={setHighlightedTaskId}
+        onSetPeekedTaskId={setPeekedTaskId}
         onSetOpenMenuId={setOpenMenuId}
         onSetMenuPosition={setMenuPosition}
         onTaskKeyDown={handleTaskKeyDown}
@@ -856,8 +877,8 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onAddTaskToGroup={addTaskToGroup}
         people={people}
         onAssignPeople={assignPeople}
-        onZoomToGroup={zoomToGroup}
-        onZoomToTask={zoomToTask}
+        onZoomToGroup={selectAndCenterGroup}
+        onZoomToTask={selectAndCenterTask}
       />
 
       <div
@@ -875,7 +896,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         connecting={connecting}
         shiftPressed={shiftPressed}
         hoveredNode={hoveredNode}
-        highlightedTaskId={highlightedTaskId}
+        peekedTaskId={peekedTaskId}
         editingNodeId={editingNodeId}
         selectedNodes={selectedNodes}
         selection={selection}
@@ -900,7 +921,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onGroupResizeEnd={handleGroupResizeEnd}
         onGroupTitleChange={updateGroupTitle}
         onEditingGroupChange={setEditingGroupId}
-        onGroupZoomTo={zoomToGroup}
+        onGroupZoomTo={selectAndCenterGroup}
         onGroupToggleLock={toggleGroupLock}
         onGroupDelete={deleteGroup}
         people={people}
@@ -925,7 +946,8 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         canRedo={canRedo}
         onUndo={wrappedUndo}
         onRedo={wrappedRedo}
-        onHighlightTask={setHighlightedTaskId}
+        onSelectTask={selectAndCenterTask}
+        onSelectGroup={selectGroupOnly}
       />
     </div>
   );

@@ -38,8 +38,8 @@ interface UseDragSelectionArgs {
   replace: (state: TaskGraphState) => void;
   /** Map a React.MouseEvent to SVG user-space coordinates. */
   getSvgCoords: (e: React.MouseEvent) => { x: number; y: number };
-  /** Clear the "highlighted task" state in the parent (called on canvas click). */
-  onClearHighlight: () => void;
+  /** Clear the transient "peek" echo in the parent (called on a canvas-background click). */
+  onClearPeek: () => void;
   /**
    * Called when a node or selection drag completes (mouse up). Receives the
    * IDs of all tasks and groups whose positions changed during the drag.
@@ -78,7 +78,7 @@ export function useDragSelection({
   push,
   replace,
   getSvgCoords,
-  onClearHighlight,
+  onClearPeek,
   onDragComplete,
   onConnectionAdded,
 }: UseDragSelectionArgs): UseDragSelectionResult {
@@ -175,7 +175,7 @@ export function useDragSelection({
     (e: React.MouseEvent, svgEl: SVGSVGElement | null) => {
       if (e.target !== svgEl) return;
       const coords = getSvgCoords(e);
-      onClearHighlight();
+      onClearPeek();
       if (selectedNodesRef.current.size > 0 || selectedGroupsRef.current.size > 0) {
         const clickedOnSelected = presentRef.current.tasks.some((t) => {
           if (!selectedNodesRef.current.has(t.id)) return false;
@@ -195,7 +195,7 @@ export function useDragSelection({
         currentY: coords.y,
       });
     },
-    [getSvgCoords, onClearHighlight],
+    [getSvgCoords, onClearPeek],
   );
 
   const handleCanvasMouseMove = useCallback(

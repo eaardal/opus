@@ -85,7 +85,7 @@
 
 .selection-rect {
   fill: var(--selection-fill);
-  stroke: var(--selection-stroke);
+  stroke: var(--selection-border);
   stroke-width: 1;
   stroke-dasharray: 4, 2;
 }
@@ -294,5 +294,5 @@
 }
 
 .help-pin-btn.active {
-  color: var(--selection-stroke);
+  color: var(--selection-border);
 }

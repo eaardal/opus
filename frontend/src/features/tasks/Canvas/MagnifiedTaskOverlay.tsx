@@ -133,8 +133,8 @@ export function MagnifiedTaskOverlay({
             categories={categories}
             statuses={statuses}
             isDragging={false}
-            isHighlighted={false}
             isSelected={false}
+            isPeeked={false}
             isEditing={false}
             assignedPersons={assignedPersons}
             idPrefix="mag-"

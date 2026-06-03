@@ -28,12 +28,13 @@ interface TaskQueuePanelProps {
   people: Person[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
-  highlightedTaskId: string | null;
+  selectedTaskIds: ReadonlySet<string>;
   showBlockedBySection: boolean;
   onAssignPersonToTask: (taskId: string, personIds: string[]) => void;
   onAssignPersonAndSetInProgress: (taskId: string, personId: string) => void;
   onSetTaskStatus: (taskId: string, status: TaskStatus) => void;
-  onHighlightTask: (taskId: string | null) => void;
+  /** Select a single task and centre the canvas on it. */
+  onSelectTask: (taskId: string) => void;
   onClose: () => void;
 }
 
@@ -44,12 +45,12 @@ export function TaskQueuePanel({
   people,
   categories,
   statuses,
-  highlightedTaskId,
+  selectedTaskIds,
   showBlockedBySection,
   onAssignPersonToTask,
   onAssignPersonAndSetInProgress,
   onSetTaskStatus,
-  onHighlightTask,
+  onSelectTask,
   onClose,
 }: TaskQueuePanelProps) {
   const dragSourceRef = useRef<DragSource | null>(null);
@@ -249,12 +250,10 @@ export function TaskQueuePanel({
                               seqNum={seqNum}
                               groupTitle={getGroupTitle(task)}
                               assignedPeople={assignedPeople}
-                              isHighlighted={highlightedTaskId === task.id}
+                              isHighlighted={selectedTaskIds.has(task.id)}
                               categories={categories}
                               statuses={statuses}
-                              onClick={() =>
-                                onHighlightTask(highlightedTaskId === task.id ? null : task.id)
-                              }
+                              onClick={() => onSelectTask(task.id)}
                             />
                           );
                         })}
@@ -289,7 +288,7 @@ export function TaskQueuePanel({
                           task={task}
                           seqNum={seqNum}
                           groupTitle={getGroupTitle(task)}
-                          isHighlighted={highlightedTaskId === task.id}
+                          isHighlighted={selectedTaskIds.has(task.id)}
                           categories={categories}
                           statuses={statuses}
                           draggable
@@ -304,9 +303,7 @@ export function TaskQueuePanel({
                             handleDrop(e, person.id, "current");
                           }}
                           onRemove={() => unassignTaskFromPerson(task.id, person.id)}
-                          onClick={() =>
-                            onHighlightTask(highlightedTaskId === task.id ? null : task.id)
-                          }
+                          onClick={() => onSelectTask(task.id)}
                         />
                       );
                     })}
@@ -343,7 +340,7 @@ export function TaskQueuePanel({
                           task={task}
                           seqNum={seqNum}
                           groupTitle={getGroupTitle(task)}
-                          isHighlighted={highlightedTaskId === task.id}
+                          isHighlighted={selectedTaskIds.has(task.id)}
                           categories={categories}
                           statuses={statuses}
                           draggable
@@ -358,9 +355,7 @@ export function TaskQueuePanel({
                             handleDrop(e, person.id, "queue");
                           }}
                           onRemove={() => unassignTaskFromPerson(task.id, person.id)}
-                          onClick={() =>
-                            onHighlightTask(highlightedTaskId === task.id ? null : task.id)
-                          }
+                          onClick={() => onSelectTask(task.id)}
                         />
                       );
                     })}

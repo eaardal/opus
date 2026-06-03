@@ -18,15 +18,8 @@
   fill: var(--node-drag-fill);
 }
 
-.node.highlighted {
-  stroke: var(--highlight-border);
-  stroke-width: 4;
-}
-
-.node.selected {
-  stroke: var(--selection-stroke);
-  stroke-width: 3;
-}
+/* Selection and peek are drawn as separate offset rings in TaskNode, not as a
+   stroke on the node shape — see domain/tasks/selectionRing. */
 
 .node-text {
   fill: var(--text-primary);

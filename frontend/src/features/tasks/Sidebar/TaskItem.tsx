@@ -9,7 +9,10 @@ interface TaskItemProps {
   index: number;
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
-  isHighlighted: boolean;
+  /** Reflects canvas selection (selectedNodes). Draws the blue selection outline. */
+  isSelected: boolean;
+  /** Transient hover echo (this row or its canvas node is being hovered). */
+  isPeeked: boolean;
   isMenuOpen: boolean;
   menuPosition: { top: number; left: number } | null;
   onUpdateText: (text: string) => void;
@@ -18,7 +21,7 @@ interface TaskItemProps {
   onDuplicate: () => void;
   onCopy: () => void;
   onDelete: () => void;
-  onSetHighlighted: (highlighted: boolean) => void;
+  onSetPeeked: (peeked: boolean) => void;
   onToggleMenu: (e: React.MouseEvent) => void;
   onCloseMenu: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -35,7 +38,8 @@ export function TaskItem({
   index,
   categories,
   statuses,
-  isHighlighted,
+  isSelected,
+  isPeeked,
   isMenuOpen,
   menuPosition,
   onUpdateText,
@@ -44,7 +48,7 @@ export function TaskItem({
   onDuplicate,
   onCopy,
   onDelete,
-  onSetHighlighted,
+  onSetPeeked,
   onToggleMenu,
   onCloseMenu,
   onKeyDown,
@@ -57,9 +61,9 @@ export function TaskItem({
   return (
     <div
       ref={registerRef}
-      className={`task-item ${isHighlighted ? "highlighted" : ""}`}
-      onMouseEnter={() => onSetHighlighted(true)}
-      onMouseLeave={() => onSetHighlighted(false)}
+      className={`task-item ${isSelected ? "selected" : ""} ${isPeeked ? "peeked" : ""}`}
+      onMouseEnter={() => onSetPeeked(true)}
+      onMouseLeave={() => onSetPeeked(false)}
     >
       <button
         type="button"
@@ -81,8 +85,8 @@ export function TaskItem({
         value={task.text}
         onChange={(e) => onUpdateText(e.target.value)}
         onKeyDown={onKeyDown}
-        onFocus={() => onSetHighlighted(true)}
-        onBlur={() => onSetHighlighted(false)}
+        onFocus={() => onSetPeeked(true)}
+        onBlur={() => onSetPeeked(false)}
         placeholder="Enter task..."
       />
       <div className="task-menu-container">

@@ -11,7 +11,9 @@ interface TaskListProps {
   groups: Group[];
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
-  highlightedTaskId: string | null;
+  peekedTaskId: string | null;
+  selectedTaskIds: ReadonlySet<string>;
+  selectedGroupIds: ReadonlySet<string>;
   openMenuId: string | null;
   menuPosition: { top: number; left: number } | null;
   focusTaskId: string | null;
@@ -21,7 +23,7 @@ interface TaskListProps {
   onDuplicateTask: (id: string) => void;
   onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
-  onSetHighlightedTaskId: (id: string | null) => void;
+  onSetPeekedTaskId: (id: string | null) => void;
   onSetOpenMenuId: (id: string | null) => void;
   onSetMenuPosition: (position: { top: number; left: number } | null) => void;
   onTaskKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -42,7 +44,9 @@ export function TaskList({
   groups,
   categories,
   statuses,
-  highlightedTaskId,
+  peekedTaskId,
+  selectedTaskIds,
+  selectedGroupIds,
   openMenuId,
   menuPosition,
   focusTaskId,
@@ -52,7 +56,7 @@ export function TaskList({
   onDuplicateTask,
   onCopyTask,
   onDeleteTask,
-  onSetHighlightedTaskId,
+  onSetPeekedTaskId,
   onSetOpenMenuId,
   onSetMenuPosition,
   onTaskKeyDown,
@@ -121,7 +125,8 @@ export function TaskList({
         index={index}
         categories={categories}
         statuses={statuses}
-        isHighlighted={highlightedTaskId === task.id}
+        isSelected={selectedTaskIds.has(task.id)}
+        isPeeked={peekedTaskId === task.id}
         isMenuOpen={openMenuId === task.id}
         menuPosition={menuPosition}
         onUpdateText={(text) => onUpdateTaskText(task.id, text)}
@@ -130,7 +135,7 @@ export function TaskList({
         onDuplicate={() => onDuplicateTask(task.id)}
         onCopy={() => onCopyTask(task.id)}
         onDelete={() => onDeleteTask(task.id)}
-        onSetHighlighted={(highlighted) => onSetHighlightedTaskId(highlighted ? task.id : null)}
+        onSetPeeked={(peeked) => onSetPeekedTaskId(peeked ? task.id : null)}
         onToggleMenu={(e) => handleOpenMenu(task.id, e)}
         onCloseMenu={handleCloseMenu}
         onKeyDown={onTaskKeyDown}
@@ -165,7 +170,7 @@ export function TaskList({
         <div key={group.id} className="task-list-group">
           <button
             type="button"
-            className="task-list-group-header task-list-group-link"
+            className={`task-list-group-header task-list-group-link ${selectedGroupIds.has(group.id) ? "selected" : ""}`}
             onClick={() => onZoomToGroup(group.id)}
             title="Zoom to group"
           >
