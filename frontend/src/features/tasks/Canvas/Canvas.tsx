@@ -609,12 +609,20 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         groupTitle: string | null;
         left: number;
         top: number;
+        bounds: { width: number; height: number };
       }
-    | { kind: "group"; title: string; left: number; top: number }
+    | {
+        kind: "group";
+        title: string;
+        left: number;
+        top: number;
+        bounds: { width: number; height: number };
+      }
     | null = null;
 
   if (magnifyActive && svgRef.current && viewBox.width > 0 && viewBox.height > 0) {
     const rect = svgRef.current.getBoundingClientRect();
+    const bounds = { width: rect.width, height: rect.height };
     const toScreen = (cx: number, cy: number) => ({
       left: ((cx - viewBox.x) / viewBox.width) * rect.width,
       top: ((cy - viewBox.y) / viewBox.height) * rect.height,
@@ -628,6 +636,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         kind: "task",
         task: hoveredTask,
         groupTitle: findOwningGroup(hoveredTask, groups)?.title ?? null,
+        bounds,
         ...(magnifierCursor ?? toScreen(hoveredTask.x, hoveredTask.y)),
       };
     } else if (hoveredGroupId !== null && hoveredGroupId !== editingGroupId) {
@@ -636,6 +645,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         magnifier = {
           kind: "group",
           title: group.title,
+          bounds,
           ...(magnifierCursor ?? toScreen(group.x + group.width / 2, group.y + group.height / 2)),
         };
       }
@@ -736,10 +746,16 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           groupTitle={magnifier.groupTitle}
           left={magnifier.left}
           top={magnifier.top}
+          bounds={magnifier.bounds}
         />
       )}
       {magnifier?.kind === "group" && (
-        <MagnifiedGroupOverlay title={magnifier.title} left={magnifier.left} top={magnifier.top} />
+        <MagnifiedGroupOverlay
+          title={magnifier.title}
+          left={magnifier.left}
+          top={magnifier.top}
+          bounds={magnifier.bounds}
+        />
       )}
       {showSettings && (
         <SettingsDialog

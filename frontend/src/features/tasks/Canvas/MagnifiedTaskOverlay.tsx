@@ -4,6 +4,7 @@ import type { Task, TaskStatus } from "../../../domain/tasks/types";
 import type { Person } from "../../../domain/teams/types";
 import type { CategoryConfig, StatusConfig } from "../theme";
 import { wrapText } from "../../../lib/wrapText";
+import { magnifierPanelPosition } from "../../../lib/magnifierPanelPosition";
 import { TaskNode } from "./TaskNode";
 
 // How much larger than its on-canvas-at-100% size the copy is drawn.
@@ -33,10 +34,12 @@ interface MagnifiedTaskOverlayProps {
   /**
    * The anchor point in pixels, relative to the canvas container — the trailing
    * cursor while magnifying, or the task centre as a fallback. The panel floats
-   * above and to the right of this point (see `.magnifier-overlay` in CSS).
+   * above and to the right of this point, flipping/clamping near an edge.
    */
   left: number;
   top: number;
+  /** Canvas container size in pixels, used to keep the panel within view. */
+  bounds: { width: number; height: number };
 }
 
 const noop = () => {};
@@ -55,6 +58,7 @@ export function MagnifiedTaskOverlay({
   groupTitle,
   left,
   top,
+  bounds,
 }: MagnifiedTaskOverlayProps) {
   const groupRef = useRef<SVGGElement>(null);
   const [box, setBox] = useState<Box | null>(null);
@@ -93,13 +97,23 @@ export function MagnifiedTaskOverlay({
   // SVG text does not wrap, so split the title ourselves and stack the lines.
   const groupLabelLines = groupTitle ? wrapText(groupTitle, GROUP_LABEL_MAX_CHARS_PER_LINE) : [];
 
+  // The rendered panel is the measured content box scaled up; place it near the
+  // cursor but kept within the canvas so it never spills past an edge.
+  const position = box
+    ? magnifierPanelPosition(
+        { left, top },
+        { width: box.width * SCALE, height: box.height * SCALE },
+        bounds,
+      )
+    : null;
+
   return (
     <div
       className="magnifier-overlay"
       style={{
-        left,
-        top,
-        visibility: box ? "visible" : "hidden",
+        left: position?.left ?? left,
+        top: position?.top ?? top,
+        visibility: position ? "visible" : "hidden",
       }}
     >
       <svg
