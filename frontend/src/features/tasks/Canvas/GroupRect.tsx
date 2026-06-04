@@ -187,6 +187,15 @@ export function GroupRect({
 
   const handleBodyMouseDown = (e: React.MouseEvent) => {
     if (isEditing) return;
+
+    // Pressing the group should commit any open title editor (a task's or
+    // another group's), just as pressing the empty canvas does. Those editors
+    // commit on blur, but the preventDefault() below — and the one in the
+    // selection hook — suppresses the browser's native focus shift, so the blur
+    // would never fire. Dismiss it explicitly.
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== inputRef.current) active.blur();
+
     if (panMode || e.button === 1) return;
     if (canvasLocked) return;
     if (group.locked && !e.shiftKey) return;
