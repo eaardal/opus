@@ -12,6 +12,6 @@
 .help-key {
   color: var(--text-primary);
   font-weight: 500;
-  padding-right: 16px;
+  padding-left: 16px;
   white-space: nowrap;
 }

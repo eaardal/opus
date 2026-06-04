@@ -20,76 +20,76 @@ export function HelpContent({ categories, statuses }: HelpContentProps) {
       <table className="help-table">
         <tbody>
           <tr>
-            <td className="help-key">Cmd/Ctrl + Z</td>
             <td>Undo</td>
+            <td className="help-key">Cmd/Ctrl + Z</td>
           </tr>
           <tr>
-            <td className="help-key">Cmd/Ctrl + Shift + Z</td>
             <td>Redo</td>
+            <td className="help-key">Cmd/Ctrl + Shift + Z</td>
           </tr>
           <tr>
-            <td className="help-key">Cmd/Ctrl + Enter</td>
             <td>Add new task</td>
+            <td className="help-key">Cmd/Ctrl + Enter</td>
           </tr>
           <tr>
-            <td className="help-key">Shift + drag</td>
             <td>Connect nodes</td>
+            <td className="help-key">Shift + drag</td>
           </tr>
           <tr>
-            <td className="help-key">Shift + click connection</td>
             <td>Remove connection</td>
+            <td className="help-key">Shift + click connection</td>
           </tr>
           <tr>
+            <td>Pan canvas</td>
             <td className="help-key">Space + drag</td>
-            <td>Pan canvas</td>
           </tr>
           <tr>
+            <td>Pan canvas</td>
             <td className="help-key">Middle mouse + drag</td>
-            <td>Pan canvas</td>
           </tr>
           <tr>
+            <td>Pan canvas</td>
             <td className="help-key">Two-finger scroll / scroll wheel</td>
-            <td>Pan canvas</td>
           </tr>
           <tr>
-            <td className="help-key">Cmd/Ctrl + scroll / pinch</td>
             <td>Zoom in/out</td>
+            <td className="help-key">Cmd/Ctrl + scroll / pinch</td>
           </tr>
           <tr>
-            <td className="help-key">Alt/Option + hover</td>
             <td>Magnify the task or group under the cursor</td>
+            <td className="help-key">Alt/Option + hover</td>
           </tr>
           <tr>
-            <td className="help-key">Drag on canvas</td>
             <td>Select — node/group must be fully inside the selection area</td>
+            <td className="help-key">Drag on canvas</td>
           </tr>
           <tr>
-            <td className="help-key">Cmd/Ctrl + A</td>
             <td>Select all elements</td>
+            <td className="help-key">Cmd/Ctrl + A</td>
           </tr>
           <tr>
-            <td className="help-key">Cmd/Ctrl + C</td>
             <td>Copy selected elements</td>
+            <td className="help-key">Cmd/Ctrl + C</td>
           </tr>
           <tr>
-            <td className="help-key">Cmd/Ctrl + V</td>
             <td>Paste elements (works across projects and workspaces)</td>
+            <td className="help-key">Cmd/Ctrl + V</td>
           </tr>
           <tr>
-            <td className="help-key">Cmd/Ctrl + D</td>
             <td>Duplicate selected elements</td>
+            <td className="help-key">Cmd/Ctrl + D</td>
           </tr>
           <tr>
-            <td className="help-key">Escape</td>
             <td>Clear selection</td>
+            <td className="help-key">Escape</td>
           </tr>
           <tr>
-            <td className="help-key">Double-click group title</td>
             <td>Edit group name</td>
+            <td className="help-key">Double-click group title</td>
           </tr>
           <tr>
-            <td className="help-key">Double-click node tooltip</td>
             <td>Rename node</td>
+            <td className="help-key">Double-click node tooltip</td>
           </tr>
         </tbody>
       </table>
