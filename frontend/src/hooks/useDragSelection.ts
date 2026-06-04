@@ -68,10 +68,15 @@ export interface UseDragSelectionResult {
   handleCanvasMouseUp: (e: React.MouseEvent, coords: { x: number; y: number }) => void;
   clearSelection: () => void;
   selectElements: (taskIds: ReadonlySet<string>, groupIds: ReadonlySet<string>) => void;
+  /** Add or remove a single group from the current selection (shift/cmd-click). */
+  toggleGroupSelection: (groupId: string) => void;
 }
 
 const NODE_HIT_RADIUS = 25;
 const CONNECTION_DROP_RADIUS = 30;
+// Pointer travel (screen px) under which a shift-press on a node counts as a
+// click (toggles selection) rather than a drag (creates a connection).
+const SHIFT_CLICK_MAX_TRAVEL = 4;
 
 export function useDragSelection({
   present,
@@ -103,6 +108,9 @@ export function useDragSelection({
   onDragCompleteRef.current = onDragComplete;
   const onConnectionAddedRef = useRef(onConnectionAdded);
   onConnectionAddedRef.current = onConnectionAdded;
+  // Screen-space origin of a shift-press, used at mouse-up to tell a shift-click
+  // (toggle selection) apart from a shift-drag (create a connection).
+  const connectStartClientRef = useRef<{ x: number; y: number } | null>(null);
 
   const isDragging = draggingNode !== null || draggingSelection !== null;
 
@@ -129,6 +137,7 @@ export function useDragSelection({
       e.stopPropagation();
       const coords = getSvgCoords(e);
       if (e.shiftKey) {
+        connectStartClientRef.current = { x: e.clientX, y: e.clientY };
         setConnecting({ from: taskId, mouseX: coords.x, mouseY: coords.y });
       } else if (e.metaKey || e.ctrlKey) {
         const next = new Set(selectedNodesRef.current);
@@ -227,27 +236,41 @@ export function useDragSelection({
   );
 
   const handleCanvasMouseUp = useCallback(
-    (_e: React.MouseEvent, coords: { x: number; y: number }) => {
+    (e: React.MouseEvent, coords: { x: number; y: number }) => {
       const current = presentRef.current;
 
       if (connecting) {
-        const targetTask = current.tasks.find((t) => {
-          const dx = t.x - coords.x;
-          const dy = t.y - coords.y;
-          return Math.sqrt(dx * dx + dy * dy) < CONNECTION_DROP_RADIUS;
-        });
-        if (targetTask && targetTask.id !== connecting.from) {
-          const nextConnections = addConnectionIfNew(current.connections, {
-            from: connecting.from,
-            to: targetTask.id,
+        const startClient = connectStartClientRef.current;
+        connectStartClientRef.current = null;
+        const travel = startClient
+          ? Math.hypot(e.clientX - startClient.x, e.clientY - startClient.y)
+          : Number.POSITIVE_INFINITY;
+
+        if (travel < SHIFT_CLICK_MAX_TRAVEL) {
+          // Shift-click without a drag: toggle the origin node in the selection.
+          const next = new Set(selectedNodesRef.current);
+          if (next.has(connecting.from)) next.delete(connecting.from);
+          else next.add(connecting.from);
+          setSelectedNodes(next);
+        } else {
+          const targetTask = current.tasks.find((t) => {
+            const dx = t.x - coords.x;
+            const dy = t.y - coords.y;
+            return Math.sqrt(dx * dx + dy * dy) < CONNECTION_DROP_RADIUS;
           });
-          if (nextConnections !== current.connections) {
-            push({
-              tasks: current.tasks,
-              connections: nextConnections,
-              groups: current.groups,
+          if (targetTask && targetTask.id !== connecting.from) {
+            const nextConnections = addConnectionIfNew(current.connections, {
+              from: connecting.from,
+              to: targetTask.id,
             });
-            onConnectionAddedRef.current?.(connecting.from, targetTask.id);
+            if (nextConnections !== current.connections) {
+              push({
+                tasks: current.tasks,
+                connections: nextConnections,
+                groups: current.groups,
+              });
+              onConnectionAddedRef.current?.(connecting.from, targetTask.id);
+            }
           }
         }
       }
@@ -300,6 +323,13 @@ export function useDragSelection({
     [],
   );
 
+  const toggleGroupSelection = useCallback((groupId: string) => {
+    const next = new Set(selectedGroupsRef.current);
+    if (next.has(groupId)) next.delete(groupId);
+    else next.add(groupId);
+    setSelectedGroups(next);
+  }, []);
+
   return {
     draggingNode,
     connecting,
@@ -314,5 +344,6 @@ export function useDragSelection({
     handleCanvasMouseUp,
     clearSelection,
     selectElements,
+    toggleGroupSelection,
   };
 }

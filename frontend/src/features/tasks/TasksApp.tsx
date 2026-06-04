@@ -289,6 +289,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     handleCanvasMouseUp,
     clearSelection,
     selectElements,
+    toggleGroupSelection,
   } = dragSelection;
 
   // Keep the ref in sync for the subscription callback to read.
@@ -948,6 +949,7 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onRedo={wrappedRedo}
         onSelectTask={selectAndCenterTask}
         onSelectGroup={selectGroupOnly}
+        onToggleGroupSelect={toggleGroupSelection}
       />
     </div>
   );

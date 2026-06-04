@@ -194,6 +194,103 @@ describe("handleNodeMouseDown — Cmd/Ctrl multi-select", () => {
   });
 });
 
+describe("Shift-click multi-select", () => {
+  test("shift-clicking a node (press and release without dragging) toggles it into the selection", () => {
+    const state: TaskGraphState = {
+      tasks: [task("a", 0, 0), task("b", 10, 10)],
+      connections: [],
+      groups: [],
+    };
+    const { result } = renderDragSelection({ state, coords: { x: 0, y: 0 } });
+
+    act(() => {
+      result.current.handleNodeMouseDown(
+        mouseEvent({ shiftKey: true, clientX: 0, clientY: 0 }),
+        "a",
+      );
+    });
+    act(() => {
+      result.current.handleCanvasMouseUp(mouseEvent({ clientX: 0, clientY: 0 }), { x: 0, y: 0 });
+    });
+
+    expect(result.current.selectedNodes.has("a")).toBe(true);
+    expect(result.current.connecting).toBeNull();
+  });
+
+  test("shift-clicking an already-selected node removes it from the selection", () => {
+    const state: TaskGraphState = { tasks: [task("a", 0, 0)], connections: [], groups: [] };
+    const { result } = renderDragSelection({ state, coords: { x: 0, y: 0 } });
+
+    act(() => {
+      result.current.handleNodeMouseDown(
+        mouseEvent({ shiftKey: true, clientX: 0, clientY: 0 }),
+        "a",
+      );
+    });
+    act(() => {
+      result.current.handleCanvasMouseUp(mouseEvent({ clientX: 0, clientY: 0 }), { x: 0, y: 0 });
+    });
+    act(() => {
+      result.current.handleNodeMouseDown(
+        mouseEvent({ shiftKey: true, clientX: 0, clientY: 0 }),
+        "a",
+      );
+    });
+    act(() => {
+      result.current.handleCanvasMouseUp(mouseEvent({ clientX: 0, clientY: 0 }), { x: 0, y: 0 });
+    });
+
+    expect(result.current.selectedNodes.has("a")).toBe(false);
+  });
+
+  test("shift-dragging a node still creates a connection rather than toggling selection", () => {
+    const state: TaskGraphState = {
+      tasks: [task("a", 0, 0), task("b", 100, 100)],
+      connections: [],
+      groups: [],
+    };
+    const { result, push } = renderDragSelection({ state });
+
+    act(() => {
+      result.current.handleNodeMouseDown(
+        mouseEvent({ shiftKey: true, clientX: 0, clientY: 0 }),
+        "a",
+      );
+    });
+    act(() => {
+      result.current.handleCanvasMouseUp(mouseEvent({ clientX: 200, clientY: 200 }), {
+        x: 105,
+        y: 105,
+      });
+    });
+
+    const lastCall = push.mock.calls[push.mock.calls.length - 1][0];
+    expect(lastCall.connections).toEqual([{ from: "a", to: "b" }]);
+    expect(result.current.selectedNodes.has("a")).toBe(false);
+  });
+});
+
+describe("toggleGroupSelection", () => {
+  test("adds an unselected group", () => {
+    const { result } = renderDragSelection();
+    act(() => {
+      result.current.toggleGroupSelection("g1");
+    });
+    expect(result.current.selectedGroups.has("g1")).toBe(true);
+  });
+
+  test("removes an already-selected group", () => {
+    const { result } = renderDragSelection();
+    act(() => {
+      result.current.toggleGroupSelection("g1");
+    });
+    act(() => {
+      result.current.toggleGroupSelection("g1");
+    });
+    expect(result.current.selectedGroups.has("g1")).toBe(false);
+  });
+});
+
 describe("handleGroupMouseDown — Cmd/Ctrl multi-select", () => {
   test("Cmd+click on an unselected group adds it to the selection", () => {
     const state: TaskGraphState = {

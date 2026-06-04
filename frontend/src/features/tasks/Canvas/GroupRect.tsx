@@ -50,6 +50,8 @@ interface GroupRectProps {
   onMouseDown: (e: React.MouseEvent, groupId: string) => void;
   /** Select this group as the sole selection (plain click on an unselected group). */
   onSelect: (id: string) => void;
+  /** Toggle this group in the multi-selection (shift-click). */
+  onToggleSelect: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onMoveWithTasks: (id: string, x: number, y: number, taskIds: ReadonlySet<string>) => void;
   onMoveStart: () => void;
@@ -77,6 +79,7 @@ export function GroupRect({
   canvasLocked = false,
   onMouseDown: onGroupMouseDown,
   onSelect,
+  onToggleSelect,
   onMove,
   onMoveWithTasks,
   onMoveStart,
@@ -187,24 +190,34 @@ export function GroupRect({
     if (panMode || e.button === 1) return;
     if (canvasLocked) return;
     if (group.locked && !e.shiftKey) return;
+
+    const additive = e.shiftKey;
+
     // Cmd/Ctrl-click toggles this group in the multi-selection (handled by the hook).
-    // An already-selected group lets the hook start a selection drag.
-    if (e.metaKey || e.ctrlKey || isSelected) {
+    if (e.metaKey || e.ctrlKey) {
+      onGroupMouseDown(e, group.id);
+      return;
+    }
+    // An already-selected group, pressed without Shift, lets the hook start a
+    // selection drag (moving the whole selection).
+    if (isSelected && !additive) {
       onGroupMouseDown(e, group.id);
       return;
     }
     e.preventDefault();
     e.stopPropagation();
 
-    // Unselected group: a plain click selects it; dragging past the threshold
-    // moves it. onMoveStart (which checkpoints history) is deferred until an
-    // actual move, so a click leaves no stray undo entry.
+    // Unselected group, or any Shift press: a click selects (toggling into the
+    // multi-selection with Shift, or selecting only this group otherwise) while a
+    // drag moves it. Shift-drag moves the frame without its tasks. onMoveStart
+    // (which checkpoints history) is deferred until an actual move, so a click
+    // leaves no stray undo entry.
     const startSvg = toSvgCoords(e.clientX, e.clientY);
     const startClientX = e.clientX;
     const startClientY = e.clientY;
     const origX = group.x;
     const origY = group.y;
-    const withTasks = !e.shiftKey;
+    const withTasks = !additive;
     const carriedTaskIds = withTasks ? new Set(containedTasks.map((t) => t.id)) : new Set<string>();
     let moving = false;
 
@@ -231,6 +244,8 @@ export function GroupRect({
       document.removeEventListener("mouseup", handleMouseUp);
       if (moving) {
         onMoveEnd(group.id, carriedTaskIds);
+      } else if (additive) {
+        onToggleSelect(group.id);
       } else {
         onSelect(group.id);
       }

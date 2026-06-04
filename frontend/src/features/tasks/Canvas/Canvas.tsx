@@ -136,6 +136,8 @@ interface CanvasProps {
   onSelectTask: (taskId: string) => void;
   /** Select a single group as the sole selection (plain click on a group body). */
   onSelectGroup: (groupId: string) => void;
+  /** Toggle a single group in the multi-selection (shift-click on a group body). */
+  onToggleGroupSelect: (groupId: string) => void;
   /**
    * When true, fit all content into the viewport once after mount — used on the
    * first-ever open of a project that already has content, so the user lands on
@@ -205,6 +207,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onRedo,
     onSelectTask,
     onSelectGroup,
+    onToggleGroupSelect,
     autoFitOnLoad,
   },
   ref,
@@ -785,6 +788,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             canvasLocked={canvasLocked}
             onMouseDown={onGroupMouseDown}
             onSelect={onSelectGroup}
+            onToggleSelect={onToggleGroupSelect}
             onMove={onGroupMove}
             onMoveWithTasks={onGroupMoveWithTasks}
             onMoveStart={onGroupMoveStart}

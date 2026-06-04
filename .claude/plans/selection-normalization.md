@@ -147,3 +147,15 @@ Selection blue (`#2f6fe0`?), peek blue, widths (canvas 3 / sidebar 2), offset
 - Deviation from the plan: panel/navigation clicks select + centre with no
   toggle-off on re-click (deselect via Escape or empty-canvas click), chosen for
   predictability. Easy to revert to toggle if desired.
+
+## Follow-up: Shift-click multi-select (2026-06-04)
+
+Shift+click on a task or group toggles it in the selection (alongside the
+existing Cmd/Ctrl+click). Reconciled with Shift's existing canvas meaning via
+click-vs-drag: Shift+**click** (travel < 4px) toggles selection; Shift+**drag**
+keeps its prior behaviour (node → create connection; group → move frame without
+its tasks). Node toggle lives in `useDragSelection` (handleNodeMouseDown stores
+the press origin; handleCanvasMouseUp toggles when travel is below threshold);
+group toggle uses the new `toggleGroupSelection` exposed from the hook, called by
+`GroupRect` on a shift-click. Note: holding Shift still shows connection-mode
+affordances, so the modifier is dual-purpose — revisit if it feels conflicting.
