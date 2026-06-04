@@ -44,7 +44,7 @@
   align-self: flex-start;
   width: auto;
   outline: 2px solid var(--selection-border);
-  outline-offset: 2px;
+  outline-offset: -2px;
   border-radius: 3px;
 }
 

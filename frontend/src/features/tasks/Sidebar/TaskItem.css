@@ -11,12 +11,12 @@
 /* Transient hover echo. Listed before .selected so selection wins when both apply. */
 .task-item.peeked {
   outline: 2px solid var(--peek-border);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 .task-item.selected {
   outline: 2px solid var(--selection-border);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 .task-status-dot {
