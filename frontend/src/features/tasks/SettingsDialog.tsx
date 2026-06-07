@@ -4,6 +4,7 @@ export interface AppSettings {
   showBlockedBySection: boolean;
   scrollToPan: boolean;
   showPresentationBar: boolean;
+  presentationBarExpandedByDefault: boolean;
   showTimelinePanel: boolean;
 }
 
@@ -11,6 +12,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showBlockedBySection: true,
   scrollToPan: true,
   showPresentationBar: true,
+  presentationBarExpandedByDefault: false,
   showTimelinePanel: true,
 };
 
@@ -97,6 +99,12 @@ export function SettingsDialog({ settings, onChange, onClose }: SettingsDialogPr
             description="The row of people under the toolbar for stepping through a person's tasks"
             checked={settings.showPresentationBar}
             onChange={(v) => set({ showPresentationBar: v })}
+          />
+          <ToggleRow
+            label="Presentation bar expanded by default"
+            description="When on, the Presentation bar starts expanded; otherwise it starts collapsed"
+            checked={settings.presentationBarExpandedByDefault}
+            onChange={(v) => set({ presentationBarExpandedByDefault: v })}
           />
           <ToggleRow
             label="Show Timeline panel"

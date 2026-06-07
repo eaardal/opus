@@ -18,6 +18,8 @@ interface PresentationBarProps {
   currentIndex: number;
   /** Each person's task count in the current status filter, keyed by person id. */
   taskCountsByPerson: Record<string, number>;
+  /** Whether the bar starts expanded on mount (the user can still toggle it). */
+  expandedByDefault: boolean;
   onSelectPerson: (personId: string) => void;
   onSelectStatus: (filter: StatusFilter) => void;
   onAdvance: () => void;
@@ -37,11 +39,12 @@ export function PresentationBar({
   statusFilter,
   currentIndex,
   taskCountsByPerson,
+  expandedByDefault,
   onSelectPerson,
   onSelectStatus,
   onAdvance,
 }: PresentationBarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(!expandedByDefault);
 
   if (people.length === 0) return null;
 

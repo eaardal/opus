@@ -50,6 +50,22 @@ describe("saveSettings", () => {
   });
 });
 
+describe("presentationBarExpandedByDefault setting", () => {
+  test("defaults to false so the bar starts collapsed", () => {
+    expect(DEFAULT_SETTINGS.presentationBarExpandedByDefault).toBe(false);
+  });
+
+  test("falls back to false when the stored data predates the setting", () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ showBlockedBySection: false }));
+    expect(loadSettings().presentationBarExpandedByDefault).toBe(false);
+  });
+
+  test("preserves true when explicitly stored", () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ presentationBarExpandedByDefault: true }));
+    expect(loadSettings().presentationBarExpandedByDefault).toBe(true);
+  });
+});
+
 describe("scrollToPan setting", () => {
   test("defaults to true so scroll pans out of the box", () => {
     expect(DEFAULT_SETTINGS.scrollToPan).toBe(true);

@@ -707,6 +707,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           statusFilter={presentationStatus}
           currentIndex={presentationIndex}
           taskCountsByPerson={presentationTaskCounts}
+          expandedByDefault={settings.presentationBarExpandedByDefault}
           onSelectPerson={handleSelectPresentationPerson}
           onSelectStatus={handleSelectPresentationStatus}
           onAdvance={handleAdvancePresentation}

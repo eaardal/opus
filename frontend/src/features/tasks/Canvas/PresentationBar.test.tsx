@@ -15,7 +15,7 @@ const STATUSES: Record<TaskStatus, StatusConfig> = {
 
 const ALICE: Person = { id: "p1", name: "Alice", picture: null };
 
-function renderBar() {
+function renderBar(expandedByDefault = true) {
   return render(
     <PresentationBar
       people={[ALICE]}
@@ -24,6 +24,7 @@ function renderBar() {
       statusFilter="all"
       currentIndex={0}
       taskCountsByPerson={{ p1: 2 }}
+      expandedByDefault={expandedByDefault}
       onSelectPerson={vi.fn()}
       onSelectStatus={vi.fn()}
       onAdvance={vi.fn()}
@@ -44,5 +45,12 @@ describe("PresentationBar", () => {
     fireEvent.click(screen.getByLabelText("Collapse presentation bar"));
 
     expect(screen.queryByText(/presentation mode/i)).not.toBeInTheDocument();
+  });
+
+  test("starts collapsed when expandedByDefault is false", () => {
+    renderBar(false);
+
+    expect(screen.queryByText(/presentation mode/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Expand presentation bar")).toBeInTheDocument();
   });
 });
