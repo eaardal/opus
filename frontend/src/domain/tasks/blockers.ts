@@ -3,11 +3,7 @@ import type { Connection, Task } from "./types";
 // Statuses that count as live, unfinished work a person still owns. Drives
 // swimlane membership in the Task Queue and which tasks can be blocked. Blocked
 // is active: a blocked task isn't done — it's stuck — so it keeps its swimlane.
-const ACTIVE_STATUSES: ReadonlySet<Task["status"]> = new Set([
-  "pending",
-  "in_progress",
-  "blocked",
-]);
+const ACTIVE_STATUSES: ReadonlySet<Task["status"]> = new Set(["pending", "in_progress", "blocked"]);
 
 /**
  * Ids of tasks that are pending or in_progress and assigned to the given person.

@@ -78,7 +78,9 @@ export function LinkDestinationDialog({
     .filter(({ task }) => task.id !== sourceTaskId)
     .filter(
       ({ task, seq }) =>
-        !lower || taskDisplayTitle(task.text).toLowerCase().includes(lower) || String(seq) === lower,
+        !lower ||
+        taskDisplayTitle(task.text).toLowerCase().includes(lower) ||
+        String(seq) === lower,
     );
   const groups = (content?.groups ?? []).filter(
     (g) => !lower || (g.title || "").toLowerCase().includes(lower),
@@ -160,7 +162,9 @@ export function LinkDestinationDialog({
                     className={`link-dialog-item ${isActive(t) ? "selected" : ""}`}
                     onClick={() => setTarget(t)}
                   >
-                    <span className="link-dialog-item-text">{group.title || "(unnamed group)"}</span>
+                    <span className="link-dialog-item-text">
+                      {group.title || "(unnamed group)"}
+                    </span>
                   </button>
                 );
               })}

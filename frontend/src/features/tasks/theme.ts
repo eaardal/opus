@@ -1,7 +1,4 @@
-import {
-  CATEGORY_DEFINITIONS,
-  CATEGORY_IDS,
-} from "../../domain/tasks/categoryConfig";
+import { CATEGORY_DEFINITIONS, CATEGORY_IDS } from "../../domain/tasks/categoryConfig";
 import { STATUS_DEFINITIONS } from "../../domain/tasks/statusConfig";
 import type { NodeShape, TaskStatus } from "../../domain/tasks/types";
 
