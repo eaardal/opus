@@ -26,7 +26,11 @@
       "Bash(grep -rn \"integration\" frontend/src)",
       "Bash(grep -rn \"Integration Point\" . --exclude-dir=node_modules --exclude-dir=.git)",
       "Bash(find . -iname \"CHANGELOG*\" -not -path \"*/node_modules/*\")",
-      "Bash(ls scripts/generate-changelog/)"
+      "Bash(ls scripts/generate-changelog/)",
+      "Bash(cat index.html)",
+      "Bash(ls -la public/)",
+      "Bash(ls -la *.svg *.ico *.png favicon*)",
+      "Bash(ls vite.config.*)"
     ]
   }
 }
