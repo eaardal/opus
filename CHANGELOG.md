@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.9.0] - 2026-06-07
+
+### Added
+
+- Link tasks — a task can now link to another task, group, or project in the workspace
+  - A "Link to…" menu option opens a picker to choose the destination
+  - "Go to link destination" navigates there, switching the active project first when needed
+  - Linked tasks show a link icon on their label; "Remove link" reverts them to a standard task
+- New task status: "Blocked"
+- New task category: "Business"
+- The active project is now stored in the URL (`?project=…`) and reopened on load
+- The selected task or group is stored in the URL and zoomed to on load
+- A new setting in the Settings dialog to choose whether the Presentation Bar starts expanded (off/collapsed by default)
+- Shift+click to add tasks and groups to a multi-selection
+- Explanations of the three category shapes (circle, triangle, diamond) in the "How to Use" panel
+- Favicon
+
+### Fixed
+
+- Assigning or unassigning a person in the Task Queue no longer reshuffles the swimlanes — they stay sorted alphabetically by assignee name
+- Magnifying glass keeps itself inside the viewport when used on nodes near an edge
+- Can now click outside a task title being edited when the click lands on a group
+
+### Changed
+
+- Renamed the "Integration Point" task category to "Milestone"
+- Sidebar task list: replaced the sequence number with a category-coloured square that shows the status emoji
+- Unified task and group selection into a single highlight model, with refined selected-state styling (dark blue border for all selected/highlight styling)
+- "How to Use" table now shows the description first, then the keyboard shortcut
+- Presentation bar now shows a "Presentation mode" heading
+- Updated the page title
+
 ## [0.8.0] - 2026-06-03
 
 ### Added

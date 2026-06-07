@@ -24,6 +24,118 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.0",
+    date: "2026-06-07",
+    sections: [
+      {
+        name: "Added",
+        subsections: [
+          {
+            heading: null,
+            items: [
+              {
+                text: "Link tasks — a task can now link to another task, group, or project in the workspace",
+                subitems: [
+                  'A "Link to…" menu option opens a picker to choose the destination',
+                  '"Go to link destination" navigates there, switching the active project first when needed',
+                  'Linked tasks show a link icon on their label; "Remove link" reverts them to a standard task',
+                ],
+              },
+              {
+                text: 'New task status: "Blocked"',
+                subitems: [],
+              },
+              {
+                text: 'New task category: "Business"',
+                subitems: [],
+              },
+              {
+                text: "The active project is now stored in the URL (`?project=…`) and reopened on load",
+                subitems: [],
+              },
+              {
+                text: "The selected task or group is stored in the URL and zoomed to on load",
+                subitems: [],
+              },
+              {
+                text: "A new setting in the Settings dialog to choose whether the Presentation Bar starts expanded (off/collapsed by default)",
+                subitems: [],
+              },
+              {
+                text: "Shift+click to add tasks and groups to a multi-selection",
+                subitems: [],
+              },
+              {
+                text: 'Explanations of the three category shapes (circle, triangle, diamond) in the "How to Use" panel',
+                subitems: [],
+              },
+              {
+                text: "Favicon",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Fixed",
+        subsections: [
+          {
+            heading: null,
+            items: [
+              {
+                text: "Assigning or unassigning a person in the Task Queue no longer reshuffles the swimlanes — they stay sorted alphabetically by assignee name",
+                subitems: [],
+              },
+              {
+                text: "Magnifying glass keeps itself inside the viewport when used on nodes near an edge",
+                subitems: [],
+              },
+              {
+                text: "Can now click outside a task title being edited when the click lands on a group",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Changed",
+        subsections: [
+          {
+            heading: null,
+            items: [
+              {
+                text: 'Renamed the "Integration Point" task category to "Milestone"',
+                subitems: [],
+              },
+              {
+                text: "Sidebar task list: replaced the sequence number with a category-coloured square that shows the status emoji",
+                subitems: [],
+              },
+              {
+                text: "Unified task and group selection into a single highlight model, with refined selected-state styling (dark blue border for all selected/highlight styling)",
+                subitems: [],
+              },
+              {
+                text: '"How to Use" table now shows the description first, then the keyboard shortcut',
+                subitems: [],
+              },
+              {
+                text: 'Presentation bar now shows a "Presentation mode" heading',
+                subitems: [],
+              },
+              {
+                text: "Updated the page title",
+                subitems: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-06-03",
     sections: [
