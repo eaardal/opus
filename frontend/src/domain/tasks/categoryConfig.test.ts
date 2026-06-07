@@ -2,9 +2,10 @@ import { describe, expect, test } from "vitest";
 import { CATEGORY_DEFINITIONS, CATEGORY_IDS, resolveCategoryKey } from "./categoryConfig";
 
 describe("CATEGORY_DEFINITIONS", () => {
-  test("exposes all six known categories", () => {
+  test("exposes all seven known categories", () => {
     expect([...CATEGORY_IDS].sort()).toEqual([
       "backend",
+      "business",
       "external_dependency",
       "frontend",
       "milestone",
@@ -18,8 +19,9 @@ describe("CATEGORY_DEFINITIONS", () => {
     expect(CATEGORY_DEFINITIONS.qa.shape).toBe("diamond");
   });
 
-  test("external_dependency is a triangle", () => {
+  test("external_dependency and business are triangles", () => {
     expect(CATEGORY_DEFINITIONS.external_dependency.shape).toBe("triangle");
+    expect(CATEGORY_DEFINITIONS.business.shape).toBe("triangle");
   });
 
   test("plain categories (backend/frontend/ux) have no explicit shape (default circle)", () => {

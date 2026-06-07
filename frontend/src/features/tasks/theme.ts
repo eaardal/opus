@@ -1,4 +1,7 @@
-import { CATEGORY_DEFINITIONS, CATEGORY_IDS } from "../../domain/tasks/categoryConfig";
+import {
+  CATEGORY_DEFINITIONS,
+  CATEGORY_IDS,
+} from "../../domain/tasks/categoryConfig";
 import { STATUS_DEFINITIONS } from "../../domain/tasks/statusConfig";
 import type { NodeShape, TaskStatus } from "../../domain/tasks/types";
 
@@ -38,6 +41,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   milestone: "#f5f5f5",
   qa: "#f5eeaa",
   external_dependency: "#bf8ede",
+  business: "#edf4ff", //"#f08dc2",
 };
 
 interface StatusPalette {
@@ -71,7 +75,11 @@ export function getCategories(): Record<string, CategoryConfig> {
   const result: Record<string, CategoryConfig> = {};
   for (const id of CATEGORY_IDS) {
     const def = CATEGORY_DEFINITIONS[id];
-    result[id] = { label: def.label, shape: def.shape, color: CATEGORY_COLORS[id] };
+    result[id] = {
+      label: def.label,
+      shape: def.shape,
+      color: CATEGORY_COLORS[id],
+    };
   }
   return result;
 }

@@ -15,6 +15,7 @@ export const CATEGORY_DEFINITIONS: Record<string, CategoryDefinition> = {
   milestone: { label: "Milestone", shape: "diamond" },
   qa: { label: "QA", shape: "diamond" },
   external_dependency: { label: "External dependency", shape: "triangle" },
+  business: { label: "Business", shape: "triangle" },
 };
 
 export const CATEGORY_IDS: ReadonlyArray<string> = Object.keys(CATEGORY_DEFINITIONS);
