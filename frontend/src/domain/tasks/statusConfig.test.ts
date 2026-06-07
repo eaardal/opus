@@ -3,7 +3,7 @@ import { STATUS_DEFINITIONS } from "./statusConfig";
 import type { TaskStatus } from "./types";
 
 describe("STATUS_DEFINITIONS", () => {
-  const expected: TaskStatus[] = ["pending", "in_progress", "completed", "archived"];
+  const expected: TaskStatus[] = ["pending", "in_progress", "blocked", "completed", "archived"];
 
   test("includes a definition for every TaskStatus", () => {
     for (const status of expected) {

@@ -8,6 +8,7 @@ import { BlockerCard } from "./BlockerCard";
 const STATUS: Record<Task["status"], StatusConfig> = {
   pending: { label: "Pending", emoji: "💤", color: "#cbcce2", fontColor: "#000" },
   in_progress: { label: "In Progress", emoji: "👀", color: "#8e8ebb", fontColor: "#fff" },
+  blocked: { label: "Blocked", emoji: "🚫", color: "#f5a9a9", fontColor: "#5a1f1f" },
   completed: { label: "Completed", emoji: "✅", color: "#56cf7c", fontColor: "#000" },
   archived: { label: "Archived", emoji: "🪦", color: "#a0a0a0", fontColor: "#000" },
 };

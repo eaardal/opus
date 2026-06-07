@@ -10,6 +10,7 @@ export interface StatusDefinition {
 export const STATUS_DEFINITIONS: Record<TaskStatus, StatusDefinition> = {
   pending: { label: "Pending", emoji: "💤" },
   in_progress: { label: "In Progress", emoji: "👀" },
+  blocked: { label: "Blocked", emoji: "🚫" },
   completed: { label: "Completed", emoji: "✅" },
   archived: { label: "Archived", emoji: "🪦" },
 };

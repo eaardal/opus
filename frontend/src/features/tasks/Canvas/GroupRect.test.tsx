@@ -8,6 +8,7 @@ import { GroupRect } from "./GroupRect";
 const STATUSES: Record<TaskStatus, StatusConfig> = {
   pending: { label: "Pending", color: "#000", fontColor: "#fff", emoji: "💤" },
   in_progress: { label: "In progress", color: "#000", fontColor: "#fff", emoji: "🛠️" },
+  blocked: { label: "Blocked", color: "#000", fontColor: "#fff", emoji: "🚫" },
   completed: { label: "Done", color: "#000", fontColor: "#fff", emoji: "✅" },
   archived: { label: "Archived", color: "#000", fontColor: "#fff", emoji: "🗄️" },
 };

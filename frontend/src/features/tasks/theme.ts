@@ -48,6 +48,7 @@ interface StatusPalette {
 const STATUS_PALETTE: Record<TaskStatus, StatusPalette> = {
   pending: { color: "#cbcce2", fontColor: "#2a2a3e" },
   in_progress: { color: "#8e8ebb", fontColor: "#eeeffa" },
+  blocked: { color: "#f5a9a9", fontColor: "#5a1f1f" },
   completed: { color: "#56cf7c", fontColor: "#0f3d1f" },
   archived: { color: "#a0a0a0", fontColor: "#2a2a2a" },
 };

@@ -180,7 +180,7 @@ function toTask(data: DocumentData): Task {
     task.assignedPersonIds = data.assignedPersonIds;
   }
   if (Array.isArray(data.inProgressIntervals)) {
-    const validStatuses = ["pending", "in_progress", "completed", "archived"];
+    const validStatuses = ["pending", "in_progress", "blocked", "completed", "archived"];
     const intervals: NonNullable<Task["inProgressIntervals"]> = [];
     for (const iv of data.inProgressIntervals) {
       if (!iv || typeof iv.start !== "number") continue;

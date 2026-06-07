@@ -10,7 +10,7 @@ export interface Connection {
   to: string;
 }
 
-export type TaskStatus = "pending" | "in_progress" | "completed" | "archived";
+export type TaskStatus = "pending" | "in_progress" | "blocked" | "completed" | "archived";
 
 /**
  * A span of time a task spent in the "in_progress" status. `start`/`end` are

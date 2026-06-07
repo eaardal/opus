@@ -125,10 +125,14 @@ export function TaskQueuePanel({
   // so the lanes stay put as tasks are assigned and unassigned.
   const swimlanePeople = peopleWithSwimlanes(people, tasks);
 
-  // Derive task lists for a person from task state
+  // Derive task lists for a person from task state. The "In progress" column
+  // shows their active focus: in-progress work plus blocked work (stuck, but
+  // still theirs and not done), each distinguished by its status colour/emoji.
   const getInProgressTasks = (personId: string) =>
     tasks.filter(
-      (t) => t.status === "in_progress" && (t.assignedPersonIds ?? []).includes(personId),
+      (t) =>
+        (t.status === "in_progress" || t.status === "blocked") &&
+        (t.assignedPersonIds ?? []).includes(personId),
     );
 
   const getQueuedTasks = (personId: string) =>

@@ -27,6 +27,11 @@ describe("findActiveTaskIdsFor", () => {
     const tasks = [t("a", { status: "completed", assignedPersonIds: ["p1"] })];
     expect(findActiveTaskIdsFor(tasks, "p1")).toEqual(new Set());
   });
+
+  test("treats blocked tasks as active (they are unfinished work the person owns)", () => {
+    const tasks = [t("a", { status: "blocked", assignedPersonIds: ["p1"] })];
+    expect(findActiveTaskIdsFor(tasks, "p1")).toEqual(new Set(["a"]));
+  });
 });
 
 describe("findSwimlanePersonIds", () => {
@@ -43,6 +48,11 @@ describe("findSwimlanePersonIds", () => {
   test("ignores tasks with no assignees", () => {
     const tasks = [t("a", { status: "pending" })];
     expect(findSwimlanePersonIds(tasks)).toEqual(new Set());
+  });
+
+  test("gives a swimlane to a person whose only task is blocked", () => {
+    const tasks = [t("a", { status: "blocked", assignedPersonIds: ["p1"] })];
+    expect(findSwimlanePersonIds(tasks)).toEqual(new Set(["p1"]));
   });
 });
 
