@@ -6,7 +6,6 @@ import { TaskContextMenu } from "../TaskContextMenu";
 
 interface TaskItemProps {
   task: Task;
-  index: number;
   categories: Record<string, CategoryConfig>;
   statuses: Record<TaskStatus, StatusConfig>;
   /** Reflects canvas selection (selectedNodes). Draws the blue selection outline. */
@@ -38,7 +37,6 @@ interface TaskItemProps {
 
 export function TaskItem({
   task,
-  index,
   categories,
   statuses,
   isSelected,
@@ -73,18 +71,14 @@ export function TaskItem({
     >
       <button
         type="button"
-        className="task-number"
+        className="task-square"
         style={task.category ? { background: categories[task.category]?.color } : undefined}
         onClick={onZoomTo}
-        title="Zoom to task"
+        title={`Zoom to task — ${statuses[task.status]?.label}`}
+        aria-label="Zoom to task"
       >
-        {index + 1}
+        <span className="task-square-emoji">{statuses[task.status]?.emoji}</span>
       </button>
-      <span
-        className="task-status-dot"
-        style={{ background: statuses[task.status]?.color }}
-        title={statuses[task.status]?.label}
-      />
       <input
         ref={registerInputRef}
         type="text"

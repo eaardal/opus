@@ -19,33 +19,29 @@
   outline-offset: 1px;
 }
 
-.task-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+.task-square {
+  /* Stretch to the row height so it matches the title input beside it, and keep
+     it square. Category-coloured box holding the status emoji; click zooms. */
+  align-self: stretch;
+  aspect-ratio: 1;
   flex-shrink: 0;
-}
-
-.task-number {
-  min-width: 18px;
-  height: 18px;
   padding: 0;
   border: none;
   background: var(--bg-control);
-  border-radius: 50%;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-primary);
-  /* Clickable: zooms the canvas to the task. */
   cursor: pointer;
   transition: filter 0.15s;
 }
 
-.task-number:hover {
+.task-square-emoji {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.task-square:hover {
   filter: brightness(1.12);
 }
 

@@ -123,12 +123,10 @@ export function TaskList({
     .map((g) => ({ group: g, groupTasks: grouped.get(g.id) ?? [] }));
 
   const renderTask = (task: Task) => {
-    const index = tasks.indexOf(task);
     return (
       <TaskItem
         key={task.id}
         task={task}
-        index={index}
         categories={categories}
         statuses={statuses}
         isSelected={selectedTaskIds.has(task.id)}
