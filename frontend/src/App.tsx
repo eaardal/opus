@@ -12,6 +12,7 @@ import TaskMgtApp, { type PendingFocus, type TaskMgtAppHandle } from "./features
 import { TeamMgt } from "./features/teams/TeamsApp";
 import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
+import { readProjectIdFromUrl, writeProjectIdToUrl } from "./lib/projectUrlParam";
 import { resolveRole } from "./domain/workspace/roles";
 import { WorkspaceRoleProvider } from "./features/workspace/WorkspaceRoleContext";
 import { Avatar } from "./ui/Avatar";
@@ -93,17 +94,27 @@ function App() {
   const taskMgtRef = useRef<TaskMgtAppHandle>(null);
   const menuWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Set initial active project when workspace loads or switches.
+  // Set initial active project when workspace loads or switches. Resolution
+  // order: keep a still-valid current selection → the `?project=` URL param →
+  // the last project used in this workspace → the first project.
   useEffect(() => {
     if (workspaceLoadCount > 0 && projects.length > 0) {
       setActiveProjectId((prev) => {
         if (prev && projects.some((p) => p.id === prev)) return prev;
+        const urlId = readProjectIdFromUrl();
+        if (urlId && projects.some((p) => p.id === urlId)) return urlId;
         const storedId = workspaceId ? readLastActiveProjectId(workspaceId) : null;
         const restored = storedId ? projects.find((p) => p.id === storedId) : null;
         return restored ? restored.id : projects[0].id;
       });
     }
   }, [workspaceLoadCount, projects, workspaceId]);
+
+  // Keep the URL's `?project=` in sync with the active project, so reloading or
+  // sharing the tab reopens the same project. Covers every path that changes it.
+  useEffect(() => {
+    if (activeProjectId) writeProjectIdToUrl(activeProjectId);
+  }, [activeProjectId]);
 
   useEffect(() => {
     if (loadStatus === "missing") select(null);
