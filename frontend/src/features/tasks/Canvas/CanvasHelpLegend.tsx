@@ -25,6 +25,13 @@ function CategoryShape({ color, shape }: { color: string; shape: NodeShape | und
   );
 }
 
+/** What each node shape signifies, regardless of the category's colour. */
+const SHAPE_MEANINGS: { shape: NodeShape; meaning: string }[] = [
+  { shape: "circle", meaning: "Tasks local to the team" },
+  { shape: "triangle", meaning: "Tasks external to the team" },
+  { shape: "diamond", meaning: "Gates/Checkpoints" },
+];
+
 /**
  * The legend shown in the "How to Use" dialog: explains what each task category
  * shape/colour and each status emoji/colour means, using the same visual
@@ -40,6 +47,14 @@ export function CanvasHelpLegend({ categories, statuses }: CanvasHelpLegendProps
             <li key={key} className="legend-row">
               <CategoryShape color={color} shape={shape} />
               <span className="legend-label">{label}</span>
+            </li>
+          ))}
+        </ul>
+        <ul className="legend-shape-meanings">
+          {SHAPE_MEANINGS.map(({ shape, meaning }) => (
+            <li key={shape} className="legend-row">
+              <CategoryShape color="var(--text-secondary)" shape={shape} />
+              <span className="legend-label legend-label--wrap">{meaning}</span>
             </li>
           ))}
         </ul>
