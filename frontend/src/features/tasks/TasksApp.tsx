@@ -29,6 +29,7 @@ import { useGlobalKeyboardShortcuts } from "../../hooks/useGlobalKeyboardShortcu
 import { type HistoryStep, useHistory } from "../../hooks/useHistory";
 import { useResizableSidebar } from "../../hooks/useResizableSidebar";
 import { useViewBoxAnimation } from "../../hooks/useViewBoxAnimation";
+import { type EntityFocus, readFocusFromUrl, writeFocusToUrl } from "../../lib/urlParams";
 import { loadViewBox, saveViewBox } from "../../lib/viewBox";
 import { workspaceService } from "../../services/container";
 import type { ProjectSummary } from "../../services/workspace.types";
@@ -637,21 +638,49 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     onDuplicate: handleDuplicate,
   });
 
-  // After a cross-project link hop, focus the destination once this project's
-  // content has loaded. Runs once per mount; the component is key-remounted on
-  // project switch, so the ref resets for the newly-active project.
-  const pendingFocusHandledRef = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectAndCenter* are recreated each render; this is a once-per-mount focus keyed off load + pendingFocus.
+  // The URL's focus target (task/group) captured once at mount, before any
+  // effect rewrites the query — used to zoom on load.
+  const [initialUrlFocus] = useState<EntityFocus | null>(() => readFocusFromUrl());
+  const [initialFocusDone, setInitialFocusDone] = useState(false);
+
+  // On first load, focus the destination once this project's content is ready: an
+  // explicit cross-project link focus wins, otherwise the most granular entity
+  // named in the URL. Runs once per mount (the component is key-remounted on
+  // project switch, so this re-runs for the newly-active project).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectAndCenter* are recreated each render; this is a once-per-mount focus.
   useEffect(() => {
-    if (loadStatus !== "ready" || !pendingFocus || pendingFocusHandledRef.current) return;
-    pendingFocusHandledRef.current = true;
-    if (pendingFocus.kind === "task" && tasks.some((t) => t.id === pendingFocus.id)) {
-      selectAndCenterTask(pendingFocus.id);
-    } else if (pendingFocus.kind === "group" && groups.some((g) => g.id === pendingFocus.id)) {
-      selectAndCenterGroup(pendingFocus.id);
+    if (loadStatus !== "ready" || initialFocusDone) return;
+    const focus = pendingFocus ?? initialUrlFocus;
+    if (focus?.kind === "task" && tasks.some((t) => t.id === focus.id)) {
+      selectAndCenterTask(focus.id);
+    } else if (focus?.kind === "group" && groups.some((g) => g.id === focus.id)) {
+      selectAndCenterGroup(focus.id);
     }
-    onPendingFocusHandled();
-  }, [loadStatus, pendingFocus, tasks, groups, onPendingFocusHandled]);
+    if (pendingFocus) onPendingFocusHandled();
+    setInitialFocusDone(true);
+  }, [
+    loadStatus,
+    initialFocusDone,
+    pendingFocus,
+    initialUrlFocus,
+    tasks,
+    groups,
+    onPendingFocusHandled,
+  ]);
+
+  // Mirror the current single selection into the URL (?task / ?group), clearing
+  // it for empty or multi selection. Gated until the initial focus resolves so it
+  // can't wipe the load-time params first; it then reconciles once.
+  useEffect(() => {
+    if (!initialFocusDone) return;
+    const focus: EntityFocus | null =
+      selectedNodes.size === 1 && selectedGroups.size === 0
+        ? { kind: "task", id: [...selectedNodes][0] }
+        : selectedGroups.size === 1 && selectedNodes.size === 0
+          ? { kind: "group", id: [...selectedGroups][0] }
+          : null;
+    writeFocusToUrl(focus);
+  }, [initialFocusDone, selectedNodes, selectedGroups]);
 
   const buildNewTask = (x: number, y: number): Task => ({
     id: crypto.randomUUID(),

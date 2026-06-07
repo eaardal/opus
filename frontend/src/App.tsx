@@ -12,7 +12,7 @@ import TaskMgtApp, { type PendingFocus, type TaskMgtAppHandle } from "./features
 import { TeamMgt } from "./features/teams/TeamsApp";
 import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
-import { readProjectIdFromUrl, writeProjectIdToUrl } from "./lib/projectUrlParam";
+import { readProjectIdFromUrl, writeProjectIdToUrl } from "./lib/urlParams";
 import { resolveRole } from "./domain/workspace/roles";
 import { WorkspaceRoleProvider } from "./features/workspace/WorkspaceRoleContext";
 import { Avatar } from "./ui/Avatar";
