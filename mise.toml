@@ -322,3 +322,22 @@ cd scripts/firestore
 npm install --silent
 FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID}" npx tsx migrate-users-to-email-keys.ts
 """
+
+[tasks."firestore:rename-integration-category-to-milestone"]
+description = "Rename stored task category 'integration' → 'milestone'; requires FIREBASE_PROJECT_ID (set DRY_RUN=1 to preview)"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${FIREBASE_PROJECT_ID:-}" ]; then
+  echo "Error: FIREBASE_PROJECT_ID is required." >&2
+  echo "Usage: FIREBASE_PROJECT_ID=domino-staging-dc209 mise run firestore:rename-integration-category-to-milestone" >&2
+  echo "Preview only: DRY_RUN=1 FIREBASE_PROJECT_ID=... mise run firestore:rename-integration-category-to-milestone" >&2
+  exit 1
+fi
+
+cd scripts/firestore
+npm install --silent
+DRY_RUN="${DRY_RUN:-}" FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID}" GOOGLE_CLOUD_PROJECT="${FIREBASE_PROJECT_ID}" \
+  npx tsx rename-integration-category-to-milestone.ts
+"""

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { CATEGORY_DEFINITIONS, CATEGORY_IDS } from "./categoryConfig";
+import { CATEGORY_DEFINITIONS, CATEGORY_IDS, resolveCategoryKey } from "./categoryConfig";
 
 describe("CATEGORY_DEFINITIONS", () => {
   test("exposes all six known categories", () => {
@@ -7,14 +7,14 @@ describe("CATEGORY_DEFINITIONS", () => {
       "backend",
       "external_dependency",
       "frontend",
-      "integration",
+      "milestone",
       "qa",
       "ux",
     ]);
   });
 
-  test("integration and qa are diamonds", () => {
-    expect(CATEGORY_DEFINITIONS.integration.shape).toBe("diamond");
+  test("milestone and qa are diamonds", () => {
+    expect(CATEGORY_DEFINITIONS.milestone.shape).toBe("diamond");
     expect(CATEGORY_DEFINITIONS.qa.shape).toBe("diamond");
   });
 
@@ -32,5 +32,21 @@ describe("CATEGORY_DEFINITIONS", () => {
     for (const id of CATEGORY_IDS) {
       expect(CATEGORY_DEFINITIONS[id].label.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("resolveCategoryKey", () => {
+  test("maps the legacy 'integration' key to 'milestone'", () => {
+    expect(resolveCategoryKey("integration")).toBe("milestone");
+  });
+
+  test("passes through current keys unchanged", () => {
+    for (const id of CATEGORY_IDS) {
+      expect(resolveCategoryKey(id)).toBe(id);
+    }
+  });
+
+  test("passes through unknown keys unchanged", () => {
+    expect(resolveCategoryKey("something_else")).toBe("something_else");
   });
 });

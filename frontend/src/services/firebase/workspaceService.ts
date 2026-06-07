@@ -29,6 +29,7 @@ import type {
   WorkspaceService,
   WorkspaceSummary,
 } from "../workspace.types";
+import { resolveCategoryKey } from "../../domain/tasks/categoryConfig";
 import type { Task, Group } from "../../domain/tasks/types";
 import type { Person, Team } from "../../domain/teams/types";
 import { firebaseAuth, firestore } from "./client";
@@ -169,7 +170,11 @@ function toTask(data: DocumentData): Task {
     status: data.status ?? "pending",
   };
   if (data.category != null && data.category !== "") {
-    task.category = data.category;
+    // Translate legacy category keys (e.g. "integration" → "milestone") so tasks
+    // written before a rename still resolve to a current category. This is the
+    // single choke point for all Firestore reads; it covers every task until the
+    // one-time data migration rewrites the stored keys.
+    task.category = resolveCategoryKey(data.category);
   }
   if (Array.isArray(data.assignedPersonIds)) {
     task.assignedPersonIds = data.assignedPersonIds;

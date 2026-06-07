@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "migrate-users-to-email-keys": "tsx migrate-users-to-email-keys.ts",
-    "migrate-to-subcollections": "tsx migrate-to-subcollections.ts"
+    "migrate-to-subcollections": "tsx migrate-to-subcollections.ts",
+    "rename-integration-category-to-milestone": "tsx rename-integration-category-to-milestone.ts"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"

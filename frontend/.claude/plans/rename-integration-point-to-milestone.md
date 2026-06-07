@@ -1,9 +1,16 @@
 # Plan: Rename "Integration Point" category → "Milestone"
 
-**Status:** Planned, not started.
+**Status:** PR 1 code + migration script implemented (2026-06-07). Remaining: CHANGELOG entry, commit, run the migration manually, then PR 2 cleanup.
 **Created:** 2026-06-01
 **Scope decision:** **Option B — full rename including the stored Firestore value** (chosen over the label-only option).
-**Open decision (resolve at implementation):** stored-data migration mechanism — one-time **admin script** vs **lazy self-heal** (both documented below).
+**Migration mechanism (RESOLVED 2026-06-07):** **Option B-script** — a one-time admin script the maintainer runs manually. (Lazy self-heal rejected.)
+
+## Deviations found at implementation (plan was stale)
+1. **Admin tooling already existed** at `opus/scripts/firestore/` (firebase-admin installed, `tsx`, a mise-task pattern). The new script lives there as
+   `scripts/firestore/rename-integration-category-to-milestone.ts`, wired via `package.json` + the mise task `firestore:rename-integration-category-to-milestone` (supports `DRY_RUN=1`). No new dependency, no `frontend/scripts/` dir.
+2. **`parseWorkspaceFile.ts`** is at `domain/workspace/` (not `domain/tasks/`) and does a blanket `as Task[]` cast, not per-task transforms. **Decision: the parse-path mapping was SKIPPED** — the read alias in `toTask` is the single choke point and covers JSON-imported `integration` tasks on reload, so adding value-migration to a shape-detection function (SRP violation, and would need to walk every project in the v2 fast-path) was not worth it. Trivially reversible if belt-and-suspenders is wanted.
+3. **Alias is a shared pure function**, not an inline ternary duplicated in two places: `resolveCategoryKey()` in `categoryConfig.ts` (unit-tested), called from `toTask`. Single source of truth for legacy-key aliasing.
+4. **`firestore.rules` confirmed** to NOT validate `category` — the new key is not rejected.
 
 ---
 
@@ -86,10 +93,12 @@ So a **visual** rename is a one-liner (just change `label`). Renaming the **stor
 ---
 
 ## Quick checklist
-- [ ] PR 1: key rename (`categoryConfig.ts`, `theme.ts`), label "Milestone"
-- [ ] PR 1: `toTask` read alias + `parseWorkspaceFile` mapping
-- [ ] PR 1: update `categoryConfig.test.ts`
-- [ ] PR 1: CHANGELOG entry; typecheck/lint/format/test green
-- [ ] Decide migration mechanism (admin script vs lazy self-heal)
-- [ ] Run migration; verify 0 remaining `integration` docs
-- [ ] PR 2: remove alias + mapping (+ lazy self-heal) after verification
+- [x] PR 1: key rename (`categoryConfig.ts`, `theme.ts`), label "Milestone"
+- [x] PR 1: `toTask` read alias via shared `resolveCategoryKey()` (parse mapping intentionally skipped — see deviation 2)
+- [x] PR 1: update `categoryConfig.test.ts` (+ `resolveCategoryKey` tests)
+- [x] PR 1: typecheck/lint/test green (404 tests)
+- [ ] PR 1: CHANGELOG entry (under `### Changed`, e.g. "Renamed the 'Integration Point' task category to 'Milestone'") + commit
+- [x] Decide migration mechanism → admin script, run manually
+- [x] Migration script written: `scripts/firestore/rename-integration-category-to-milestone.ts` + mise task (DRY_RUN supported)
+- [ ] Run migration (maintainer, manual); verify 0 remaining `integration` docs with `DRY_RUN=1`
+- [ ] PR 2: remove `resolveCategoryKey` alias + its call in `toTask` after verification (keep until all clients are on the new build)

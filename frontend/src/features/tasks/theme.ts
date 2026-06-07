@@ -35,7 +35,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   backend: "#ffce92",
   frontend: "#9dcbef",
   ux: "#f289bf",
-  integration: "#f5f5f5",
+  milestone: "#f5f5f5",
   qa: "#f5eeaa",
   external_dependency: "#bf8ede",
 };
