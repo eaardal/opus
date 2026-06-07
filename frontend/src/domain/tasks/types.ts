@@ -26,6 +26,23 @@ export interface InProgressInterval {
   endStatus?: TaskStatus;
 }
 
+/**
+ * Whether a task is an ordinary task or a "link" task that navigates to another
+ * destination. Absent ⇒ "standard" (the default for every pre-existing task).
+ */
+export type TaskType = "standard" | "link";
+
+/**
+ * Where a link task points. Always within the same workspace, so the workspace
+ * is implicit; `projectId` identifies the destination project (it equals the
+ * link's own project for same-project links). A project link carries no
+ * task/group id; a task/group link carries the specific entity id.
+ */
+export type LinkTarget =
+  | { kind: "project"; projectId: string }
+  | { kind: "task"; projectId: string; taskId: string }
+  | { kind: "group"; projectId: string; groupId: string };
+
 export interface Task {
   id: string;
   text: string;
@@ -38,6 +55,10 @@ export interface Task {
   inProgressIntervals?: InProgressInterval[];
   /** Epoch ms each currently-assigned person was (most recently) assigned. */
   assignedAt?: Record<string, number>;
+  /** Task kind. Absent ⇒ "standard". */
+  type?: TaskType;
+  /** Destination of a link task. Present iff `type === "link"`. */
+  linkTarget?: LinkTarget;
 }
 
 export interface Group {

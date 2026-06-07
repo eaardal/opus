@@ -30,6 +30,7 @@ import type {
   WorkspaceSummary,
 } from "../workspace.types";
 import { resolveCategoryKey } from "../../domain/tasks/categoryConfig";
+import { parseLinkTarget } from "../../domain/tasks/link";
 import type { Task, Group } from "../../domain/tasks/types";
 import type { Person, Team } from "../../domain/teams/types";
 import { firebaseAuth, firestore } from "./client";
@@ -201,6 +202,13 @@ function toTask(data: DocumentData): Task {
       if (typeof value === "number") assignedAt[personId] = value;
     }
     if (Object.keys(assignedAt).length > 0) task.assignedAt = assignedAt;
+  }
+  // Link tasks. A "link" type is kept even if its target is missing/corrupt so
+  // the node still renders as a link and the user gets the dead-link prompt.
+  if (data.type === "link") {
+    task.type = "link";
+    const target = parseLinkTarget(data.linkTarget);
+    if (target) task.linkTarget = target;
   }
   return task;
 }
@@ -435,6 +443,20 @@ export const firebaseWorkspaceService: WorkspaceService = {
     };
   },
 
+  async getProjectContent(id, projectId) {
+    const [projectSnap, taskSnap, groupSnap] = await Promise.all([
+      getDoc(projectDoc(id, projectId)),
+      getDocs(tasksCol(id, projectId)),
+      getDocs(groupsCol(id, projectId)),
+    ]);
+    if (!projectSnap.exists()) return null;
+    return {
+      projectDoc: toProjectDocument({ ...projectSnap.data(), id: projectSnap.id }),
+      tasks: taskSnap.docs.map((d) => toTask(d.data())),
+      groups: groupSnap.docs.map((d) => toGroup(d.data())),
+    };
+  },
+
   subscribePeople(id, callback) {
     return onSnapshot(peopleCol(id), (snap) => {
       callback(snap.docs.map((d) => toPerson(d.data())));
@@ -484,6 +506,15 @@ export const firebaseWorkspaceService: WorkspaceService = {
 
   async updateTask(id, projectId, taskId, changes) {
     await updateDoc(taskDoc(id, projectId, taskId), changes);
+  },
+
+  async clearTaskLink(id, projectId, taskId) {
+    // Revert a link task to a standard task by removing both link fields, so no
+    // stale link data lingers in the document.
+    await updateDoc(taskDoc(id, projectId, taskId), {
+      type: deleteField(),
+      linkTarget: deleteField(),
+    });
   },
 
   async deleteTask(id, projectId, taskId, newConnections) {

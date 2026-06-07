@@ -84,6 +84,13 @@ export interface WorkspaceService {
     callback: (content: ProjectContent | null) => void,
   ): () => void;
 
+  /**
+   * One-shot read of a project's content (project doc + tasks + groups).
+   * Resolves null when the project does not exist. Used to browse/validate a
+   * link destination in a non-active project without switching to it.
+   */
+  getProjectContent(id: WorkspaceId, projectId: string): Promise<ProjectContent | null>;
+
   /** Live list of people in the workspace. */
   subscribePeople(id: WorkspaceId, callback: (people: Person[]) => void): () => void;
 
@@ -109,6 +116,8 @@ export interface WorkspaceService {
     taskId: string,
     changes: Partial<Task>,
   ): Promise<void>;
+  /** Reverts a link task to a standard task, removing its link fields. */
+  clearTaskLink(id: WorkspaceId, projectId: string, taskId: string): Promise<void>;
   /** Deletes the task doc and removes its connections from the project doc atomically. */
   deleteTask(
     id: WorkspaceId,

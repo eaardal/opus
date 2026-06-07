@@ -38,6 +38,9 @@ function renderMenu(onClose: () => void) {
         onCopy={vi.fn()}
         onDelete={vi.fn()}
         onAssignPeople={vi.fn()}
+        onLinkTo={vi.fn()}
+        onGoToLinkDestination={vi.fn()}
+        onRemoveLink={vi.fn()}
         onClose={onClose}
       />
     </div>,

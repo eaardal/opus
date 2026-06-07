@@ -23,6 +23,12 @@ interface TaskContextMenuProps {
   onEditTitle?: () => void;
   onDelete: () => void;
   onAssignPeople: (personIds: string[]) => void;
+  /** Open the picker to set/change this task's link destination. */
+  onLinkTo: () => void;
+  /** Navigate to this link task's destination (only meaningful for link tasks). */
+  onGoToLinkDestination: () => void;
+  /** Revert this link task back to a standard task. */
+  onRemoveLink: () => void;
   onClose: () => void;
 }
 
@@ -40,8 +46,12 @@ export function TaskContextMenu({
   onEditTitle,
   onDelete,
   onAssignPeople,
+  onLinkTo,
+  onGoToLinkDestination,
+  onRemoveLink,
   onClose,
 }: TaskContextMenuProps) {
+  const isLink = task.type === "link";
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedTop, setAdjustedTop] = useState(y);
   const [peopleFilter, setPeopleFilter] = useState("");
@@ -175,6 +185,40 @@ export function TaskContextMenu({
           Edit title
         </button>
       )}
+
+      <hr className="menu-divider" />
+      {isLink && (
+        <button
+          className="menu-item"
+          onClick={() => {
+            onGoToLinkDestination();
+            onClose();
+          }}
+        >
+          Go to link destination
+        </button>
+      )}
+      <button
+        className="menu-item"
+        onClick={() => {
+          onLinkTo();
+          onClose();
+        }}
+      >
+        {isLink ? "Change link destination…" : "Link to…"}
+      </button>
+      {isLink && (
+        <button
+          className="menu-item"
+          onClick={() => {
+            onRemoveLink();
+            onClose();
+          }}
+        >
+          Remove link
+        </button>
+      )}
+
       {task.category && (
         <button
           className="menu-item clear-category"

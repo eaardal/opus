@@ -21,6 +21,9 @@ interface TaskItemProps {
   onDuplicate: () => void;
   onCopy: () => void;
   onDelete: () => void;
+  onLinkTo: () => void;
+  onGoToLinkDestination: () => void;
+  onRemoveLink: () => void;
   onSetPeeked: (peeked: boolean) => void;
   onToggleMenu: (e: React.MouseEvent) => void;
   onCloseMenu: () => void;
@@ -48,6 +51,9 @@ export function TaskItem({
   onDuplicate,
   onCopy,
   onDelete,
+  onLinkTo,
+  onGoToLinkDestination,
+  onRemoveLink,
   onSetPeeked,
   onToggleMenu,
   onCloseMenu,
@@ -107,6 +113,9 @@ export function TaskItem({
             onCopy={onCopy}
             onDelete={onDelete}
             onAssignPeople={onAssignPeople}
+            onLinkTo={onLinkTo}
+            onGoToLinkDestination={onGoToLinkDestination}
+            onRemoveLink={onRemoveLink}
             onClose={onCloseMenu}
           />
         )}

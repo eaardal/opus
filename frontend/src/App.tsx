@@ -8,7 +8,7 @@ import { useAuthUser } from "./features/auth/useAuthUser";
 import { confirm } from "./ui/ConfirmModal";
 import { ChangelogModal } from "./ui/ChangelogModal";
 import { CHANGELOG } from "./generated/changelog";
-import TaskMgtApp, { type TaskMgtAppHandle } from "./features/tasks/TasksApp";
+import TaskMgtApp, { type PendingFocus, type TaskMgtAppHandle } from "./features/tasks/TasksApp";
 import { TeamMgt } from "./features/teams/TeamsApp";
 import { ProjectAdminDialog } from "./features/workspace/ProjectAdminDialog";
 import { useWorkspaceLoader } from "./hooks/useWorkspaceLoader";
@@ -76,6 +76,11 @@ function App() {
   const canEdit = role === "owner" || role === "editor";
 
   const [activeProjectId, setActiveProjectId] = useState<string>("");
+  // A destination to focus after switching projects via a cross-project link.
+  // Carried across the TasksApp remount that the project switch triggers.
+  const [pendingFocus, setPendingFocus] = useState<(PendingFocus & { projectId: string }) | null>(
+    null,
+  );
   const [activeModule, setActiveModule] = useState<ActiveModule>("tasks");
   const [showProjectAdmin, setShowProjectAdmin] = useState(false);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
@@ -129,6 +134,17 @@ function App() {
       if (workspaceId) writeLastActiveProjectId(workspaceId, newId);
     },
     [workspaceId],
+  );
+
+  // Switch to a project and remember a task/group to focus once it loads. The
+  // remounted TasksApp reads `pendingFocus` and applies it after its content
+  // subscription fires.
+  const handleNavigateToProjectWithFocus = useCallback(
+    (targetProjectId: string, focus: PendingFocus) => {
+      setPendingFocus({ projectId: targetProjectId, ...focus });
+      handleSwitchProject(targetProjectId);
+    },
+    [handleSwitchProject],
   );
 
   const handleAddProject = useCallback(async () => {
@@ -424,6 +440,13 @@ function App() {
               onSwitchProject={handleSwitchProject}
               onOpenProjectAdmin={() => setShowProjectAdmin(true)}
               people={people}
+              pendingFocus={
+                pendingFocus && pendingFocus.projectId === activeProjectId
+                  ? { kind: pendingFocus.kind, id: pendingFocus.id }
+                  : null
+              }
+              onPendingFocusHandled={() => setPendingFocus(null)}
+              onNavigateToProjectWithFocus={handleNavigateToProjectWithFocus}
             />
           </div>
           <div className={`module-wrapper ${activeModule === "teams" ? "" : "module-hidden"}`}>

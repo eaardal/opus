@@ -32,6 +32,9 @@ interface SidebarProps {
   onDuplicateTask: (id: string) => void;
   onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
+  onLinkToTask: (id: string) => void;
+  onGoToLinkDestination: (id: string) => void;
+  onRemoveLink: (id: string) => void;
   onSetPeekedTaskId: (id: string | null) => void;
   onSetOpenMenuId: (id: string | null) => void;
   onSetMenuPosition: (position: { top: number; left: number } | null) => void;
@@ -70,6 +73,9 @@ export function Sidebar({
   onDuplicateTask,
   onCopyTask,
   onDeleteTask,
+  onLinkToTask,
+  onGoToLinkDestination,
+  onRemoveLink,
   onSetPeekedTaskId,
   onSetOpenMenuId,
   onSetMenuPosition,
@@ -152,6 +158,9 @@ export function Sidebar({
         onDuplicateTask={onDuplicateTask}
         onCopyTask={onCopyTask}
         onDeleteTask={onDeleteTask}
+        onLinkToTask={onLinkToTask}
+        onGoToLinkDestination={onGoToLinkDestination}
+        onRemoveLink={onRemoveLink}
         onSetPeekedTaskId={onSetPeekedTaskId}
         onSetOpenMenuId={onSetOpenMenuId}
         onSetMenuPosition={onSetMenuPosition}

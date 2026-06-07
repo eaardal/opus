@@ -23,6 +23,9 @@ interface TaskListProps {
   onDuplicateTask: (id: string) => void;
   onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
+  onLinkToTask: (id: string) => void;
+  onGoToLinkDestination: (id: string) => void;
+  onRemoveLink: (id: string) => void;
   onSetPeekedTaskId: (id: string | null) => void;
   onSetOpenMenuId: (id: string | null) => void;
   onSetMenuPosition: (position: { top: number; left: number } | null) => void;
@@ -56,6 +59,9 @@ export function TaskList({
   onDuplicateTask,
   onCopyTask,
   onDeleteTask,
+  onLinkToTask,
+  onGoToLinkDestination,
+  onRemoveLink,
   onSetPeekedTaskId,
   onSetOpenMenuId,
   onSetMenuPosition,
@@ -135,6 +141,9 @@ export function TaskList({
         onDuplicate={() => onDuplicateTask(task.id)}
         onCopy={() => onCopyTask(task.id)}
         onDelete={() => onDeleteTask(task.id)}
+        onLinkTo={() => onLinkToTask(task.id)}
+        onGoToLinkDestination={() => onGoToLinkDestination(task.id)}
+        onRemoveLink={() => onRemoveLink(task.id)}
         onSetPeeked={(peeked) => onSetPeekedTaskId(peeked ? task.id : null)}
         onToggleMenu={(e) => handleOpenMenu(task.id, e)}
         onCloseMenu={handleCloseMenu}

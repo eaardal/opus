@@ -116,6 +116,9 @@ interface CanvasProps {
   onDuplicateTask: (id: string) => void;
   onCopyTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
+  onLinkToTask: (id: string) => void;
+  onGoToLinkDestination: (id: string) => void;
+  onRemoveLink: (id: string) => void;
   onDeleteSelected: () => void;
   onCopySelected: () => void;
   onUpdateTaskText: (id: string, text: string) => void;
@@ -194,6 +197,9 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onDuplicateTask,
     onCopyTask,
     onDeleteTask,
+    onLinkToTask,
+    onGoToLinkDestination,
+    onRemoveLink,
     onDeleteSelected,
     onCopySelected,
     onUpdateTaskText,
@@ -1115,6 +1121,18 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 setNodeContextMenu(null);
               }}
               onAssignPeople={(ids) => onAssignPeople(task.id, ids)}
+              onLinkTo={() => {
+                onLinkToTask(task.id);
+                setNodeContextMenu(null);
+              }}
+              onGoToLinkDestination={() => {
+                onGoToLinkDestination(task.id);
+                setNodeContextMenu(null);
+              }}
+              onRemoveLink={() => {
+                onRemoveLink(task.id);
+                setNodeContextMenu(null);
+              }}
               onClose={() => setNodeContextMenu(null)}
             />
           );

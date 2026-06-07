@@ -19,8 +19,9 @@ import {
   updateGroup as updateGroupOp,
   updateTask as updateTaskOp,
 } from "../../domain/tasks/operations";
+import { classifyLinkNavigation, linkTargetExistsIn } from "../../domain/tasks/link";
 import { backfillUpdate, recordAssignment, recordStatusChange } from "../../domain/tasks/timeline";
-import type { Group, Task, TaskStatus, ViewBox } from "../../domain/tasks/types";
+import type { Group, LinkTarget, Task, TaskStatus, ViewBox } from "../../domain/tasks/types";
 import { centerViewBoxOnPoint, zoomViewBoxToGroup } from "../../domain/tasks/viewport";
 import type { Person } from "../../domain/teams/types";
 import { useDragSelection } from "../../hooks/useDragSelection";
@@ -34,8 +35,15 @@ import type { ProjectSummary } from "../../services/workspace.types";
 import { confirm } from "../../ui/ConfirmModal";
 import { useWorkspaceRole } from "../workspace/WorkspaceRoleContext";
 import { Canvas, type CanvasHandle } from "./Canvas/Canvas";
+import { LinkDestinationDialog } from "./LinkDestinationDialog/LinkDestinationDialog";
 import { Sidebar } from "./Sidebar/Sidebar";
 import { getCategories, getStatuses } from "./theme";
+
+/** A task or group to focus once a project's content has loaded (after a cross-project link hop). */
+export interface PendingFocus {
+  kind: "task" | "group";
+  id: string;
+}
 
 const DEFAULT_VIEW_BOX: ViewBox = { x: 0, y: 0, width: 1200, height: 800 };
 
@@ -51,6 +59,12 @@ interface AppProps {
   onSwitchProject?: (id: string) => void;
   onOpenProjectAdmin?: () => void;
   people?: Person[];
+  /** A destination to focus once this project's content loads (cross-project link hop). */
+  pendingFocus?: PendingFocus | null;
+  /** Called once the pending focus has been applied (or found unresolvable). */
+  onPendingFocusHandled?: () => void;
+  /** Switch to another project and focus a task/group there once it loads. */
+  onNavigateToProjectWithFocus?: (projectId: string, focus: PendingFocus) => void;
 }
 
 export interface TaskMgtAppHandle {
@@ -68,6 +82,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     onSwitchProject = () => {},
     onOpenProjectAdmin = () => {},
     people = [],
+    pendingFocus = null,
+    onPendingFocusHandled = () => {},
+    onNavigateToProjectWithFocus = () => {},
   },
   ref,
 ) {
@@ -214,6 +231,8 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
   // The group whose title editor is open on the canvas. Set when a group is
   // created via the canvas so the user can type its title immediately.
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  // The task whose link-destination picker is open (null = closed).
+  const [linkEditorTaskId, setLinkEditorTaskId] = useState<string | null>(null);
 
   const canvasRef = useRef<CanvasHandle>(null);
   const taskItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -512,6 +531,101 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     [tasks, connections, groups, workspaceId],
   );
 
+  // ── Link tasks ──────────────────────────────────────────────────────────────
+
+  // Loads a project's tasks/groups for the link picker: in-memory for the active
+  // project, a one-shot Firestore read otherwise. Stable so the picker's loader
+  // effect doesn't re-fire every render.
+  const loadProjectContent = useCallback(
+    async (pid: string): Promise<{ tasks: Task[]; groups: Group[] } | null> => {
+      if (pid === projectId) {
+        const { tasks: t, groups: g } = presentRef.current;
+        return { tasks: t, groups: g };
+      }
+      return workspaceService.getProjectContent(workspaceId, pid);
+    },
+    [workspaceId, projectId],
+  );
+
+  const handleLinkTo = (taskId: string) => setLinkEditorTaskId(taskId);
+
+  const handleConfirmLinkDestination = (target: LinkTarget) => {
+    const taskId = linkEditorTaskId;
+    if (!taskId) return;
+    push({
+      tasks: updateTaskOp(tasks, taskId, { type: "link", linkTarget: target }),
+      connections,
+      groups,
+    });
+    setLinkEditorTaskId(null);
+    workspaceService
+      .updateTask(workspaceId, projectId, taskId, { type: "link", linkTarget: target })
+      .catch(console.error);
+  };
+
+  const handleRemoveLink = (taskId: string) => {
+    // Drop the link fields entirely (rather than set them undefined) so neither
+    // local state nor a later full-state sync writes an undefined Firestore value.
+    const nextTasks = tasks.map((t) => {
+      if (t.id !== taskId) return t;
+      const { type: _type, linkTarget: _linkTarget, ...rest } = t;
+      return rest;
+    });
+    push({ tasks: nextTasks, connections, groups });
+    workspaceService.clearTaskLink(workspaceId, projectId, taskId).catch(console.error);
+  };
+
+  const showDeadLinkDialog = async (taskId: string) => {
+    const update = await confirm({
+      title: "Link destination not found",
+      message:
+        "This link points to a task, group, or project that no longer exists. " +
+        "You can pick a new destination.",
+      confirmLabel: "Update destination",
+      cancelLabel: "Cancel",
+    });
+    if (update) setLinkEditorTaskId(taskId);
+  };
+
+  const handleGoToLinkDestination = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task?.linkTarget) {
+      await showDeadLinkDialog(taskId);
+      return;
+    }
+    const nav = classifyLinkNavigation(task.linkTarget, projectId);
+    switch (nav.kind) {
+      case "sameProjectTask":
+        if (tasks.some((t) => t.id === nav.taskId)) selectAndCenterTask(nav.taskId);
+        else await showDeadLinkDialog(taskId);
+        return;
+      case "sameProjectGroup":
+        if (groups.some((g) => g.id === nav.groupId)) selectAndCenterGroup(nav.groupId);
+        else await showDeadLinkDialog(taskId);
+        return;
+      case "activateProject":
+        if (projects.some((p) => p.id === nav.projectId)) onSwitchProject(nav.projectId);
+        else await showDeadLinkDialog(taskId);
+        return;
+      case "crossProjectTask":
+      case "crossProjectGroup": {
+        // Validate in the destination project before switching, so a dead link
+        // surfaces the dialog without bouncing the user to another project.
+        const content = await workspaceService.getProjectContent(workspaceId, nav.projectId);
+        if (content && linkTargetExistsIn(task.linkTarget, content)) {
+          const focus: PendingFocus =
+            nav.kind === "crossProjectTask"
+              ? { kind: "task", id: nav.taskId }
+              : { kind: "group", id: nav.groupId };
+          onNavigateToProjectWithFocus(nav.projectId, focus);
+        } else {
+          await showDeadLinkDialog(taskId);
+        }
+        return;
+      }
+    }
+  };
+
   const { shiftPressed } = useGlobalKeyboardShortcuts({
     onUndo: wrappedUndo,
     onRedo: wrappedRedo,
@@ -522,6 +636,22 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
     onSelectAll: handleSelectAll,
     onDuplicate: handleDuplicate,
   });
+
+  // After a cross-project link hop, focus the destination once this project's
+  // content has loaded. Runs once per mount; the component is key-remounted on
+  // project switch, so the ref resets for the newly-active project.
+  const pendingFocusHandledRef = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectAndCenter* are recreated each render; this is a once-per-mount focus keyed off load + pendingFocus.
+  useEffect(() => {
+    if (loadStatus !== "ready" || !pendingFocus || pendingFocusHandledRef.current) return;
+    pendingFocusHandledRef.current = true;
+    if (pendingFocus.kind === "task" && tasks.some((t) => t.id === pendingFocus.id)) {
+      selectAndCenterTask(pendingFocus.id);
+    } else if (pendingFocus.kind === "group" && groups.some((g) => g.id === pendingFocus.id)) {
+      selectAndCenterGroup(pendingFocus.id);
+    }
+    onPendingFocusHandled();
+  }, [loadStatus, pendingFocus, tasks, groups, onPendingFocusHandled]);
 
   const buildNewTask = (x: number, y: number): Task => ({
     id: crypto.randomUUID(),
@@ -868,6 +998,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onDuplicateTask={handleDuplicateTask}
         onCopyTask={handleCopyTask}
         onDeleteTask={deleteTask}
+        onLinkToTask={handleLinkTo}
+        onGoToLinkDestination={handleGoToLinkDestination}
+        onRemoveLink={handleRemoveLink}
         onSetPeekedTaskId={setPeekedTaskId}
         onSetOpenMenuId={setOpenMenuId}
         onSetMenuPosition={setMenuPosition}
@@ -936,6 +1069,9 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onDuplicateTask={handleDuplicateTask}
         onCopyTask={handleCopyTask}
         onDeleteTask={deleteTask}
+        onLinkToTask={handleLinkTo}
+        onGoToLinkDestination={handleGoToLinkDestination}
+        onRemoveLink={handleRemoveLink}
         onDeleteSelected={handleDeleteSelected}
         onCopySelected={handleCopy}
         onUpdateTaskText={updateTaskText}
@@ -951,6 +1087,18 @@ const App = forwardRef<TaskMgtAppHandle, AppProps>(function App(
         onSelectGroup={selectGroupOnly}
         onToggleGroupSelect={toggleGroupSelection}
       />
+
+      {linkEditorTaskId && (
+        <LinkDestinationDialog
+          sourceTaskId={linkEditorTaskId}
+          projects={projects}
+          activeProjectId={projectId}
+          initialTarget={tasks.find((t) => t.id === linkEditorTaskId)?.linkTarget}
+          loadProjectContent={loadProjectContent}
+          onConfirm={handleConfirmLinkDestination}
+          onCancel={() => setLinkEditorTaskId(null)}
+        />
+      )}
     </div>
   );
 });

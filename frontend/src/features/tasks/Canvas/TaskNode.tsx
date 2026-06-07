@@ -17,6 +17,12 @@ const EDIT_BORDER_Y = 2;
 
 // Node border + selection/peek ring styling. Tunable while we settle on values.
 const NODE_STROKE_WIDTH = 3;
+
+// Link-task indicator: a circular badge holding a link icon, placed on the
+// label's top-left corner (mirroring the assignee avatars on the top right).
+const LINK_BADGE_RADIUS = 11;
+const LINK_BADGE_STROKE_WIDTH = 1.5;
+const LINK_ICON_FONT_SIZE = 12;
 const SELECTION_RING_GAP = 5; // px the ring sits outside the node shape
 const SELECTION_RING_WIDTH = 3; // canvas selection ring thickness
 const PEEK_RING_WIDTH = 2; // transient hover-echo ring thickness
@@ -116,6 +122,9 @@ export function TaskNode({
   const statusFontColor = statuses[task.status]?.fontColor || statuses.pending.fontColor;
   const category = task.category ? categories[task.category] : undefined;
   const categoryColor = category?.color;
+  // Link tasks keep their category's shape/colour; the link is signalled on the
+  // title label instead (an icon + an inverted, transparent-fill style below).
+  const isLink = task.type === "link";
   const shape = category?.shape || "circle";
   const baseFill = categoryColor || statusColor;
   const nodeClass = `node ${isDragging ? "dragging" : ""}`;
@@ -303,6 +312,29 @@ export function TaskNode({
                 </tspan>
               ))}
             </text>
+            {isLink && (
+              // Link badge on the label's top-left corner (mirrors avatars, top right).
+              <g style={{ pointerEvents: "none" }}>
+                <circle
+                  cx={tooltipX}
+                  cy={-12}
+                  r={LINK_BADGE_RADIUS}
+                  fill="#fff"
+                  stroke={statusColor}
+                  strokeWidth={LINK_BADGE_STROKE_WIDTH}
+                />
+                <text
+                  x={tooltipX}
+                  y={-12}
+                  textAnchor="middle"
+                  dy="0.35em"
+                  fontSize={LINK_ICON_FONT_SIZE}
+                  style={{ userSelect: "none" }}
+                >
+                  🔗
+                </text>
+              </g>
+            )}
             {assignedPersons.length > 0 &&
               (() => {
                 const AVATAR_R = 15;
