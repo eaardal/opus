@@ -4,10 +4,11 @@ import {
   hasTasksWithAssignedPeople,
   orderPeopleByAssignment,
   peopleWithAssignedTasks,
+  peopleWithSwimlanes,
   taskCountsByPerson,
   tasksAssignedToPerson,
 } from "./assignments";
-import type { Task } from "./types";
+import type { Task, TaskStatus } from "./types";
 
 const person = (id: string, name = id): Person => ({ id, name, picture: null });
 
@@ -17,6 +18,15 @@ const task = (id: string, assignedPersonIds?: string[]): Task => ({
   x: 0,
   y: 0,
   status: "pending",
+  assignedPersonIds,
+});
+
+const taskWith = (id: string, status: TaskStatus, assignedPersonIds: string[]): Task => ({
+  id,
+  text: id,
+  x: 0,
+  y: 0,
+  status,
   assignedPersonIds,
 });
 
@@ -51,6 +61,62 @@ describe("peopleWithAssignedTasks", () => {
   test("ignores assignee ids that do not match a known person", () => {
     const result = peopleWithAssignedTasks([ALICE], [task("t1", ["ghost"])]);
     expect(result).toEqual([]);
+  });
+});
+
+describe("peopleWithSwimlanes", () => {
+  test("returns only people with at least one active task, sorted by name", () => {
+    const people = [CARLA, ALICE, BOB];
+    const tasks = [task("t1", ["carla"]), task("t2", ["alice", "bob"])];
+
+    const result = peopleWithSwimlanes(people, tasks);
+
+    expect(result).toEqual([ALICE, BOB, CARLA]);
+  });
+
+  test("orders by name regardless of which task was assigned first", () => {
+    // Assignment order (carla, then bob) must not leak into swimlane order.
+    const people = [ALICE, BOB, CARLA];
+    const assignedCarlaFirst = [task("t1", ["carla"]), task("t2", ["bob"]), task("t3", ["alice"])];
+    const assignedBobFirst = [task("t1", ["bob"]), task("t2", ["carla"]), task("t3", ["alice"])];
+
+    const fromCarlaFirst = peopleWithSwimlanes(people, assignedCarlaFirst);
+    const fromBobFirst = peopleWithSwimlanes(people, assignedBobFirst);
+
+    expect(fromCarlaFirst.map((p) => p.id)).toEqual(["alice", "bob", "carla"]);
+    expect(fromBobFirst.map((p) => p.id)).toEqual(["alice", "bob", "carla"]);
+  });
+
+  test("sorts names case-insensitively", () => {
+    const zoe = person("p1", "Zoe");
+    const adam = person("p2", "adam");
+
+    const result = peopleWithSwimlanes([zoe, adam], [task("t1", ["p1", "p2"])]);
+
+    expect(result.map((p) => p.name)).toEqual(["adam", "Zoe"]);
+  });
+
+  test("excludes people whose only tasks are completed or archived", () => {
+    const tasks = [
+      taskWith("t1", "completed", ["alice"]),
+      taskWith("t2", "archived", ["bob"]),
+      taskWith("t3", "in_progress", ["carla"]),
+    ];
+
+    const result = peopleWithSwimlanes([ALICE, BOB, CARLA], tasks);
+
+    expect(result).toEqual([CARLA]);
+  });
+
+  test("ignores assignee ids that do not match a known person", () => {
+    const result = peopleWithSwimlanes([ALICE], [task("t1", ["ghost"])]);
+    expect(result).toEqual([]);
+  });
+
+  test("does not mutate the input people array", () => {
+    const list = [CARLA, ALICE, BOB];
+    peopleWithSwimlanes(list, [task("t1", ["alice", "bob", "carla"])]);
+    expect(list).toEqual([CARLA, ALICE, BOB]);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { Person } from "../teams/types";
+import { findSwimlanePersonIds } from "./blockers";
 import type { Task, TaskStatus } from "./types";
 
 /**
@@ -14,6 +15,23 @@ export function peopleWithAssignedTasks(people: Person[], tasks: Task[]): Person
   }
   return people
     .filter((person) => assignedIds.has(person.id))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+}
+
+/**
+ * The people who get a swimlane in the Task Queue — those with at least one
+ * active (pending/in_progress) task — sorted alphabetically by name
+ * (case-insensitive).
+ *
+ * The order is intentionally derived from the person's name, never from task
+ * assignment order, so that assigning or unassigning a task does not reshuffle
+ * the lanes. A person only appears or disappears as their active-task count
+ * crosses zero; their position is otherwise stable.
+ */
+export function peopleWithSwimlanes(people: Person[], tasks: Task[]): Person[] {
+  const swimlaneIds = findSwimlanePersonIds(tasks);
+  return people
+    .filter((person) => swimlaneIds.has(person.id))
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
 }
 

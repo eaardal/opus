@@ -4,7 +4,8 @@ import { X } from "lucide-react";
 import type { Connection, Group, Task, TaskStatus } from "../../../domain/tasks/types";
 import type { Person } from "../../../domain/teams/types";
 import type { CategoryConfig, StatusConfig } from "../theme";
-import { findBlockerTaskIds, findSwimlanePersonIds } from "../../../domain/tasks/blockers";
+import { peopleWithSwimlanes } from "../../../domain/tasks/assignments";
+import { findBlockerTaskIds } from "../../../domain/tasks/blockers";
 import { findOwningGroup } from "../../../domain/tasks/groupGeometry";
 import { assignPerson, unassignPerson } from "../../../domain/tasks/operations";
 import { BlockerCard } from "./BlockerCard";
@@ -120,10 +121,9 @@ export function TaskQueuePanel({
     position: { x: number; y: number };
   } | null>(null);
 
-  // Derive swimlane people from task assignments
-  const swimlanePeople = [...findSwimlanePersonIds(tasks)]
-    .map((id) => people.find((p) => p.id === id))
-    .filter((p): p is Person => p !== undefined);
+  // Derive swimlane people from task assignments, ordered alphabetically by name
+  // so the lanes stay put as tasks are assigned and unassigned.
+  const swimlanePeople = peopleWithSwimlanes(people, tasks);
 
   // Derive task lists for a person from task state
   const getInProgressTasks = (personId: string) =>
